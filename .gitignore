@@ -1,0 +1,19 @@
+# System & IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Node / Frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/.env
+
+# DDEV & Backend
+/backend/.ddev
+/backend/wp-config.php
+/backend/wp-content/uploads
+/backend/vendor
+/backend/.env
+
+# Local secrets
+.env
