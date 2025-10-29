@@ -1,0 +1,34 @@
+{
+  "name": "vite-bridge-boilerplate",
+  "version": "0.0.2",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format:code": "biome format --write ./frontend/src",
+    "format:templates": "prettier --write \"./frontend/src/views/**/*.njk\"",
+    "format": "pnpm format:code && pnpm format:templates",
+    "lint:code": "biome lint --apply ./frontend/src",
+    "check": "pnpm lint:code && pnpm format",
+    "verify": "pnpm build && pnpm playwright test",
+    "test:ui": "pnpm playwright test --ui",
+    "test:update": "pnpm build && pnpm playwright test --update-snapshots"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.2",
+    "@playwright/test": "^1.56.1",
+    "@vituum/vite-plugin-nunjucks": "^1.1.0",
+    "autoprefixer": "^10.4.21",
+    "gray-matter": "^4.0.3",
+    "prettier": "^3.6.2",
+    "prettier-plugin-jinja-template": "^2.1.0",
+    "vite": "^7.1.12",
+    "vite-plugin-svg-sprite": "^0.6.3"
+  },
+  "packageManager": "pnpm@10.19.0"
+}

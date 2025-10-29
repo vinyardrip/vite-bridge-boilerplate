@@ -17,3 +17,7 @@
 
 # Local secrets
 .env
+
+# Service files
+status.md
+
