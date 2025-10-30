@@ -3,12 +3,13 @@ import nunjucks from "@vituum/vite-plugin-nunjucks";
 import svgSprite from "vite-plugin-svg-sprite";
 import { imagetools } from "vite-plugin-imagetools";
 import webfontDl from "vite-plugin-webfont-dl";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ command }) => ({
   plugins: [
     nunjucks({
-      root: "./src/views",
-      data: ["./src/data/**/*.json"],
+      root: "./frontend/src/views",
+      data: ["./frontend/src/data/**/*.json"],
       fm: true,
       globals: {
         site: {
@@ -23,18 +24,11 @@ export default defineConfig(({ command }) => ({
     // --- НАСТРОЙКА ГИБРИДНОЙ ЗАГРУЗКИ ШРИФТОВ ---
     webfontDl({
       // --- ЭТАП 1: ЗАПРОС К GOOGLE FONTS ---
-      // Плагин будет использовать этот блок для генерации CSS,
-      // который в первую очередь пытается загрузить шрифты с серверов Google.
       google: {
-        // Указываем, какие семейства шрифтов нам нужны.
         families: [
           {
-            // Имя семейства на Google Fonts.
             name: "JetBrains Mono",
-            // Указываем необходимые начертания (веса).
             weights: ["300", "700"],
-            // Можно также указать текст для создания subset'ов (оптимизация).
-            // text: 'abcdef12345',
           },
           {
             name: "Spectral",
@@ -46,17 +40,14 @@ export default defineConfig(({ command }) => ({
           },
         ],
       },
-
       // --- ЭТАП 2: ДОБАВЛЕНИЕ ЛОКАЛЬНЫХ ФАЙЛОВ КАК FALLBACK ---
-      // Этот блок добавляет наши локальные шрифты в те же самые правила @font-face,
-      // которые были сгенерированы для Google Fonts.
       custom: {
         families: [
           {
             // ВАЖНО: 'name' должно ТОЧНО совпадать с именем из секции 'google'.
             // Так плагин понимает, к какому правилу @font-face добавить этот файл.
             name: "JetBrains Mono",
-            // 'local' - имя нашего локального файла в /src/assets/fonts/
+            // 'local' - имя нашего локального файла в /frontend/src/assets/fonts/
             local: "JetBrainsMono-Light",
             // Указываем, какому весу (начертанию) соответствует этот файл.
             weights: ["300"],
@@ -72,11 +63,8 @@ export default defineConfig(({ command }) => ({
             weights: ["700"],
           },
           {
-            // Пример, как мы можем дать кастомный алиас, если имя на Google Fonts
-            // отличается от того, что мы хотим использовать в CSS.
-            // Здесь мы используем 'Spectral SC' от Google, но в CSS будет 'spectral-lc'.
-            name: "spectral-lc", // <-- Наш алиас для CSS
-            // Но мы "связываем" его с семейством от Google.
+            // Пример, как мы можем дать кастомный алиас.
+            name: "spectral-lc",
             mapTo: "Spectral SC",
             local: "SpectralSC-Bold",
             weights: ["700"],
@@ -86,6 +74,74 @@ export default defineConfig(({ command }) => ({
         // Она говорит плагину: "Не создавай новые правила @font-face,
         // а добавь эти локальные файлы в правила, созданные для 'google'".
         injectTo: "google",
+      },
+    }),
+
+    // --- НАСТРОЙКА PWA И ГЕНЕРАЦИИ FAVICONS ---
+    VitePWA({
+      // Отключаем лишние для нас PWA-фичи, оставляя только генерацию ассетов.
+      registerType: "autoUpdate",
+      injectRegister: false,
+
+      manifest: {
+        // Данные для файла manifest.webmanifest
+        name: "Vite Bridge Boilerplate",
+        short_name: "ViteApp",
+        description: "My Awesome App description",
+        theme_color: "#ffffff", // Цвет для UI браузера на Android
+        background_color: "#da532c", // Цвет для плиток Windows
+
+        // Описание иконок, которые будут перечислены в манифесте.
+        // Плагин сам сгенерирует эти файлы из исходника.
+        icons: [
+          {
+            src: "pwa-192x192.png", // Путь будет относительным корня сайта
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+          {
+            src: "apple-touch-icon.png", // Иконка для iOS
+            sizes: "180x180",
+            type: "image/png",
+          },
+          {
+            src: "maskable-icon-512x512.png", // Адаптивная иконка для Android
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+
+      // Эта секция - ядро генерации иконок.
+      pwaAssets: {
+        // ВАЖНО: Указываем путь к нашему мастер-файлу иконки.
+        image: "frontend/public/favicon.svg",
+        // Конфигурация для разных платформ, аналог вашего Gulp-файла.
+        config: {
+          // Генерировать favicon.ico для старых браузеров
+          favicon: true,
+          // Настройки для иконок Apple
+          apple: {
+            // true = иконка без эффекта "стеклянного блеска"
+            precomposed: true,
+          },
+          // Настройки для плиток Windows Metro
+          msTile: {
+            tileColor: "#da532c",
+          },
+          // Включить генерацию стандартных иконок для Android/PWA
+          android: true,
+          // Настройки для закрепленной вкладки в Safari
+          safariPinnedTab: {
+            themeColor: "#5bbad5",
+          },
+        },
       },
     }),
   ],
