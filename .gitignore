@@ -18,6 +18,10 @@
 # Local secrets
 .env
 
+# Кеш-файл оптимизации изображений (создадим его позже внутри /frontend)
+/frontend/.tinypng-cache
+/frontend/.svgo-cache
+
 # Service files
 status.md
 

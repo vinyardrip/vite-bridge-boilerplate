@@ -1,1 +1,30 @@
-{"name": "Site Name", "url": "https://example.com"}
+{
+  "name": "Vite Bridge Boilerplate",
+  "url": "https://example.com",
+  "fonts": [
+    {
+      "name": "JetBrains Mono",
+      "weight": 300,
+      "style": "normal",
+      "text": "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+    },
+    {
+      "name": "JetBrains Mono",
+      "weight": 700,
+      "style": "normal",
+      "text": "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
+    },
+    {
+      "name": "Spectral",
+      "weight": 700,
+      "style": "normal",
+      "text": "The quick brown fox jumps over the lazy dog"
+    },
+    {
+      "name": "Spectral SC",
+      "weight": 700,
+      "style": "normal",
+      "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
+    }
+  ]
+}

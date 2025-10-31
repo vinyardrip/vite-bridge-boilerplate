@@ -1,0 +1,60 @@
+---
+title: "Диагностика веб-шрифтов"
+layout: "layouts/_default.njk"
+page_class: "page-font-test"
+---
+
+{#
+  Этот контейнер является точкой входа для нашего JS-модуля.
+  Скрипт найдет его по ID и запустит тесты.
+#}
+<div class="font-tester" id="font-tester">
+  <div class="font-tester__header">
+    <h1>Диагностика веб-шрифтов</h1>
+    <p class="font-tester__intro">
+      Эта страница — ваш инструмент для проверки корректности загрузки веб-шрифтов в проекте. Она помогает убедиться, что все начертания, настроенные в <code>vite.config.js</code>, действительно загружаются и применяются браузером.
+    </p>
+  </div>
+
+  <div class="font-tester__guide">
+    <h2>Как это работает?</h2>
+    <ol>
+      <li><strong>Слева ("Ожидание"):</strong> Текст отображается с применением нужных CSS-свойств <code>font-family</code> и <code>font-weight</code>. Так он <strong>должен</strong> выглядеть.</li>
+      <li><strong>Справа ("Результат"):</strong> JavaScript через <code>document.fonts</code> API проверяет, загружен ли фактически данный шрифт в браузере.</li>
+      <li><strong>Статус:</strong> Если шрифт успешно загружен, вы увидите зеленую плашку "Успешно". Если браузер использует системный fallback-шрифт (например, Times New Roman или Arial), вы увидите красную плашку "Ошибка".</li>
+    </ol>
+  </div>
+
+  <div class="font-tester__grid">
+    {#
+      !Главная магия здесь.
+      Мы запускаем цикл по массиву `site.fonts`, который мы определили в `site.json`.
+      Для каждого шрифта в этом массиве Nunjucks автоматически создаст тестовый блок.
+    #}
+    {% for font in site.fonts %}
+      <div
+        class="font-test-card"
+        data-family="{{ font.name }}"
+        data-weight="{{ font.weight }}"
+        data-style="{{ font.style }}"
+      >
+        <div class="font-test-card__header">
+          <h3 class="font-test-card__title">{{ font.name }}</h3>
+          <div class="font-test-card__meta">
+            <span>Weight: {{ font.weight }}</span>
+            {# Мы добавляем этот span с результатом, который наш JS найдет и заполнит #}
+            <span class="font-test-card__status" data-status="pending">Проверка...</span>
+          </div>
+        </div>
+        <div class="font-test-card__body">
+          <p
+            class="font-test-card__preview"
+            style="font-family: '{{ font.name }}', serif; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
+          >
+            {{ font.text }}
+          </p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
