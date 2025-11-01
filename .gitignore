@@ -1,27 +1,45 @@
-# System & IDE
+# =================================
+# System & IDE Files
+# =================================
 .DS_Store
 .idea/
 .vscode/
 
-# Node / Frontend
-/frontend/node_modules
-/frontend/dist
-/frontend/.env
+# =================================
+# Node / Monorepo Root
+# =================================
+# Папка с зависимостями, устанавливаемыми pnpm. Никогда не должна быть в Git.
+/node_modules
+# Папка с результатом production-сборки. Будет создана Vite в корне проекта.
+/dist
+# Локальные кеш-файлы для утилит оптимизации.
+.tinypng-cache
+.svgo-cache
 
+# =================================
 # DDEV & Backend
+# =================================
+# Локальная конфигурация и данные DDEV.
 /backend/.ddev
+# Конфигурационный файл WP с секретными ключами.
 /backend/wp-config.php
+# Загруженные пользователем медиафайлы.
 /backend/wp-content/uploads
+# Зависимости Composer.
 /backend/vendor
+# Файл с переменными окружения для бэкенда.
 /backend/.env
 
-# Local secrets
-.env
+# =================================
+# Frontend
+# =================================
+# Файл с переменными окружения для фронтенда (например, ключи API).
+/frontend/.env
 
-# Кеш-файл оптимизации изображений (создадим его позже внутри /frontend)
-/frontend/.tinypng-cache
-/frontend/.svgo-cache
-
-# Service files
+# =================================
+# Service & Local Files
+# =================================
+# Файлы, не относящиеся к проекту напрямую.
 status.md
-
+# Файл для менеджера версий mise/asdf.
+.tool-versions

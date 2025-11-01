@@ -17,9 +17,19 @@ import svgSprite from "vite-plugin-svg-sprite";
 import { imagetools } from "vite-plugin-imagetools";
 import webfontDl from "vite-plugin-webfont-dl";
 import { VitePWA } from "vite-plugin-pwa";
+import { FontaineTransform } from "fontaine"; // 👈 ИМПОРТИРУЕМ ПЛАГИН
 
 export default defineConfig(({ command }) => {
   const plugins = [
+    // 👇 ДОБАВЛЯЕМ ПЛАГИН FONTAINE В САМОЕ НАЧАЛО
+    FontaineTransform.vite({
+      fallbacks: {
+        "JetBrains Mono": ["Courier New", "monospace"],
+        Spectral: ["Georgia", "serif"],
+        "Spectral SC": ["Georgia", "serif"],
+      },
+    }),
+
     nunjucks({
       root: "./frontend/src/views",
       data: ["./frontend/src/data/**/*.json"],
