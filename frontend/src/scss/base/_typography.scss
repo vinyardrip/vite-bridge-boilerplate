@@ -1,0 +1,53 @@
+// ==========================================================================
+// TYPOGRAPHY
+// ==========================================================================
+
+// Этот файл определяет базовые стили для текста.
+// Мы используем переменные, которые будут определены в `abstracts/_variables.scss`.
+
+body {
+  font-family: var(--font-family-base); // Используем CSS-переменную для гибкости
+  font-size: var(--font-size-base);
+  color: var(--color-text-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Базовые стили для заголовков.
+// Мы используем простую и надежную шкалу размеров.
+h1, .h1 {
+  font-size: var(--font-size-h1);
+  font-family: var(--font-family-headings);
+  font-weight: 700; // Пример
+  line-height: 1.2;
+}
+
+h2, .h2 {
+  font-size: var(--font-size-h2);
+  font-family: var(--font-family-headings);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h3, .h3 {
+  font-size: var(--font-size-h3);
+  font-family: var(--font-family-headings);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+// и т.д. для h4, h5, h6...
+
+p {
+  margin-bottom: 1rem; // Добавляем стандартный отступ между параграфами
+}
+
+a {
+  color: var(--color-link);
+  text-decoration: none; // Убираем подчеркивание по умолчанию
+
+  &:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline; // Возвращаем подчеркивание при наведении
+  }
+}

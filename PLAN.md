@@ -1,0 +1,242 @@
+Финальная, Полная, Единая и Абсолютно Корректная Версия PLAN.md
+Пожалуйста, полностью замените все содержимое вашего PLAN.md на этот код. Я восстановил все утерянные фрагменты и форматирование, и включил все наши правки.
+code
+Markdown
+# Vite Bridge Boilerplate: План и Архитектура (v3.13 - SCSS Завершен)
+
+Этот документ (PLAN.md) является единственным источником правды для архитектуры и плана реализации проекта. Все действия выполняются в строгом соответствии с этим планом.
+
+## 1. Ключевые особенности и философия
+
+- **Монорепозиторий (Monorepo):** Весь проект, включая frontend и backend части, находится в едином Git-репозитории.
+- **Разделение ответственности:** Проект имеет строгую двухкомпонентную структуру (`/frontend` и `/backend`).
+- **Современная модульная архитектура SCSS:** Мы используем методологию ITCSS с директивами `@use` и `@forward`. Каждая папка в `scss` имеет "бочковой" файл (`_index.scss`), который собирает и экспортирует ее содержимое.
+- **Безопасный и предсказуемый рабочий процесс:** Мы следуем четкой последовательности: Разработка -> Коммит -> Сборка -> Синхронизация.
+- **Гибридный подход к качеству кода:** Используется Biome для быстрой проверки JS/CSS и Prettier для форматирования Nunjucks.
+- **Продвинутый шаблонизатор:** Nunjucks с поддержкой Front Matter и глобальных файлов данных.
+- **Профессиональная архитектура:** Файловая структура исходников и сборки четко организована.
+- **Автоматическое управление путями:** `manifest.json` и PHP-функция `get_asset()` для версионирования ассетов.
+
+## 2. Рабочий процесс и Управление версиями
+
+Для обеспечения предсказуемости и отслеживания истории изменений, мы придерживаемся следующего строгого пошагового процесса для завершения и публикации блока работ.
+
+**Шаг 1: Закоммитить проделанную работу**
+Сначала фиксируем все изменения в коде.
+```bash
+git add .
+git commit -m "feat(images): implement automatic image optimization"
+Шаг 2: Повысить версию проекта
+Используем pnpm для формального повышения версии согласно SemVer.
+code
+Bash
+pnpm version patch
+Шаг 3: Отправить всё на сервер
+Используем флаг --follow-tags, чтобы отправить и коммиты, и теги.
+code
+Bash
+git push --follow-tags
+3. Правила нашей совместной работы
+Методичный пошаговый подход: Все действия выполняются строго пошагово.
+Слово-команда "дальше": Переход к следующему действию осуществляется только после вашего подтверждения.
+Полнота предоставляемой информации: Когда требуется предоставить содержимое файла, оно должно быть предоставлено полностью, без сокращений.
+Приоритет прагматизма: При выборе между новым стандартом и привычным, удобным подходом, мы выбираем тот, который повышает скорость и ясность разработки.
+Сохранение целостности плана: Этот документ (PLAN.md) всегда предоставляется в полной версии.
+Информативный вывод в консоли: Все скрипты и процессы должны предоставлять четкую обратную связь.
+Поиск решений для новых задач: Если для новой задачи требуется зависимость, не описанная в плане, я обязан найти актуальное решение.
+4. Используемый стек и окружение
+Разрабатываем на: Arch Linux + zsh + yay + micro + VS Code.
+Инструмент Версия/Менеджер Назначение
+ОС Arch Linux Основная среда разработки.
+mise latest Управляет версиями инструментов.
+pnpm mise Основной пакетный менеджер.
+DDEV latest Управляет серверным окружением на базе Docker.
+WP-CLI Встроен в DDEV Интерфейс командной строки для WordPress.
+Vite latest Сборщик фронтенда.
+5. Архитектура и файловая структура
+code
+Code
+.
+├── backend
+│   ├── .env
+│   └── wp-content
+│       ├── plugins
+│       └── themes
+│           └── my-theme
+├── biome.json
+├── frontend
+│   ├── .env
+│   ├── public
+│   │   ├── favicon.svg
+│   │   └── robots.txt
+│   └── src
+│       ├── assets
+│       │   ├── fonts
+│       │   ├── icons
+│       │   ├── images
+│       │   └── svg
+│       ├── data
+│       │   └── site.json
+│       ├── js
+│       │   ├── app.js
+│       │   ├── lib
+│       │   └── modules
+│       ├── scss
+│       │   ├── abstracts
+│       │   ├── app.scss
+│       │   ├── base
+│       │   ├── components
+│       │   ├── layout
+│       │   ├── pages
+│       │   ├── utils
+│       │   └── vendor
+│       └── views
+│           ├── components
+│           ├── layouts
+│           ├── macros
+│           ├── pages
+│           └── partials
+├── .gitignore
+├── node_modules/
+├── package.json
+├── plan.md
+├── playwright.config.js
+├── pnpm-lock.yaml
+├── postcss.config.js
+├── posthtml.config.js
+├── .prettierrc.json
+├── scripts
+│   ├── compress-images.js
+│   ├── convert-images.js
+│   ├── make-critical.js
+│   └── optimize-svg.js
+├── snippets.md
+├── status.md
+├── temp.txt
+├── .tool-versions
+└── vite.config.js```
+
+## 6. Настройка Vite: Шаблонизатор и структура сборки
+Настройка `build.rollupOptions.output` в `vite.config.js`:
+```javascript
+// Внутри defineConfig
+build: {
+  outDir: 'dist',
+  manifest: true,
+  rollupOptions: {
+    output: {
+      entryFileNames: 'js/[name].[hash].js',
+      chunkFileNames: 'js/chunk.[hash].js',
+      assetFileNames: (assetInfo) => {
+        const extType = (assetInfo.fileName || assetInfo.name).split(".").pop();
+        if (/css/i.test(extType)) return "css/app.[hash].css";
+        if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType)) return "img/[name].[hash][extname]";
+        if (/woff|woff2|eot|ttf|otf/i.test(extType)) return "fonts/[name].[hash][extname]";
+        return "[name].[hash][extname]";
+      },
+      manualChunks(id) {
+        if (id.includes('node_modules')) {
+          return 'vendor';
+        }
+      },
+    },
+  },
+},
+7. Качество кода и форматирование: Гибридный подход Biome + Prettier
+Установка зависимостей: pnpm add -D @biomejs/biome prettier @prettier/plugin-nunjucks
+Скрипты в package.json:
+code
+JSON
+{
+  "scripts": {
+    "format:code": "biome format --write ./frontend/src",
+    "format:templates": "prettier --write \"./frontend/src/views/**/*.njk\"",
+    "format": "pnpm format:code && pnpm format:templates",
+    "lint:code": "biome lint --apply ./frontend/src",
+    "check": "pnpm lint:code && pnpm format"
+  }
+}
+8. Рабочий процесс тестирования: "Проверяй то, что отдаешь"
+(Настройки Playwright актуальны и находятся в playwright.config.js)
+9. Безопасный рабочий процесс и интеграция с бэкендом
+Скрипт sync:theme в package.json:
+code
+JSON
+{
+  "scripts": {
+    "sync:theme": "if [ -n \"$(git status --porcelain)\" ]; then echo '❌ Ошибка: Обнаружены незакоммиченные изменения!'; exit 1; fi && echo '✅ Рабочая директория чиста, начинаю синхронизацию...' && rsync -av --delete dist/ backend/wp-content/themes/my-theme/assets/"
+  }
+}
+PHP-функция get_asset в functions.php (WordPress):
+code
+PHP
+<?php
+function get_asset($entry) {
+    static $manifest = null;
+    $manifestPath = get_template_directory() . '/assets/manifest.json';
+
+    if ($manifest === null) {
+        if (!file_exists($manifestPath)) {
+            $dev_server_url = 'http://localhost:5173';
+            return $dev_server_url . '/frontend/src/' . $entry;
+        }
+        $manifest = json_decode(file_get_contents($manifestPath), true);
+    }
+
+    if (isset($manifest[$entry]['file'])) {
+        return get_template_directory_uri() . '/assets/' . $manifest[$entry]['file'];
+    }
+
+    error_log("Asset not found in manifest.json: " . $entry);
+    return '';
+}
+10. Обязательный плагин для WordPress: Контроль ресурсов
+Для контроля над ресурсами, которые загружают сторонние плагины в WordPress, обязательна установка плагина-менеджера ресурсов, например, Asset CleanUp: Page Speed Booster.
+11. План реализации (Финальный чек-лист)
+Фаза 0: Фундамент (ЗАВЕРШЕНА)
+Фаза 1: Базовая настройка Frontend-сборки (ЗАВЕРШЕНА)
+Фаза 1.5: Дополнительная настройка фронтенда (ЗАВЕРШЕНА)
+ТЕКУЩИЙ ЭТАП -> Фаза 1.7: Рефакторинг исходного кода
+SCSS: (ЗАВЕРШЕНО) Проведен полный рефакторинг: создана модульная архитектура (ITCSS), внедрены @use/@forward, сформирован мощный фундамент (abstracts), все старые стили проанализированы и мигрированы/заменены.
+Nunjucks: (СЛЕДУЮЩИЙ) Анализ и структурирование шаблонов.
+JavaScript: Перенос логики в модульную структуру.
+СЛЕДУЮЩИЙ ЭТАП -> Фаза 1.8: Финальное интеграционное тестирование
+(Секция без изменений)
+Фаза 2: Настройка бэкенда (WordPress)
+Фаза 3: Интеграция и DX
+Фаза 4: Развертывание (Деплой)
+Фаза 5: Упаковка в Yeoman-генератор
+Фаза X: Продвинутая Оптимизация (На Будущее)
+[ ] Интеграция PurgeCSS: Рассмотреть возможность добавления vite-plugin-purgecss (или аналога) в production-сборку. Это позволит автоматически удалять все неиспользуемые CSS-правила, уменьшая размер итогового бандла.
+12. План на будущее: Превращение шаблона в "Конструктор"
+Наш Yeoman-генератор будет использовать prompts (вопросы), чтобы спрашивать у пользователя, что он хочет.
+Ключевое требование к генератору:
+Поддержка мульти-менеджеров пакетов: Генератор должен автоматически определять или спрашивать у пользователя, какой менеджер (pnpm, npm, yarn) использовать.
+Пример, как это будет работать:
+Запуск генератора: yo my-generator
+Вопрос 1 (Тип проекта):
+code
+Code
+? Какой тип проекта вы создаете?
+> Landing Page (Статический сайт)
+> WordPress + DDEV
+Вопрос 2 (Шаблонизатор):
+code
+Code
+? Какой шаблонизатор вы хотите использовать?
+> Nunjucks
+> Mustache
+> Plain HTML (с инклюдами)
+Вопрос 3 (CSS):
+code
+Code
+? Какой препроцессор CSS?
+> SASS/SCSS
+> PostCSS-only
+13. Вспомогательные (Utility) Скрипты
+Помимо основных команд dev и build, проект включает отдельные скрипты для выполнения разовых задач.
+favicons:generate
+images:compress
+images:convert
+svg:optimize
+test:fonts

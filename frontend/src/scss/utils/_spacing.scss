@@ -1,0 +1,64 @@
+// ==========================================================================
+// UTILS: Spacing Generator
+// ==========================================================================
+@use "../abstracts" as *;
+
+// --- Конфигурация ---
+// Здесь мы определяем, какие классы и значения мы хотим сгенерировать.
+// Вы можете легко добавить или изменить значения.
+$spacing-properties: (
+  "m": "margin",
+  "p": "padding"
+);
+
+$spacing-directions: (
+  "t": "top",
+  "r": "right",
+  "b": "bottom",
+  "l": "left",
+  "x": "inline", // Горизонтальные (left + right)
+  "y": "block"  // Вертикальные (top + bottom)
+);
+
+$spacing-values: (
+  "0": 0,
+  "10": rem(10),
+  "15": rem(15),
+  "20": rem(20),
+  "25": rem(25),
+  "30": rem(30),
+  "40": rem(40),
+  "50": rem(50),
+  "auto": auto
+);
+// -----------------------------
+
+
+// --- Генератор ---
+// Этот код автоматически создает классы типа .mt-10, .px-20 и т.д.
+@each $prop-abbr, $prop-full in $spacing-properties {
+  @each $dir-abbr, $dir-full in $spacing-directions {
+    @each $val-name, $val-css in $spacing-values {
+
+      // Генерация классов для конкретных направлений (mt-10, pr-15, ...)
+      @if $dir-full == "top" or $dir-full == "right" or $dir-full == "bottom" or $dir-full == "left" {
+        .u-#{$prop-abbr}#{$dir-abbr}-#{$val-name} {
+          #{$prop-full}-#{$dir-full}: $val-css;
+        }
+      }
+      // Генерация классов для осей (px-20, my-30, ...)
+      @else if $dir-full == "inline" { // Для .px-..
+        .u-#{$prop-abbr}#{$dir-abbr}-#{$val-name} {
+          #{$prop-full}-left: $val-css;
+          #{$prop-full}-right: $val-css;
+        }
+      }
+      @else if $dir-full == "block" { // Для .py-..
+        .u-#{$prop-abbr}#{$dir-abbr}-#{$val-name} {
+          #{$prop-full}-top: $val-css;
+          #{$prop-full}-bottom: $val-css;
+        }
+      }
+    }
+  }
+}

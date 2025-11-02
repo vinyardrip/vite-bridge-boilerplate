@@ -1,0 +1,277 @@
+// ==========================================================================
+// ABSTRACTS: Mixins
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// Медиа-запросы (Media Queries)
+//
+// Миксины принимают либо ключ из карты $breakpoints (напр. "md"),
+// либо конкретное значение (напр. 850px).
+// --------------------------------------------------------------------------
+
+// Применяет стили для экранов МЕНЬШЕ указанного брейкпоинта.
+// @use: @include breakpoint-down(md) { ... }
+// @use: @include breakpoint-down(850px) { ... }
+@mixin breakpoint-down($breakpoint) {
+  $value: null;
+
+  @if type-of($breakpoint) ==
+    "string" and
+    map-has-key($breakpoints, $breakpoint)
+  {
+    $value: map-get($breakpoints, $breakpoint);
+  } @else if type-of($breakpoint) == "number" and unitless($breakpoint) {
+    $value: $breakpoint * 1px; // Добавляем px, если передано просто число
+  } @else if type-of($breakpoint) == "number" and not unitless($breakpoint) {
+    $value: $breakpoint;
+  } @else {
+    @warn "Invalid breakpoint `#{$breakpoint}`.";
+    @return;
+  }
+
+  @media (max-width: #{$value - 0.02px}) {
+    @content;
+  }
+}
+
+// Применяет стили для экранов БОЛЬШЕ указанного брейкпоинта.
+// @use: @include breakpoint-up(md) { ... }
+// @use: @include breakpoint-up(850px) { ... }
+@mixin breakpoint-up($breakpoint) {
+  $value: null;
+
+  @if type-of($breakpoint) ==
+    "string" and
+    map-has-key($breakpoints, $breakpoint)
+  {
+    $value: map-get($breakpoints, $breakpoint);
+  } @else if type-of($breakpoint) == "number" and unitless($breakpoint) {
+    $value: $breakpoint * 1px; // Добавляем px, если передано просто число
+  } @else if type-of($breakpoint) == "number" and not unitless($breakpoint) {
+    $value: $breakpoint;
+  } @else {
+    @warn "Invalid breakpoint `#{$breakpoint}`.";
+    @return;
+  }
+
+  @media (min-width: #{$value}) {
+    @content;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Утилиты (Utilities)
+// --------------------------------------------------------------------------
+
+// Устанавливает ширину и высоту элемента.
+// @use: @include size(50px);
+@mixin size($width, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+// Обрезает текст многоточием.
+// @use: @include text-overflow;
+@mixin text-overflow() {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Стилизация плейсхолдера.
+// @use: @include placeholder { color: #ccc; }
+@mixin placeholder() {
+  &::placeholder {
+    @content;
+  }
+}
+
+// Отключает выделение текста.
+// @use: @include user-select-none;
+@mixin user-select-none() {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+// Стилизация выделенного текста.
+// @use: @include selection { background: #f00; }
+@mixin selection() {
+  &::selection {
+    @content;
+  }
+}
+
+// Применяет стили только для устройств, поддерживающих hover.
+// @use: @include on-hover { ... }
+@mixin on-hover() {
+  @media (hover: hover) {
+    &:hover {
+      @content;
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// Генераторы CSS-фигур
+// --------------------------------------------------------------------------
+
+// Создание CSS-треугольника (сплошного).
+// @use: @include triangle(up, 10px, #f00);
+@mixin triangle($direction, $size, $color) {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  @if $direction == up {
+    border-width: 0 $size $size $size;
+    border-color: transparent transparent $color transparent;
+  } @else if $direction == down {
+    border-width: $size $size 0 $size;
+    border-color: $color transparent transparent transparent;
+  } @else if $direction == left {
+    border-width: $size $size $size 0;
+    border-color: transparent $color transparent transparent;
+  } @else if $direction == right {
+    border-width: $size 0 $size $size;
+    border-color: transparent transparent transparent $color;
+  }
+}
+
+// Создание контурной стрелки-шеврона.
+// @use: @include chevron(up, 20px, 2px, #f00);
+@mixin chevron($direction, $size, $thickness, $color) {
+  @include size($size);
+  border: solid $color;
+  border-width: 0 $thickness $thickness 0;
+  display: inline-block;
+
+  @if $direction == "up" {
+    transform: translateY(25%) rotate(-135deg);
+  } @else if $direction == "right" {
+    transform: translateX(-25%) rotate(-45deg);
+  } @else if $direction == "down" {
+    transform: translateY(-25%) rotate(45deg);
+  } @else if $direction == "left" {
+    transform: translateX(25%) rotate(135deg);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Псевдо-элементы и Позиционирование
+// --------------------------------------------------------------------------
+
+// Добавляет базовые стили для псевдо-элементов.
+// @use: @include pseudo;
+@mixin pseudo($display: block, $content: "") {
+  content: $content;
+  display: $display;
+  position: absolute;
+}
+
+// Растягивает элемент на 100% родителя (у которого position: relative).
+// @use: @include coverdiv;
+@mixin coverdiv() {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// --------------------------------------------------------------------------
+// Фоны, Тени и Скроллбары
+// --------------------------------------------------------------------------
+
+// Популярные стили для фоновых изображений.
+// @use: @include cover-background;
+@mixin cover-background() {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 50%;
+}
+
+// Применяет тень Material Design z-depth.
+// @use: @include z-depth(4);
+@mixin z-depth($dp: 2) {
+  @if $dp == 2 {
+    box-shadow: var(--shadow-2dp);
+  } @else if $dp == 4 {
+    box-shadow: var(--shadow-4dp);
+  } @else if $dp == 8 {
+    box-shadow: var(--shadow-8dp);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Стилизация кастомного скроллбара (для WebKit-браузеров)
+// --------------------------------------------------------------------------
+
+// Стилизует всю область скроллбара.
+// Основное назначение: задать ширину/высоту.
+// @use: @include scrollbar { width: 10px; }
+@mixin scrollbar() {
+  &::-webkit-scrollbar {
+    @content;
+  }
+}
+
+// Стилизует "дорожку", по которой движется ползунок.
+// Основное назначение: задать фон.
+// @use: @include scrollbar-track { background: #f1f1f1; }
+@mixin scrollbar-track() {
+  &::-webkit-scrollbar-track {
+    @content;
+  }
+}
+
+// Стилизует сам ползунок.
+// Основное назначение: задать цвет, скругления, тени.
+// @use: @include scrollbar-thumb { background: #888; }
+@mixin scrollbar-thumb() {
+  &::-webkit-scrollbar-thumb {
+    @content;
+  }
+}
+
+// --------------------------------------------------------------------------
+// ЗААРХИВИРОВАНО: Оптимизация фоновых изображений (WebP/AVIF)
+// --------------------------------------------------------------------------
+/*
+// Этот миксин и JS-код сохранены на случай, если они понадобятся.
+// Они позволяют автоматически подключать .webp или .avif версии фоновых изображений.
+// Современный подход - использовать vite-plugin-image-optimizer и CSS image-set().
+
+// SCSS Миксин
+// @use: +bgopt(image-name, png) default - jpg
+=bgopt($image,$ext: jpg)
+	.webp.avif &
+		background-image: img-url('#{$image}.avif')
+
+	.webp &
+		background-image: img-url('#{$image}.webp')
+
+	&
+		background-image: img-url('#{$image}.#{$ext}')
+
+// JS-код для app.js
+function checkWebP(cb) {
+  const webP = new Image();
+  webP.onload = webP.onerror = () => { cb(webP.height == 2); };
+  webP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+}
+
+function checkAvif(cb) {
+  const avif = new Image();
+  avif.onload = avif.onerror = () => { cb(avif.height == 2); };
+  avif.src = 'data:image/avif;base64,AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADybWV0YQAAAAAAAAAoaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAGxpYmF2aWYAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABGgAAAB0AAAAoaWluZgAAAAAAAQAAABppbmZlAgAAAAABAABhdjAxQ29sb3IAAAAAamlwcnAAAABLaXBjbwAAABRpc3BlAAAAAAAAAAIAAAACAAAAEHBpeGkAAAAAAwgICAAAAAxhdjFDgQ0MAAAAABNjb2xybmNseAACAAIAAYAAAAAXaXBtYQAAAAAAAAABAAEEAQKDBAAAACVtZGF0EgAKCBgANogQEAwgMg8f8D///8WfhwB8+ErK42A=';
+}
+
+checkWebP(function (support) {
+  if (support) { document.body.classList.add('webp'); }
+});
+
+checkAvif(function (support) {
+  if (support) { document.body.classList.add('avif'); }
+});
+*/

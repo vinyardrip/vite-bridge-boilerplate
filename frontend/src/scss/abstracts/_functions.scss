@@ -1,0 +1,26 @@
+// ==========================================================================
+// ABSTRACTS: Functions
+// ==========================================================================
+
+@use "sass:math";
+
+// Конвертирует пиксели в rem.
+// @use: font-size: rem(24);
+@function rem($pixels) {
+  @return math.div($pixels, $font-size-root) * 1rem;
+}
+
+// Конвертирует пиксели в em.
+// @use: font-size: em(12, 24);
+@function em($pixels, $context: $font-size-root) {
+  @return math.div($pixels, $context) * 1em;
+}
+
+// Получает значение z-index из карты $z-indices.
+// @use: z-index: z("modal");
+@function z($key) {
+  @if not map-has-key($z-indices, $key) {
+    @warn "Unknown z-index key: `#{$key}`.";
+  }
+  @return map-get($z-indices, $key);
+}

@@ -40,6 +40,6 @@
 # Service & Local Files
 # =================================
 # Файлы, не относящиеся к проекту напрямую.
-status.md
+STATUS.md
 # Файл для менеджера версий mise/asdf.
 .tool-versions

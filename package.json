@@ -54,5 +54,8 @@
     "vite-plugin-svg-sprite": "^0.6.3",
     "vite-plugin-webfont-dl": "^3.11.1"
   },
-  "packageManager": "pnpm@10.19.0"
+  "packageManager": "pnpm@10.19.0",
+  "dependencies": {
+    "swiper": "^12.0.3"
+  }
 }
