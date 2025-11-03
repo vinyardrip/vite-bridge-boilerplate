@@ -1,0 +1,30 @@
+{#
+  Этот файл содержит мета-теги для корректного отображения ссылок
+  в социальных сетях (VK, Telegram, Facebook, Twitter и т.д.).
+#}
+
+{# --- Open Graph (основной стандарт) --- #}
+<meta property="og:type" content="{{ og_type or 'website' }}">
+<meta property="og:title" content="{{ og_title or title }}">
+<meta property="og:description" content="{{ og_description or description }}">
+<meta property="og:url" content="{{ canonical_url or site.url }}">
+<meta property="og:site_name" content="{{ site.name or site.title }}">
+{# Изображение для превью. Указывать полный URL #}
+<meta property="og:image" content="{{ social_image or site.social_image }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ru_RU">
+
+{# --- Twitter Card (для Twitter) --- #}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ twitter_title or title }}">
+<meta name="twitter:description" content="{{ twitter_description or description }}">
+{# Изображение для превью. Указывать полный URL #}
+<meta name="twitter:image" content="{{ social_image or site.social_image }}">
+{# (Опционально) Укажите @username вашего сайта в Twitter #}
+{# <meta name="twitter:site" content="@your_site_handle"> #}
+{# (Опционально) Укажите @username автора контента #}
+{# <meta name="twitter:creator" content="@author_handle"> #}
+
+{# --- Канонический URL (важно для SEO) --- #}
+<link rel="canonical" href="{{ canonical_url or site.url }}">

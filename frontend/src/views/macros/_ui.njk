@@ -1,0 +1,104 @@
+{#
+  Этот файл является библиотекой Nunjucks-макросов (аналог "миксинов" или "функций").
+  Макросы - это переиспользуемые фрагменты кода для генерации HTML.
+
+  ----------------------------------------------------------------------------------------------------
+  КАК ИСПОЛЬЗОВАТЬ:
+  ----------------------------------------------------------------------------------------------------
+
+  1. Импортируйте этот файл в шаблоне, где хотите использовать макрос:
+    {% import "../macros/_ui.njk" as ui %}
+
+  2. Вызовите макрос по его имени через заданный псевдоним (`ui`):
+
+    <!-- Простой вызов -->
+    {{ ui.icon('phone') }}
+
+    <!-- Вызов с дополнительным классом -->
+    {{ ui.icon('arrow-right', 'button__icon') }}
+  ----------------------------------------------------------------------------------------------------
+#}
+
+{#
+  Макрос для вставки SVG-иконки из автоматически генерируемого спрайта.
+
+  @param {string} name - Имя (ID) иконки без префикса "icon-".
+  @param {string} [class] - (Опционально) Дополнительный CSS-класс для тега <svg>.
+#}
+{% macro icon(name, class) %}
+  <svg class="icon icon-{{ name }}{% if class %} {{ class }}{% endif %}" aria-hidden="true" focusable="false">
+    {#
+    Путь /img/sprite.svg будет корректно работать после сборки,
+    т.к. Vite поместит спрайт в dist/img/sprite.svg.
+  #}
+    <use xlink:href="/img/sprite.svg#icon-{{ name }}"></use>
+  </svg>
+{% endmacro %}
+
+{#
+  Макрос для создания видимого поля ввода.
+  Может генерировать поле с <label> и оберткой, или без них.
+
+  @param {string} name - Атрибуты `name` и `id` поля.
+  @param {string} [label] - (Опционально) Текст для <label>. Если он указан, поле будет обернуто в <div>.
+  @param {string} [type='text'] - Тип поля.
+  @param {string} [className] - (Опционально) CSS-класс для тега <input>.
+  @param {string} [wrapperClass='form-field'] - (Опционально) CSS-класс для <div>-обертки.
+  @param {string} [labelClass='form-field__label'] - (Опционально) CSS-класс для <label>.
+  ... (остальные параметры: placeholder, required, pattern, autocomplete)
+#}
+{% macro input(name, label, type='text', className, wrapperClass='form-field', labelClass='form-field__label', placeholder, required=false, pattern, autocomplete) -%}
+  {# Создаем сам тег <input> #}
+  {% set input_html %}
+  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="{{ className }}" {% if placeholder %} placeholder="{{ placeholder }}" {% endif %} {% if required %} required{% endif %}="required{% endif %}" {% if pattern %} pattern="{{ pattern }}" {% if autocomplete %} autocomplete="{{ autocomplete }}">
+  {% endset %}
+
+  {# Если передан `label`, оборачиваем инпут и добавляем label с кастомными классами #}
+  {% if label %}
+    <div class="{{ wrapperClass }}">
+      <label for="{{ name }}" class="{{ labelClass }}">{{ label }}</label>
+      {{- input_html -}}
+    </div>
+  {% else %}
+    {# Если `label` не передан, выводим "голый" инпут #}
+    {{- input_html -}}
+  {% endif %}
+{%- endmacro %}
+
+{# ... макрос hiddenInput ... #}
+{% macro hiddenInput(name, value) %}
+  <input type="hidden" name="{{ name }}" value="{{ value }}">
+{% endmacro %}
+
+{#
+  ----------------------------------------------------------------------------------------------------
+  КАК ИСПОЛЬЗОВАТЬ МАКРОС INPUT:
+  ----------------------------------------------------------------------------------------------------
+
+  1. Импортируйте этот файл:
+    {% import "../macros/_ui.njk" as ui %}
+
+  2. СТАНДАРТНЫЙ ВЫЗОВ (использует классы по умолчанию 'form-field' и 'form-field__label'):
+    {{ ui.input(name='user-name', label='Ваше имя', className='form__input') }}
+
+  3. ВЫЗОВ С КАСТОМНЫМИ КЛАССАМИ (полностью заменяет классы обертки и лейбла):
+    {{ ui.input(
+        name='search',
+        label='Поиск',
+        className='search__input',
+        wrapperClass='search__field',
+        labelClass='search__label'
+    ) }}
+
+  4. ВЫЗОВ С МОДИФИКАТОРОМ (добавляет дополнительный класс к классу по умолчанию):
+    {{ ui.input(
+        name='user-email',
+        label='Ваш Email',
+        className='form__input',
+        wrapperClass='form-field form-field--error'
+    ) }}
+
+  5. ВЫЗОВ БЕЗ ЛЕЙБЛА (сгенерирует только <input>):
+    {{ ui.input(name='phone', type='tel', className='form__input') }}
+  ----------------------------------------------------------------------------------------------------
+#}

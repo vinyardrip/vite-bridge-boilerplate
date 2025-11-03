@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    {# ... существующие мета-теги (charset, viewport, title, description) ... #}
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ title or site.title or 'Заголовок по умолчанию' }}</title>
+    <meta name="description" content="{{ description or site.description or 'Описание по умолчанию' }}">
+    <meta name="keywords" content="{{ keywords or site.keywords or '' }}">
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+    {# ПОДКЛЮЧАЕМ МЕТА-ТЕГИ ДЛЯ СОЦСЕТЕЙ #}
+    {% block social_meta %}
+      {% include "../partials/_meta-social.njk" %}
+    {% endblock %}
+
+    <script type="module" src="http://localhost:5173/@vite/client"></script>
+    <script type="module" src="/frontend/src/js/app.js"></script>
+
+    {% block head %}{% endblock %}
+  </head>
+  <body class="{% if body_class %}{{ body_class }}{% else %}page__body{% endif %}">
+
+    {% include "../partials/_sprite-inline.njk" %}
+
+    <div class="site-container">
+      {% block content %}{% endblock %}
+    </div>
+
+    {% block counters %}
+      {# ПОДКЛЮЧАЕМ СЧЕТЧИКИ #}
+      {% include "../partials/_counters.njk" %}
+    {% endblock %}
+
+  </body>
+</html>
+{# ... шпаргалка остается без изменений ... #}

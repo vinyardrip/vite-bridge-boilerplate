@@ -1,0 +1,12 @@
+{#
+  Этот файл предназначен для "встраиваемых" (inline) SVG-символов.
+  Сюда вручную добавляются сложные, многоцветные иконки,
+  которые должны управляться через CSS-переменные.
+
+  Пример символа:
+  <symbol id="my-cool-icon" viewBox="0 0 24 24">
+    <path fill="var(--icon-color-primary)" d="..."/>
+    <path stroke="var(--icon-color-accent)" d="..."/>
+  </symbol>
+#}
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;"></svg>

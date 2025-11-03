@@ -1,0 +1,20 @@
+--- title: Главная | Vite Bridge Boilerplate description: "Это главная страница, собранная с помощью Vite и Nunjucks." body_class: "main-page" canonical_url: "https://example.com/" social_image: "https://example.com/images/social-preview.jpg" ---
+{% extends "../layouts/_default.njk" %}
+
+{% block content %}
+
+  {% include "../partials/_header.njk" %}
+
+  <main class="main">
+    {# ... основной контент страницы ... #}
+    <div style="padding: 40px; text-align: center; font-family: sans-serif;">
+      <h1>🚀 Nunjucks-архитектура работает!</h1>
+    </div>
+  </main>
+
+  {% include "../partials/_footer.njk" %}
+
+  {# ПОДКЛЮЧАЕМ КОМПОНЕНТ #}
+  {% include "../components/_scroll-to-top.njk" %}
+
+{% endblock %}
