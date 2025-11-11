@@ -36,69 +36,81 @@
 {% endmacro %}
 
 {#
-  Макрос для создания видимого поля ввода.
-  Может генерировать поле с <label> и оберткой, или без них.
-
-  @param {string} name - Атрибуты `name` и `id` поля.
-  @param {string} [label] - (Опционально) Текст для <label>. Если он указан, поле будет обернуто в <div>.
-  @param {string} [type='text'] - Тип поля.
-  @param {string} [className] - (Опционально) CSS-класс для тега <input>.
-  @param {string} [wrapperClass='form-field'] - (Опционально) CSS-класс для <div>-обертки.
-  @param {string} [labelClass='form-field__label'] - (Опционально) CSS-класс для <label>.
-  ... (остальные параметры: placeholder, required, pattern, autocomplete)
+  Макрос для создания "ловушки для ботов" (Honeypot).
+  Создает поле, невидимое для людей, но видимое для ботов.
 #}
-{% macro input(name, label, type='text', className, wrapperClass='form-field', labelClass='form-field__label', placeholder, required=false, pattern, autocomplete) -%}
-  {# Создаем сам тег <input> #}
-  {% set input_html %}
-  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="{{ className }}" {% if placeholder %} placeholder="{{ placeholder }}" {% endif %} {% if required %} required{% endif %}="required{% endif %}" {% if pattern %} pattern="{{ pattern }}" {% if autocomplete %} autocomplete="{{ autocomplete }}">
-  {% endset %}
-
-  {# Если передан `label`, оборачиваем инпут и добавляем label с кастомными классами #}
-  {% if label %}
-    <div class="{{ wrapperClass }}">
-      <label for="{{ name }}" class="{{ labelClass }}">{{ label }}</label>
-      {{- input_html -}}
-    </div>
-  {% else %}
-    {# Если `label` не передан, выводим "голый" инпут #}
-    {{- input_html -}}
-  {% endif %}
-{%- endmacro %}
-
-{# ... макрос hiddenInput ... #}
-{% macro hiddenInput(name, value) %}
-  <input type="hidden" name="{{ name }}" value="{{ value }}">
+{% macro honeypot(name='bot-field') %}
+  <div style="position: absolute; left: -5000px;" aria-hidden="true">
+    <input type="text" name="{{ name }}" tabindex="-1" value="">
+  </div>
 {% endmacro %}
 
 {#
+  УМНЫЙ МАКРОС INPUT
+  Генерирует поле ввода. Приоритет отдается переданным параметрам.
+  Если type='tel' и placeholder не указан, используется значение по умолчанию.
+#}
+{% macro input(name, label, type='text', className, wrapperClass='form-field', labelClass='form-field__label', placeholder, required=false, pattern, autocomplete) -%}
+  {#
+    Логика с приоритетом:
+    1. Сначала берем `placeholder`, который передал пользователь.
+    2. Если он НЕ был передан (is none), И тип поля 'tel', ТОЛЬКО ТОГДА используем наш дефолт.
+  #}
+  {% set final_placeholder = placeholder if placeholder is not none else 
+    ("|+375..." if type == 'tel') %}
+  {% set final_pattern = pattern if pattern is not none else ("\\s*\\+375\\s?\\(?(1[567]|2[12359]|33|44)\\)?\\s?\\d{3}-\\d{2}-\\d{2}" if type == 'tel') %}
+  {% set final_autocomplete = autocomplete if autocomplete is not none else 
+    ("tel" if type == 'tel') %}
+
+  {# Генерируем HTML для самого <input> #}
+  {% set input_html %}
+  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="{{ className }}" {% if final_placeholder %} placeholder="{{ final_placeholder }}" {% endif %} {% if required %} required{% endif %}="required{% endif %}" {% if final_pattern %} pattern="{{ final_pattern }}" {% if final_autocomplete %} autocomplete="{{ final_autocomplete }}">
+  {% endset %}
+
+  {# Если передан `label`, оборачиваем инпут #}
+  {% if label %}
+    <div class="{{ wrapperClass }}">
+      <label for="{{ name }}" class="{{ labelClass }}">{{ label }}</label>
+      {{- input_html | safe -}}
+    </div>
+  {% else %}
+    {# Иначе выводим "голый" инпут #}
+    {{- input_html | safe -}}
+  {% endif %}
+{%- endmacro %}
+
+{#
   ----------------------------------------------------------------------------------------------------
-  КАК ИСПОЛЬЗОВАТЬ МАКРОС INPUT:
+  КАК ТЕПЕРЬ ИСПОЛЬЗОВАТЬ:
   ----------------------------------------------------------------------------------------------------
 
-  1. Импортируйте этот файл:
+  1. Импортируем файл:
     {% import "../macros/_ui.njk" as ui %}
 
-  2. СТАНДАРТНЫЙ ВЫЗОВ (использует классы по умолчанию 'form-field' и 'form-field__label'):
-    {{ ui.input(name='user-name', label='Ваше имя', className='form__input') }}
+  2. Телефон БЕЗ лейбла (как в нашей форме):
+    {{ ui.input(name='phone', type='tel', className='form__phone-field') }}
 
-  3. ВЫЗОВ С КАСТОМНЫМИ КЛАССАМИ (полностью заменяет классы обертки и лейбла):
+  3. Телефон С лейблом (для другого места на сайте):
     {{ ui.input(
-        name='search',
-        label='Поиск',
-        className='search__input',
-        wrapperClass='search__field',
-        labelClass='search__label'
+        name='contact-phone',
+        type='tel',
+        label='Ваш номер телефона',
+        className='another-form__input'
     ) }}
 
-  4. ВЫЗОВ С МОДИФИКАТОРОМ (добавляет дополнительный класс к классу по умолчанию):
-    {{ ui.input(
-        name='user-email',
-        label='Ваш Email',
-        className='form__input',
-        wrapperClass='form-field form-field--error'
+  4. Телефон С ДЕФОЛТНЫМ ПЛЕЙСХОЛДЕРОМ (как в нашей форме):
+    {{ ui.input(name='phone', type='tel', className='form__phone-field') }}
+    (Результат: placeholder="|+375...")
+
+  5. Телефон С КАСТОМНЫМ ПЛЕЙСХОЛДЕРОМ (если понадобится в другом месте):
+  {{ ui.input(
+        name='phone',
+        type='tel',
+        className='form__phone-field',
+        placeholder='Ваш мобильный'
     ) }}
 
-  5. ВЫЗОВ БЕЗ ЛЕЙБЛА (сгенерирует только <input>):
-    {{ ui.input(name='phone', type='tel', className='form__input') }}
-  ----------------------------------------------------------------------------------------------------
+  6. Обычное текстовое поле (работает как и раньше):
+  {{ ui.input(name='user-name', label='Ваше имя', className='form__input') }}
+----------------------------------------------------------------------------------------------------
 #}

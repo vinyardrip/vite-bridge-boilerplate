@@ -17,7 +17,7 @@
     "test:ui": "pnpm playwright test --ui",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",
-    "test:fonts": "vite --open /test-fonts.html",
+    "test:fonts": "vite --open /pages/test-fonts.html",
     "sync:theme": "if [ -n \"$(git status --porcelain)\" ]; then echo '❌ Ошибка: Обнаружены незакоммиченные изменения!'; exit 1; fi && echo '✅ Рабочая директория чиста, начинаю синхронизацию...' && rsync -av --delete dist/ ../backend/wp-content/themes/my-theme/assets/",
     "/*! --- ВСПОМОГАТЕЛЬНЫЕ (UTILITY) СКРИПТЫ --- */": "",
     "favicons:generate": "pwa-assets-generator --config vite.config.js",
@@ -56,6 +56,7 @@
   },
   "packageManager": "pnpm@10.19.0",
   "dependencies": {
+    "inputmask": "^5.0.9",
     "swiper": "^12.0.3"
   }
 }

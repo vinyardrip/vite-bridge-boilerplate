@@ -1,0 +1,141 @@
+// ==========================================================================
+// COMPONENT: Mobile Menu
+// ==========================================================================
+
+@use "../abstracts" as a;
+
+// Стили для навигации, которые будут меняться на мобильных
+.nav {
+  // На десктопе это обычный flex-контейнер
+  display: flex;
+  align-items: center;
+  height: a.rem(128); // Примерное значение, было 128px
+  font-size: a.rem(18); // Примерное значение, было $size*3
+
+  &__link {
+    color: var(--color-text-base); // Было $font-color-light
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: a.rem(32);
+    transition: color 0.3s ease-in;
+
+    @include a.on-hover {
+      color: var(--color-accent); // Было $accent-color
+    }
+  }
+}
+
+// Медиа-запрос, в котором появляется бургер и меняется поведение меню
+@include a.breakpoint-down(940px) {
+  .menu {
+    width: 100%;
+    position: relative; // Контейнер для позиционирования кнопки
+  }
+
+  // Стили для кнопки-бургера
+  .menu__btn {
+    display: inline-block;
+    cursor: pointer;
+    position: absolute;
+    z-index: a.z("modal"); // Бургер должен быть выше всего
+    right: 0;
+    top: a.rem(24); // Подбираем адекватное значение
+    @include a.size(a.rem(44)); // Делаем кнопку побольше для удобства
+    border: none;
+    padding: 0;
+    background: transparent;
+
+    > span {
+      display: inline-block;
+      position: relative;
+      height: a.rem(2);
+      width: a.rem(34);
+      background: var(--color-primary); // Цвет палочек
+      vertical-align: middle;
+      transition: all 0.2s ease-in-out;
+
+      &::before,
+      &::after {
+        content: "";
+        display: inline-block;
+        position: absolute;
+        height: a.rem(2);
+        border-radius: a.rem(1);
+        background: var(--color-primary);
+        transition: all 200ms;
+      }
+
+      &::before {
+        top: a.rem(-11);
+        left: a.rem(3);
+        width: a.rem(28);
+      }
+
+      &::after {
+        top: a.rem(11);
+        left: a.rem(4);
+        width: a.rem(26);
+      }
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    @include a.on-hover {
+      > span::after,
+      > span::before {
+        width: a.rem(34);
+        left: 0;
+      }
+    }
+  }
+
+  // Стили для открытого меню (`.menu.active`)
+  .menu.active {
+    // Анимация "крестика"
+    .menu__btn > span {
+      height: 0;
+      &::after,
+      &::before {
+        top: 0;
+        left: 0;
+        width: a.rem(34);
+      }
+      &::after {
+        transform: rotate(-45deg);
+      }
+      &::before {
+        transform: rotate(45deg);
+      }
+    }
+    // Показываем панель навигации
+    .nav {
+      transform: translateY(0%);
+    }
+  }
+
+  // Стили для панели навигации на мобильных
+  .nav {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100vh; // На весь экран
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: a.z("modal-backdrop"); // Ниже, чем бургер
+    background-color: rgba(0, 0, 0, 0.95);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-in-out;
+
+    &__link {
+      color: var(--color-white); // В темном меню ссылки должны быть светлыми
+      padding: a.rem(32);
+      width: 100%;
+      text-align: center;
+    }
+  }
+}

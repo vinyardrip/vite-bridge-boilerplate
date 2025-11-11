@@ -7,7 +7,10 @@
  *
  * =================================================================================================
  */
-
+// 1. Импорт основного файла стилей.
+// Этот импорт должен быть в самом верху, чтобы Vite мог корректно
+// собрать и внедрить CSS в страницу.
+import '../scss/app.scss';
 /*!
  * =================================================================================================
  * !ВАЖНО: СКРИПТЫ ТОЛЬКО ДЛЯ РАЗРАБОТКИ
@@ -29,7 +32,7 @@
     const fontTester = document.querySelector("#font-tester");
 
     if (fontTester) {
-      import("./modules/test-fonts.js").then(({ initFontTester }) => {
+      import("./dev/test-fonts.js").then(({ initFontTester }) => {
         initFontTester(fontTester);
       });
     }
@@ -46,7 +49,25 @@
  *
  * =================================================================================================
  */
+// Импорт утилит
+import './modules/detect-touch.js';
 
-// Например:
-// import { initSlider } from './modules/slider.js';
-// initSlider();
+// Импорт модулей компонентов
+import { initScrollToTop } from './modules/scroll-to-top.js';
+import { initMobileMenu } from './modules/mobile-menu.js';
+import { initModals } from './modules/modals.js';
+import { initForms } from './modules/forms.js';
+import { initLazyLoadVideos } from './modules/video.js';
+import { initScrollableTables } from './modules/scrollable-tables.js';
+import { initAccordion } from './modules/accordion.js';
+
+// Запускаем скрипты после полной загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+  initScrollToTop();
+  initMobileMenu();
+  initModals();
+  initForms();
+  initLazyLoadVideos();
+  initScrollableTables();
+  initAccordion();
+});

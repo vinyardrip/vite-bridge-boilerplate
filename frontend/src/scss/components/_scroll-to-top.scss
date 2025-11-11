@@ -2,49 +2,57 @@
 // COMPONENT: Scroll To Top Button
 // ==========================================================================
 
-@use "../abstracts" as *;
+@use "../abstracts" as a;
 
 #scroll-to-top {
-  display: none;
-  @include size(rem(64));
-  background-color: var(--color-white);
-  box-shadow: var(--box-shadow-base);
-  border-radius: 50%;
-  transition: background-color 0.3s ease-in-out;
+  display: none; // Изначально скрыт, управляется через JS
   position: fixed;
-  right: rem(40);
+  right: a.rem(40);
   bottom: 10%;
-  z-index: var(--z-index-high);
+  z-index: a.z("fixed");
 
-  @include breakpoint-down(lg) {
-    // Убрали !important. Порядок и специфичность CSS должны справиться.
-    display: none;
+  @include a.size(a.rem(64));
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-2dp);
+  border-radius: 50%;
+  border: none; // Добавляем сброс для <button>
+  padding: 0; // Добавляем сброс для <button>
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+
+  // Кнопка будет скрыта на смартфонах для экономии места,
+  // но останется на планшетах и десктопах.
+  @include a.breakpoint-down(md) {
+    // !important здесь оправдан, чтобы перебить JS-стиль display: block
+    display: none !important;
   }
 
   &::before {
     content: '';
-    @include size(rem(20));
-    border: rem(2) solid var(--color-primary);
-    background-color: transparent;
+    display: block;
     position: relative;
-    // Используем новое, более чистое свойство rotate
-    rotate: 45deg;
+    top: a.rem(5);
+    left: a.rem(23);
+    @include a.size(a.rem(20));
+    border: a.rem(2) solid var(--color-primary);
     border-bottom-color: transparent;
     border-right-color: transparent;
-    top: rem(5);
-    left: rem(23);
-    display: block;
+    background-color: transparent;
+    rotate: -45deg;
     transition: border-color 0.3s ease-in-out;
   }
 
-  &:hover::before {
-    border-color: var(--color-accent);
-    border-bottom-color: transparent;
-    border-right-color: transparent;
+  // Используем наш безопасный миксин для ховера
+  @include a.on-hover {
+    &::before {
+      border-color: var(--color-accent);
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+    }
   }
 }
 
-// ... (анимации остаются без изменений)
+// Анимации
 .btn-entrance {
   animation: btn-entrance 0.7s both;
 }

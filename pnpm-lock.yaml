@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      inputmask:
+        specifier: ^5.0.9
+        version: 5.0.9
       swiper:
         specifier: ^12.0.3
         version: 12.0.3
@@ -2189,6 +2192,9 @@ packages:
     resolution: {integrity: sha512-2cucuB1oRjN67MX6NIciQD39jUMD8fD8f5aUGRp8HlWtuTMn+6Gu8ov1qTxqV5+uDrj5ElwIU75HfrvuADLofw==}
     engines: {node: '>=18.18'}
     hasBin: true
+
+  inputmask@5.0.9:
+    resolution: {integrity: sha512-s0lUfqcEbel+EQXtehXqwCJGShutgieOaIImFKC/r4reYNvX3foyrChl6LOEvaEgxEbesePIrw1Zi2jhZaDZbQ==}
 
   internal-slot@1.1.0:
     resolution: {integrity: sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw==}
@@ -6162,6 +6168,8 @@ snapshots:
       - canvas
       - supports-color
       - utf-8-validate
+
+  inputmask@5.0.9: {}
 
   internal-slot@1.1.0:
     dependencies:

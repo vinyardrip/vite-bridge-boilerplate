@@ -1,8 +1,27 @@
 <header class="header">
   <div class="container">
-    <div class="header__inner">
-      {# Содержимое хедера: логотип, навигация, контакты и т.д. #}
-      <p>Это Header из <code>frontend/src/views/partials/_header.njk</code></p>
+    {#
+      Ваша оригинальная разметка `layout` и `header-wrap` сохранена.
+      Если `layout` — это глобальный класс-обертка, его можно будет вынести
+      на уровень `_default.njk`, но пока оставляем здесь для точности.
+    #}
+    <div class="layout">
+      <div class="header-wrap">
+        <a href="/" class="logo">
+          {#
+            Иконка временно закомментирована, так как SVG-спрайт
+            еще не настроен. Но структура полностью сохранена.
+          #}
+          {# <svg class="icon icon-logo"><use xlink:href="#icon-logo"></use></svg> #}
+          <div class="logo-wrap">
+            <div class="logo__name">LOGO</div>
+            <div class="logo__descr">Description</div>
+          </div>
+        </a>
+
+        {# Подключаем наш новый, отдельный компонент меню #}
+        {% include "../components/_mobile-menu.njk" %}
+      </div>
     </div>
   </div>
 </header>
