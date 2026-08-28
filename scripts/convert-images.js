@@ -29,9 +29,7 @@ const AVIF_QUALITY = 75; // AVIF обычно требует чуть меньш
  * Главная функция для конвертации изображений.
  */
 async function convertImages() {
-  console.log(chalk.cyan("--- Запуск скрипта конвертации изображений ---"));
-
-  const spinner = ora("Идет поиск изображений...").start();
+  const spinner = ora("[convert-images] Searching for images...").start();
 
   // Убедимся, что папки существуют
   await fs.mkdir(SOURCE_DIR, { recursive: true });
@@ -42,15 +40,9 @@ async function convertImages() {
   if (filePaths.length === 0) {
     spinner.warn(
       chalk.yellow(
-        `Не найдено изображений для конвертации в папке ${SOURCE_DIR}.`,
+        `[convert-images] Info: No images found in ${SOURCE_DIR}. Place .jpg or .png files there to convert.`,
       ),
     );
-    console.log(
-      chalk.yellow(
-        `Пожалуйста, поместите файлы .jpg или .png в эту директорию.`,
-      ),
-    );
-    console.log(chalk.cyan("--- Скрипт завершил работу ---"));
     return;
   }
 
@@ -59,7 +51,7 @@ async function convertImages() {
   for (const filePath of filePaths) {
     const fileName = path.basename(filePath);
     const fileBaseName = path.parse(fileName).name; // Имя файла без расширения
-    spinner.text = `Конвертирую: ${chalk.yellow(fileName)}`;
+    spinner.text = `[convert-images] Converting: ${chalk.yellow(fileName)}`;
 
     try {
       const image = sharp(filePath);
@@ -76,18 +68,19 @@ async function convertImages() {
 
       convertedCount++;
     } catch (err) {
-      spinner.fail(chalk.red(`Не удалось конвертировать ${fileName}.`));
+      spinner.fail(
+        chalk.red(`[convert-images] Failed to convert ${fileName}.`),
+      );
       console.error(err);
     }
   }
 
-  spinner.succeed(chalk.green("Конвертация изображений завершена."));
-  console.log("---");
+  spinner.stop();
   console.log(
-    `✅ Успешно конвертировано файлов: ${chalk.green(convertedCount)}`,
+    chalk.green(
+      `[convert-images] Done: ${convertedCount} file(s) converted. Output: ${OUTPUT_DIR}`,
+    ),
   );
-  console.log(`📂 Результаты сохранены в папку: ${chalk.blue(OUTPUT_DIR)}`);
-  console.log(chalk.cyan("--- Скрипт завершил работу ---"));
 }
 
 convertImages();

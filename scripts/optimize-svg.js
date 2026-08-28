@@ -20,9 +20,12 @@ import fs from "fs/promises";
 import ora from "ora";
 import chalk from "chalk";
 
+import { resolveBuildTarget } from "./build-target.js";
+
 // --- Конфигурация ---
 const SOURCE_DIR = "frontend/src/assets/svg-images"; // !Папка с исходными цветными SVG
-const OUTPUT_DIR = "dist/img"; // !Папка для результатов, та же, что использует Vite
+// !Папка для результатов — динамический целевой каталог сборки (dist/ или assets/ темы CMS).
+const OUTPUT_DIR = path.join(resolveBuildTarget().dir, "img");
 const CACHE_FILE = "frontend/.svgo-cache"; // !Файл для кеширования
 
 /*!
@@ -74,16 +77,15 @@ async function saveCache(cache) {
  * Главная функция для оптимизации SVG.
  */
 async function optimizeSvgImages() {
-  console.log(chalk.cyan("--- Запуск скрипта оптимизации цветных SVG ---"));
-
-  const spinner = ora("Идет поиск и обработка SVG...").start();
+  const spinner = ora("[optimize-svg] Searching for SVG files...").start();
   const filePaths = await glob(`${SOURCE_DIR}/**/*.svg`);
 
   if (filePaths.length === 0) {
     spinner.info(
-      chalk.yellow(`Не найдено SVG для обработки в папке ${SOURCE_DIR}.`),
+      chalk.yellow(
+        `[optimize-svg] Info: No SVG files found in ${SOURCE_DIR}.`,
+      ),
     );
-    console.log(chalk.cyan("--- Скрипт завершил работу ---"));
     return;
   }
 
@@ -105,7 +107,7 @@ async function optimizeSvgImages() {
         continue;
       }
 
-      spinner.text = `Оптимизирую: ${chalk.yellow(path.basename(filePath))}`;
+      spinner.text = `[optimize-svg] Optimizing: ${chalk.yellow(path.basename(filePath))}`;
 
       const fileContent = await fs.readFile(filePath, "utf-8");
       const result = optimize(fileContent, { path: filePath, ...svgoConfig });
@@ -118,21 +120,24 @@ async function optimizeSvgImages() {
       processedCount++;
     } catch (err) {
       spinner.fail(
-        chalk.red(`Не удалось обработать ${path.basename(filePath)}.`),
+        chalk.red(
+          `[optimize-svg] Failed to process ${path.basename(filePath)}.`,
+        ),
       );
       console.error(err);
     }
   }
 
   await saveCache(cache);
+  spinner.stop();
 
-  spinner.succeed(chalk.green("Обработка SVG завершена."));
-  console.log("---");
-  console.log(
-    `✅ Оптимизировано новых/измененных файлов: ${chalk.green(processedCount)}`,
-  );
-  console.log(`⏩ Пропущено (без изменений): ${chalk.yellow(skippedCount)}`);
-  console.log(chalk.cyan("--- Скрипт завершил работу ---"));
+  if (process.env.VERBOSE) {
+    console.log(
+      `[optimize-svg] Optimized: ${chalk.green(processedCount)}, skipped (unchanged): ${chalk.yellow(skippedCount)}`,
+    );
+  }
+
+  console.log(chalk.green("[optimize-svg] Done: SVG optimization completed."));
 }
 
 optimizeSvgImages();

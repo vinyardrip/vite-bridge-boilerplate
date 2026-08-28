@@ -55,22 +55,21 @@ async function saveCache(cache) {
  * @returns {Promise<boolean>} true, если валидный ключ найден и установлен, иначе false.
  */
 async function validateAndSetApiKey() {
-  const spinner = ora("Проверяю API ключи...").start();
+  const spinner = ora("Validating API keys...").start();
   for (const key of API_KEYS) {
     try {
       tinify.key = key.trim();
       await promisify(tinify.validate)();
-      spinner.succeed(chalk.green("Рабочий API ключ найден и установлен."));
+      spinner.succeed(chalk.green("[compress-images] Working API key found."));
       return true;
     } catch (err) {
       // Игнорируем ошибку и пробуем следующий ключ
     }
   }
-  spinner.fail(
-    chalk.red("Ошибка: Ни один из предоставленных API ключей не валиден."),
-  );
-  console.log(
-    chalk.yellow("Пожалуйста, проверьте ключи в файле frontend/.env"),
+  spinner.warn(
+    chalk.yellow(
+      "[compress-images] Warning: No valid TinyPNG API keys found. Skipping image compression.",
+    ),
   );
   return false;
 }
@@ -79,12 +78,10 @@ async function validateAndSetApiKey() {
  * Главная функция для сжатия изображений.
  */
 async function compressImages() {
-  console.log(chalk.cyan("--- Запуск скрипта сжатия изображений ---"));
-
   if (API_KEYS.length === 0) {
     console.error(
       chalk.red(
-        "Ошибка: Не найдены API ключи в переменной окружения TINYPNG_API_KEYS.",
+        "[compress-images] Error: No API keys found in TINYPNG_API_KEYS environment variable.",
       ),
     );
     return;
@@ -92,10 +89,12 @@ async function compressImages() {
 
   const isValidKey = await validateAndSetApiKey();
   if (!isValidKey) {
-    process.exit(1); // Завершаем скрипт с кодом ошибки
+    // Сжатие — best-effort оптимизация: если ключи не прошли проверку
+    // (отозваны, нет сети и т.д.), НЕ прерываем сборку, а пропускаем шаг.
+    return;
   }
 
-  const spinner = ora("Идет поиск и обработка изображений...").start();
+  const spinner = ora("[compress-images] Searching for images...").start();
   const imagePaths = await glob(`${SOURCE_DIR}/**/*.{png,jpg,jpeg}`);
   const cache = await loadCache();
   let compressedCount = 0;
@@ -116,7 +115,7 @@ async function compressImages() {
         continue; // Пропускаем файл, если он не изменился
       }
 
-      spinner.text = `Сжимаю: ${chalk.yellow(path.basename(imagePath))}`;
+      spinner.text = `[compress-images] Compressing: ${chalk.yellow(path.basename(imagePath))}`;
       const source = tinify.fromFile(imagePath);
       const outputPath = path.join(OUTPUT_DIR, path.basename(imagePath));
       await promisify(source.toFile).call(source, outputPath);
@@ -125,30 +124,32 @@ async function compressImages() {
       cache[imagePath] = fileMtime;
       compressedCount++;
     } catch (err) {
-      spinner.fail(chalk.red(`Не удалось сжать ${path.basename(imagePath)}.`));
+      spinner.fail(
+        chalk.red(`[compress-images] Failed to compress ${path.basename(imagePath)}.`),
+      );
       console.error(err);
     }
   }
 
   await saveCache(cache);
+  spinner.stop();
 
   const totalProcessed = compressedCount + skippedCount;
   if (totalProcessed === 0) {
-    spinner.info(
+    console.log(
       chalk.yellow(
-        `Не найдено изображений для обработки в папке ${SOURCE_DIR}.`,
+        `[compress-images] Info: No images found in ${SOURCE_DIR}.`,
       ),
     );
-  } else {
-    spinner.succeed(chalk.green("Обработка изображений завершена."));
+  } else if (process.env.VERBOSE) {
+    console.log(
+      `[compress-images] Compressed: ${chalk.green(compressedCount)}, skipped (unchanged): ${chalk.yellow(skippedCount)}`,
+    );
   }
 
-  console.log("---");
   console.log(
-    `✅ Сжато новых/измененных файлов: ${chalk.green(compressedCount)}`,
+    chalk.green("[compress-images] Done: Image compression check completed."),
   );
-  console.log(`⏩ Пропущено (без изменений): ${chalk.yellow(skippedCount)}`);
-  console.log(chalk.cyan("--- Скрипт завершил работу ---"));
 }
 
 compressImages();
