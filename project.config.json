@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "projectName": "vite-bridge-boilerplate",
+  "version": "0.0.11",
+  "targets": {
+    "static": {
+      "description": "Static site build — full image optimization with WebP + AVIF",
+      "imageProcessing": {
+        "webp": true,
+        "avif": true,
+        "quality": {
+          "webp": 80,
+          "avif": 75
+        }
+      }
+    },
+    "cms": {
+      "description": "CMS/WordPress build — WebP only, AVIF disabled for lightweight builds and hosting safety",
+      "imageProcessing": {
+        "webp": true,
+        "avif": false,
+        "quality": {
+          "webp": 80,
+          "avif": 75
+        }
+      }
+    }
+  },
+  "defaults": {
+    "target": "static",
+    "frontendSourceDir": "frontend/src"
+  }
+}

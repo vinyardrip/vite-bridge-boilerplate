@@ -35,7 +35,7 @@ A production-grade Vite + Nunjucks + SCSS (ITCSS) front-end boilerplate designed
 | SVG-спрайты | Работает | `vite-plugin-svg-sprite` — автоматическая инъекция в DOM |
 | Шрифты (локальные) | Работает | `@font-face` в `_typography.scss` + fallback через `fontaine` |
 | Шрифты (Google + Custom) | Работает | `vite-plugin-webfont-dl` — гибридная загрузка |
-| Фавиконы | Работает | `scripts/generate-favicons.js` в `favicons/` целевого каталога |
+| Фавиконы | Работает | `scripts/generate-favicons.js` в `img/favicons/` целевого каталога |
 | PWA | Работает | `vite-plugin-pwa` — отключён в dev, активен в build |
 | Формы | Работает | Inputmask + honeypot + dev-имитация отправки |
 | Тестер шрифтов | Работает | `test-fonts.njk` — визуальное сравнение target vs fallback |
@@ -45,6 +45,9 @@ A production-grade Vite + Nunjucks + SCSS (ITCSS) front-end boilerplate designed
 | Selective Clean | Работает | Vite-плагин для очистки managed-файлов без удаления backend |
 | PostCSS | Работает | `postcss-sort-media-queries` (desktop-first) + `autoprefixer` |
 | PostHTML | Работает | `posthtml-responsive-images` (avif/webp генерация) |
+| Image Pipeline | Работает | `convert-images.js` — recursive webp/avif generation, config-driven (static/cms) |
+| Picture Transform | Работает | `vite-plugin-picture-transform` — `<img>` → `<picture>` build-time transform |
+| CSS BG Mixin | Работает | `@include bg-responsive(...)` — webp/avif class-based background images |
 
 ---
 
@@ -81,6 +84,132 @@ A clean conceptual directory tree for organizing many projects (personal, work, 
 - **`work/`** — active client engagements. The `_s-template/` is a scaffold that new client work is cloned from.
 - **`tools/`** — small, dependency-light CLIs you maintain and `PATH`-link from `~/.local/bin`.
 - **`materials/`** — read-only raw inputs from clients: brand books, design files, copy docs, screenshots.
+
+---
+
+# IMAGE PROCESSING PIPELINE
+
+> Automated WebP/AVIF generation and `<picture>` transformation.
+
+## Configuration (`project.config.json`)
+
+All image pipeline settings live in `project.config.json` at the workspace root. The `targets` section defines per-mode behaviour:
+
+```jsonc
+{
+  "targets": {
+    "static": {
+      // Full image optimisation: WebP + AVIF
+      "imageProcessing": { "webp": true, "avif": true, "quality": { "webp": 80, "avif": 75 } }
+    },
+    "cms": {
+      // WordPress / Laravel / Bitrix — AVIF disabled for lightweight builds
+      "imageProcessing": { "webp": true, "avif": false, "quality": { "webp": 80 } }
+    }
+  },
+  "defaults": { "target": "static" }
+}
+```
+
+| Mode | `webp` | `avif` | When to use |
+|------|---------|---------|-------------|
+| `static` | ✅ always | ✅ always | Landing pages, marketing sites, static hosting |
+| `cms` | ✅ always | ❌ never | WordPress, Bitrix, Drupal — reduces build size and host compatibility |
+
+The active target is resolved in this order: `BUILD_TARGET` env var → `project.config.json` `defaults.target` → `package.json` `config.buildTarget`.
+
+## 1. Converting Source Images (`scripts/convert-images.js`)
+
+Place source images anywhere under `frontend/src/assets/`. The script recursively scans all subdirectories and generates `.webp` (always) and `.avif` (static mode only) siblings **adjacent to each original file**:
+
+```
+frontend/src/assets/
+  images/
+    heroes/
+      bg.jpg          ← source
+      bg.webp         ← generated (static + cms)
+      bg.avif         ← generated (static only)
+    thumbnails/
+      thumb.jpg        ← source
+      thumb.webp      ← generated
+      thumb.avif      ← generated (static only)
+```
+
+Run manually:
+```bash
+node scripts/convert-images.js
+# Or via the npm script:
+pnpm images:convert
+```
+
+**Mtime caching**: if an output file already exists and is newer than the source, the script skips conversion. Delete `.convert-images-cache.json` to force a full re-run.
+
+## 2. `<img>` to `<picture>` Transformation (`vite-plugin-picture-transform`)
+
+During `pnpm build` the plugin automatically wraps every local `<img>` tag in a `<picture>` element by scanning for `.webp`/`.avif` siblings in the output directory.
+
+**`static` mode — full output:**
+```html
+<!-- input -->
+<img src="/src/assets/images/bg.jpg" alt="Hero" class="hero__bg">
+
+<!-- output (static mode) -->
+<picture>
+  <source type="image/avif" srcset="./img/bg.avif">
+  <source type="image/webp" srcset="./img/bg.webp">
+  <img src="./img/bg.webp" alt="Hero" class="hero__bg">
+</picture>
+```
+
+**`cms` mode — webp only:**
+```html
+<picture>
+  <source type="image/webp" srcset="./img/bg.webp">
+  <img src="./img/bg.webp" alt="Hero" class="hero__bg">
+</picture>
+```
+
+The plugin:
+- **Skips** external URLs (`https://`, `//`, `data:`, `blob:`) — YouTube thumbnails stay as plain `<img>`.
+- **Skips** inline SVGs.
+- **Preserves** all original `<img>` attributes (`class`, `alt`, `width`, `height`, `loading`, etc.).
+- Works in **build mode only** — during dev the browser handles WebP negotiation natively.
+
+## 3. CSS Background Images (`@mixin bg-responsive`)
+
+For `background-image` CSS properties, use the SCSS mixin. It generates `.webp` and `.avif` selectors via a JS detector (see below):
+
+```scss
+@use "../../assets/scss/abstracts/mixins" as *;
+
+.hero {
+  @include bg-responsive("../../assets/images/bg-all", "svg");
+  background-size: cover;
+  background-position: center;
+}
+```
+
+**Generated output:**
+```scss
+.hero { background-image: url('../../assets/images/bg-all.svg'); }
+.webp .hero { background-image: url('../../assets/images/bg-all.webp'); }
+.avif .hero { background-image: url('../../assets/images/bg-all.avif'); }
+```
+
+## 4. Browser WebP/AVIF Detection (JavaScript)
+
+The `app.js` entry point includes a tiny inline detector that runs **before** `DOMContentLoaded` and adds `.webp` (and eventually `.avif`) classes to `<html>`:
+
+```js
+(function () {
+  var html = document.documentElement;
+  var img = new Image();
+  img.onload = function () { if (img.width > 0) html.classList.add('webp'); };
+  img.src = 'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAQAAAAfQ//73v/+BiOh/AAA=';
+})();
+```
+
+If WebP is not supported the page falls back to the original image formats automatically.
 
 ---
 

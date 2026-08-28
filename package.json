@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/compress-images.js && vite build && node scripts/generate-favicons.js && node scripts/optimize-svg.js",
+    "build": "node scripts/compress-images.js && node scripts/convert-images.js && vite build && node scripts/generate-favicons.js && node scripts/optimize-svg.js",
     "build:static": "BUILD_TARGET=static pnpm build",
     "build:wordpress": "BUILD_TARGET=wordpress pnpm build",
     "build:stats": "ANALYZE=true pnpm build",
@@ -16,6 +16,7 @@
     "lint:code": "biome lint --write ./frontend/src",
     "check": "pnpm lint:code && pnpm format",
     "verify": "pnpm build && pnpm playwright test",
+    "test:scripts": "node --test tests/scripts/*.test.js",
     "test:ui": "pnpm playwright test --ui",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",

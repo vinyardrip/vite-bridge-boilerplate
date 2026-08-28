@@ -11,6 +11,7 @@ import { getTemplatePlugins } from "./scripts/plugins/templates.js";
 import { getAssetPlugins } from "./scripts/plugins/assets.js";
 import { getPwaPlugins } from "./scripts/plugins/pwa.js";
 import { htmlAssetInjectPlugin } from "./scripts/plugins/vite-html-asset-inject.js";
+import { pictureTransformPlugin } from "./scripts/plugins/vite-plugin-picture-transform.js";
 import viteNjkTrace from "vite-njk-trace";
 
 export default defineConfig(({ command, mode }) => {
@@ -49,6 +50,7 @@ export default defineConfig(({ command, mode }) => {
       ...getTemplatePlugins(isServe, { projectRoot, pagesDir: "frontend/src/views/pages" }),
       ...getAssetPlugins(),
       ...getPwaPlugins(isDev),
+      pictureTransformPlugin({ sourceRoot: path.resolve(projectRoot, "frontend") }),
       htmlAssetInjectPlugin({ sourceRoot: path.resolve(projectRoot, "frontend") }),
       selectiveCleanPlugin(),
     ],

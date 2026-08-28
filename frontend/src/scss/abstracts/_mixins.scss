@@ -227,3 +227,30 @@
   font-family: "Spectral SC", serif;
   font-weight: $weight;
 }
+
+// --------------------------------------------------------------------------
+// Background Images (WebP / AVIF)
+// --------------------------------------------------------------------------
+
+// Responsive background image mixin — generates fallback + .webp + .avif
+// variants for CSS background-image properties.
+//
+// Usage:
+//   .hero {
+//     @include bg-responsive('../../assets/images/bg-all', 'svg');
+//   }
+//
+// Generates:
+//   .hero { background-image: url('../../assets/images/bg-all.svg'); }
+//   .webp .hero { background-image: url('../../assets/images/bg-all.webp'); }
+//   .avif .hero { background-image: url('../../assets/images/bg-all.avif'); }
+//
+@mixin bg-responsive($path-without-ext, $ext: 'jpg') {
+  background-image: url('#{$path-without-ext}.#{$ext}');
+  .webp & {
+    background-image: url('#{$path-without-ext}.webp');
+  }
+  .avif & {
+    background-image: url('#{$path-without-ext}.avif');
+  }
+}
