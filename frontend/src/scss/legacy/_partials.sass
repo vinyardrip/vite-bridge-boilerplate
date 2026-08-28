@@ -1,0 +1,602 @@
+// ==========================================================================
+// LEGACY: Page Sections
+// ==========================================================================
+// Перенесено из legacy/src/sass/partials/ (_header, _hero, _why, _features,
+// _price, _callme, _howto, _footer). Закомментированные блоки удалены
+// (мёртвый код; в dart-sass они и так не компилировались в CSS).
+//
+// Путь к логотипу переписан: ../img/logo.svg -> ../../assets/svg/logo.svg.
+
+@use "mixins" as *
+
+// --------------------------------------------------------------------------
+// HEADER (partials/_header.sass)
+// --------------------------------------------------------------------------
+
+.header
+	position: relative
+	+r(768)
+		padding-top: 27px
+	&-wrap
+		display: flex
+		justify-content: space-between
+		align-items: center
+		font-family: 'JetBrains Mono', monospace
+		position: relative
+		left: -17px
+	&__phone
+		margin-left: auto
+		span
+			+r(580)
+				display: none
+	.phone::before
+		+r(580)
+			display: none
+
+.logo
+	display: flex
+	justify-content: space-between
+	align-items: center
+	font-family: 'JetBrains Mono', monospace
+	position: relative
+	width: auto
+	&__name
+		height: 101px
+		width: 255px
+		background: url(../../assets/svg/logo.svg) no-repeat
+		background-size: contain
+		text-decoration: none
+		position: relative
+		padding-left: 22px
+		text-transform: uppercase
+		color: #FFFEFE
+		font-size: 18px
+		line-height: 1.5
+		font-weight: 300
+		+r(560)
+			height: 47px
+			width: 170px
+		&-part1
+			position: absolute
+			top: 23px
+			font-size: 61px
+			line-height: 61px
+			+r(560)
+				font-size: 27px
+				top: -5px
+				left: 13px
+		&-part2
+			position: absolute
+			top: 52px
+			left: 57px
+			+r(560)
+				top: 20px
+				font-size: 12px
+				left: 29px
+
+.message
+	margin-right: 12px
+	&-wrap
+		display: flex
+		align-items: center
+		position: relative
+		top: 7px
+		+r(580)
+			top: 15px
+			left: 17px
+		+r(560)
+			top: 4px
+	.icon
+		display: none
+		+r(580)
+			display: block
+			+size(20px)
+		+r(560)
+			+size(16px)
+
+.header__phone svg
+	display: none
+	+r(580)
+		display: block
+		+size(16px)
+		position: relative
+		top: -7px
+	+r(560)
+		+size(13px)
+
+// Инлайновые иконки шапки (viber/whatsapp/tg/mail/phone) имеют фирменные
+// заливки прямо в разметке (атрибуты fill). Базовый класс .icon
+// (base/_icons.scss) красит всё в currentColor, перебивая атрибуты —
+// возвращаем фирменные цвета явно.
+.message
+	.icon-viber
+		path
+			fill: #7e57c2
+		path:first-child
+			fill: #fff
+	.icon-whats
+		path:nth-child(1),
+		path:nth-child(2),
+		path:nth-child(5)
+			fill: #fff
+		path:nth-child(3)
+			fill: #cfd8dc
+		path:nth-child(4)
+			fill: #40c351
+	.icon-tg
+		path:nth-child(1)
+			fill: #29b6f6
+		path:nth-child(2)
+			fill: #fff
+		path:nth-child(3)
+			fill: #b0bec5
+		path:nth-child(4)
+			fill: #cfd8dc
+	.icon-mail g
+		fill: #fff
+
+.header__phone .icon-phone path
+	fill: #fff
+
+// --------------------------------------------------------------------------
+// HERO (partials/_hero.sass)
+// --------------------------------------------------------------------------
+
+.hero
+	padding-top: 81px
+	overflow: hidden
+	+r(580)
+		padding-top: 54px
+	h1
+		margin-bottom: 54px
+		+r(580)
+			margin-bottom: 27px
+	&-content
+		margin: 0
+		display: flex
+		flex-wrap: wrap
+		justify-content: space-between
+		//gap: 17px
+		+r(1200)
+			display: block
+	&__descr
+		max-width: 367px
+		font-size: 27px
+		line-height: 1.5185
+		color: #7989AA
+		+r(1200)
+			order: -1
+			max-width: unset
+			align-self: flex-start
+			margin-bottom: 54px
+			+r(580)
+				font-size: 18px
+				line-height: 1.5
+				margin-bottom: 27px
+	&__list
+		margin-left: -8px
+		min-width: 367px
+		margin-top: 37px
+		order: 1
+		+r(1200)
+			align-self: flex-start
+			margin-left: 0
+			margin-top: 0
+			margin-bottom: 81px
+			+r(580)
+				margin-bottom: 54px
+	.form
+		margin-bottom: 81px
+		position: relative
+		&-wrap
+			order: 2
+			+r(1200)
+				display: flex
+				justify-content: center
+		+r(1200)
+			justify-content: center
+		+r(840)
+			left: 0
+			margin-bottom: 54px
+		+r(580)
+			margin-bottom: 27px
+	// Закомментированные в оригинале (legacy/src/sass/partials/_hero.sass)
+	// декоративные ::before/::after для .form__cta/.form__phone/.form__btn
+	// удалены: базовые правила (content/position/size) в _form.sass были
+	// закомментированы, а decor-разметка в шаблонах отключена — мёртвый код,
+	// дублирующий BEM-элементы формы из components/_form.scss.
+
+// --------------------------------------------------------------------------
+// WHY (partials/_why.sass)
+// --------------------------------------------------------------------------
+
+.why
+	padding-bottom: 81px
+	.list__item:not(:last-of-type)
+		margin-bottom: 27px
+
+// --------------------------------------------------------------------------
+// FEATURES (partials/_features.sass)
+// --------------------------------------------------------------------------
+
+.features
+	padding-bottom: 81px
+	position: relative
+	&__container
+		display: flex
+		flex-wrap: wrap
+		justify-content: center
+		+r(1200)
+			display: flex
+			flex-direction: column
+			align-items: center
+			+r(760)
+				max-width: 544px
+				margin: 0 auto
+	h2.title
+		margin-bottom: 81px
+	&__list
+		background: white
+		color: #7989AA
+		max-width: 544px
+		padding: 56px 81px
+		+r(1200)
+			align-self: flex-start
+		+r(840)
+			align-self: center
+		+r(760)
+			width: auto
+			padding: 54px 54px 81px
+		+r(580)
+			padding: 27px 27px 81px
+	.list__item:not(:last-of-type)
+		margin-bottom: 27px
+	.wrap-img
+		font-size: 0
+		+r(1200)
+			align-self: flex-end
+		+r(840)
+			align-self: center
+		+r(760)
+			width: 100%
+			height: auto
+			padding: 0
+	&__img
+		+r(760)
+			width: 100%
+	.form-wrap
+		padding-top: 137px
+		display: flex
+		justify-content: center
+
+// --------------------------------------------------------------------------
+// PRICE (partials/_price.sass)
+// --------------------------------------------------------------------------
+
+.price
+	padding-bottom: 81px
+	overflow: auto
+	+r(460)
+		.container
+			margin: 0 8px
+			.layout
+				padding: 0 8px
+	&__title
+		+r(460)
+			padding-left: 58px
+		&::before
+			+r(460)
+				left: 7px
+	&__table
+		text-align: left
+		+r(760)
+			font-size: 16px
+		+r(580)
+			font-size: 12px
+		.list__item
+			+r(580)
+				font-size: 12px
+				padding-left: 18px
+			&::before
+				+r(580)
+					+size(4px)
+		tr
+			th
+				color: white
+				padding: 18px 27px 18px 54px
+				font-weight: normal
+				text-transform: uppercase
+				span
+					text-transform: lowercase
+				+r(760)
+					padding: 18px 18px 18px 27px
+				+r(580)
+					padding: 12px 12px 12px 18px
+				&:nth-of-type(1)
+					background: #688CEA
+				&:nth-of-type(2)
+					background: #567EDD
+					min-width: 256px
+					+r(820)
+						min-width: auto
+				&:nth-of-type(3)
+					background: #496EC7
+					min-width: 192px
+					+r(820)
+						min-width: auto
+			td
+				color: #7989AA
+				background: white
+				padding: 27px 27px 27px 54px
+				+r(760)
+					padding: 18px 18px 18px 27px
+				+r(580)
+					padding: 12px 12px 12px 18px
+			&:not(:last-of-type)
+				border-bottom: 1px solid #688CEA
+			&:last-of-type td
+				padding-bottom: 41px
+				+r(580)
+					padding-bottom: 18px
+			&:hover td
+				background: #f2f2f2 // было darken(white, 5%)
+
+// --------------------------------------------------------------------------
+// CALLME (partials/_callme.sass)
+// --------------------------------------------------------------------------
+
+.callme
+	&__container
+		position: relative
+		margin-bottom: 54px
+		display: flex
+		+r(1200)
+			align-items: center
+			flex-direction: column
+			margin-bottom: 0
+		+r(840)
+			justify-content: center
+			flex-wrap: wrap
+		+r(760)
+			max-width: 544px
+			margin: 0 auto
+		img
+			display: block
+	&__list
+		color: #7989AA
+		background: white
+		width: 656px
+		padding: 56px 81px
+		max-width: 544px
+		+r(1200)
+			align-self: flex-end
+		+r(840)
+			align-self: center
+		+r(760)
+			width: auto
+		+r(580)
+			padding: 27px 27px 81px
+	.list__item:not(:last-of-type)
+		margin-bottom: 27px
+	.wrap-img
+		position: static
+		order: -1
+		+r(1200)
+			align-self: flex-start
+		+r(840)
+			align-self: center
+		+r(760)
+			width: 100%
+			height: auto
+	&__img
+		+r(760)
+			width: 100%
+	.form-wrap
+		display: flex
+		margin-bottom: 81px
+		justify-content: center
+
+// --------------------------------------------------------------------------
+// HOWTO (partials/_howto.sass)
+// --------------------------------------------------------------------------
+
+.howto
+	.form-wrap
+		margin-top: 304px
+		margin-bottom: 81px
+		display: flex
+		justify-content: center
+		+r(1200)
+			margin-top: 162px
+		+r(580)
+			margin-top: 54px
+			margin-bottom: 27px
+
+.timeline
+	padding-top: 81px
+	position: relative
+	display: flex
+	flex-wrap: wrap
+	justify-content: space-between
+	+r(1200)
+		flex-direction: column
+		align-items: center
+	+r(580)
+		padding-top: 27px
+	+r(480)
+		top: 40px
+	+r(430)
+		top: -44px
+	+r(400)
+		top: 0
+	&::before
+		position: absolute
+		content: ''
+		height: calc(100% + 135px)
+		width: 1px
+		left: 50%
+		top: 27px
+		background: #688CEA
+		+r(1200)
+			height: 92%
+			top: 80px
+	&__block
+		background: white
+		color: #7989AA
+		padding: 54px
+		max-width: 493px
+		position: relative
+		margin-bottom: 162px
+		+r(580)
+			max-width: unset
+			margin-bottom: 81px
+			padding: 27px
+		&:nth-of-type(1)
+			height: 257px
+			+r(1200)
+				height: auto
+		&:nth-of-type(2)
+			height: 271px
+			+r(1200)
+				height: auto
+		&:nth-of-type(3)
+			height: 433px
+			+r(1200)
+				height: auto
+		&:nth-of-type(4)
+			height: 366px
+			+r(1200)
+				height: auto
+		&:nth-of-type(5)
+			height: 230px
+			+r(1200)
+				height: auto
+		&:nth-of-type(6)
+			height: 298px
+			+r(1200)
+				height: auto
+		&:nth-of-type(7)
+			height: 271px
+			+r(1200)
+				height: auto
+		&:nth-of-type(8)
+			height: 325px
+			+r(1200)
+				height: auto
+		&:nth-of-type(9)
+			height: 325px
+			+r(1200)
+				height: auto
+		&:nth-of-type(10)
+			height: 379px
+			+r(1200)
+				height: auto
+		&:nth-of-type(even)
+			top: 203px
+			+r(1200)
+				top: 0
+			&::before
+				left: -9px
+			&::after
+				left: -51px
+		&:last-of-type
+			margin-bottom: 0
+		&::before
+			position: absolute
+			content: ''
+			+size(18px)
+			border-radius: 50%
+			border: 1px solid #688cea
+			background: #1a202c
+			top: calc(50% - 9px)
+			right: -9px
+			box-shadow: 0 0 0 16px #1a202c
+			+r(1200)
+				display: none
+		&::after
+			position: absolute
+			content: ''
+			width: 42px
+			height: 1px
+			background: #688cea
+			top: calc(50% - 9px)
+			top: 50%
+			right: -51px
+			+r(1200)
+				display: none
+		&:nth-of-type(9),
+		&:nth-of-type(10)
+			&::before
+				background: #283957
+				box-shadow: 0 0 0 16px #283957
+		&:nth-of-type(7)
+			&::before
+				+r(1200)
+					background: #1a202c
+					+r(580)
+						background: #283957
+					+r(430)
+						background: #1a202c
+	&__title
+		font-size: 27px
+		line-height: 1.5185
+		margin-bottom: 27px
+		position: relative
+		position: relative
+		+r(580)
+			font-size: 18px
+			line-height: 1.5
+	&__text
+		+r(580)
+			font-size: 16px
+
+// --------------------------------------------------------------------------
+// FOOTER (partials/_footer.sass)
+// --------------------------------------------------------------------------
+
+.footer
+	padding-top: 108px
+	padding-bottom: 81px
+	.phone::before,
+	.mail::before
+		+r(580)
+			top: 27px
+	+r(840)
+		padding-top: 54px
+		padding-bottom: 27px
+	.footer__title
+		margin-bottom: 54px
+	&__phone,
+	&__mail
+		top: 0
+	.list__item
+		margin-bottom: 54px
+		+r(580)
+			margin-bottom: 27px
+		&:not(:last-of-type)
+			+r(580)
+				margin-bottom: 37px
+	&__copy
+		display: flex
+		flex-direction: column
+		margin-left: 60%
+		+r(840)
+			padding-top: 54px
+			margin-left: 0
+			align-items: flex-end
+		+r(580)
+			padding-top: 27px
+		&-text
+			font-size: 12px
+			+r(840)
+				display: flex
+				flex-direction: column
+				span
+					+r(840)
+						display: inline
+						text-align: right
+				+r(580)
+					font-size: 10px
+					text-align: right
+	&__logo
+		margin-bottom: 27px

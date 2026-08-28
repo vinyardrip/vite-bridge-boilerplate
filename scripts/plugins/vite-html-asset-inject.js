@@ -179,20 +179,20 @@ export function htmlAssetInjectPlugin({ sourceRoot }) {
         //    (relative paths, since base: './').
         //    The favicon set (favicon.svg, favicon.ico, favicon-32x32.png,
         //    apple-touch-icon.png, icon-192.png, icon-512.png) is generated
-        //    by scripts/generate-favicons.js into favicons/ of the build
+        //    by scripts/generate-favicons.js into img/favicons/ of the build
         //    target AFTER `vite build` — tags reference these deterministic
-        //    file names (all inside favicons/, build root stays clean).
+        //    file names (all inside img/favicons/, build root stays clean).
         //    IMPORTANT: this list must stay in sync with the icons config
-        //    in scripts/generate-favicons.js (favicons/android/appleIcon).
+        //    in scripts/generate-favicons.js (img/favicons/ output path).
         //    The PWA manifest is emitted separately at the build root by
         //    vite-plugin-pwa (see scripts/plugins/pwa.js).
         const faviconTags = [
-          `<link rel="icon" type="image/svg+xml" href="favicons/favicon.svg">`,
-          `<link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32x32.png">`,
-          `<link rel="shortcut icon" href="favicons/favicon.ico">`,
-          `<link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">`,
-          `<link rel="icon" type="image/png" sizes="192x192" href="favicons/icon-192.png">`,
-          `<link rel="icon" type="image/png" sizes="512x512" href="favicons/icon-512.png">`,
+          `<link rel="icon" type="image/svg+xml" href="img/favicons/favicon.svg">`,
+          `<link rel="icon" type="image/png" sizes="32x32" href="img/favicons/favicon-32x32.png">`,
+          `<link rel="shortcut icon" href="img/favicons/favicon.ico">`,
+          `<link rel="apple-touch-icon" sizes="180x180" href="img/favicons/apple-touch-icon.png">`,
+          `<link rel="icon" type="image/png" sizes="192x192" href="img/favicons/icon-192.png">`,
+          `<link rel="icon" type="image/png" sizes="512x512" href="img/favicons/icon-512.png">`,
           `<link rel="manifest" href="manifest.json">`,
           `<meta name="theme-color" content="#3b4b66">`,
         ].map((tag) => `    ${tag}`);

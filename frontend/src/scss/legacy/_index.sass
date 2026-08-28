@@ -1,0 +1,18 @@
+// ==========================================================================
+// LEGACY: Barrel File
+// ==========================================================================
+// Проектные стили, перенесённые из legacy/src/sass (сайт «Дмитриев и партнёры»).
+// Порядок повторяет legacy/src/sass/app.sass: от общих правил к частным.
+// Старый синтаксис @import заменён на современные @use / @forward.
+// Подключаются в app.scss ПОСЛЕДНИМ слоем (см. @use "./legacy"), чтобы
+// перекрывать boilerplate-стили.
+
+// Примечание: компонент .form перенесён в components/_form.scss
+// (бывший legacy/_components.sass удалён — см. task «Consolidate Form Styles»).
+
+@forward "mixins"
+@forward "base"
+@forward "common"
+@forward "containers"
+@forward "partials"
+@forward "generated"

@@ -1,8 +1,24 @@
+{# Перенесено из legacy/src/templates/partials/_footer.njk #}
 <footer class="footer">
   <div class="container">
-    <div class="footer__inner">
-      {# Содержимое футера: копирайт, ссылки и т.д. #}
-      <p>Это Footer из <code>frontend/src/views/partials/_footer.njk</code></p>
+    <div class="layout">
+      <h2 class="footer__title title">Контакты</h2>
+      <ul class="contacts__list list">
+        <li class="list__item">A1 |
+          <a href="tel:+375296664690" class="footer__phone phone nowrap">+375 29 666 46 90</a>
+        </li>
+        <li class="list__item">Email |
+          <a href="mailto:info@kdmitriev.by" class="footer__mail mail nowrap">info@kdmitriev.by</a>
+        </li>
+        <li class="list__item">Время работы | пн - пт | с 10:00 до 18:00</li>
+      </ul>
+      <div class="footer__copy copy">
+        <div class="footer__logo">Дмитриев и партнеры</div>
+        {#<div class="footer__copy-text">
+          <span>&copy; 2023 — </span>
+          <span class="nowrap">made with love by Web-Chocolatier</span></div>#}
+      </div>
+      {% include "../components/_scroll-to-top.njk" %}
     </div>
   </div>
 </footer>

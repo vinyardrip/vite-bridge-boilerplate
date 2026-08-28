@@ -10,8 +10,12 @@ import ora from "ora";
 import chalk from "chalk";
 
 // --- Конфигурация ---
-// Загружаем переменные окружения из /frontend/.env
-dotenv.config({ path: path.resolve(process.cwd(), "frontend", ".env") });
+// Load environment variables. Check both the canonical frontend/.env location
+// and a root .env so the script works whether invoked from the workspace
+// root or from /frontend.
+const envPath = path.resolve(process.cwd(), "frontend", ".env");
+const altEnvPath = path.resolve(process.cwd(), ".env");
+dotenv.config({ path: fs.existsSync(envPath) ? envPath : altEnvPath });
 
 const SOURCE_DIR = "frontend/src/assets/images"; // Папка с исходными изображениями
 const OUTPUT_DIR = "frontend/src/assets/images-tiny"; // Папка для сжатых изображений
@@ -19,7 +23,8 @@ const CACHE_FILE = "frontend/.tinypng-cache"; // Файл для кеширов�
 
 const API_KEYS = (process.env.TINYPNG_API_KEYS || "")
   .split(",")
-  .filter(Boolean);
+  .map((k) => k.trim())
+  .filter((k) => k && k.length > 0);
 // --- Конец Конфигурации ---
 
 // Промисифицируем функции для удобной работы с async/await

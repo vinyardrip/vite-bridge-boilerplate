@@ -5,6 +5,17 @@
 // Этот файл определяет базовые стили для текста.
 // Мы используем переменные, которые будут определены в `abstracts/_variables.scss`.
 
+@use "../abstracts/mixins" as *;
+
+// --------------------------------------------------------------------------
+// ЛОКАЛЬНЫЕ ШРИФТЫ САЙТА (перенесены из legacy/src/fonts/)
+// Семейства JetBrains Mono и Oswald используются вёрсткой сайта
+// (body/.btn и заголовки .title соответственно).
+// --------------------------------------------------------------------------
+@include font("JetBrains Mono", "JetBrainsMono-Light", 300);
+@include font("JetBrains Mono", "JetBrainsMono", 400);
+@include font("Oswald", "Oswald-Regular", 400);
+
 body {
   font-family: var(--font-family-base); // Используем CSS-переменную для гибкости
   font-size: var(--font-size-base);

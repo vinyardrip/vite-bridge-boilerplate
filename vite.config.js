@@ -1,175 +1,99 @@
-/*!
- * =================================================================================================
- * vite.config.js
- * =================================================================================================
- *
- * Главный конфигурационный файл для сборщика Vite.
- * Источник правды для всей frontend-сборки.
- *
- * =================================================================================================
- */
-
 import { defineConfig } from "vite";
-import { visualizer } from "rollup-plugin-visualizer";
+import path from "node:path";
+import { rmSync } from "node:fs";
 
-import nunjucks from "@vituum/vite-plugin-nunjucks";
-import svgSprite from "vite-plugin-svg-sprite";
-import { imagetools } from "vite-plugin-imagetools";
-import webfontDl from "vite-plugin-webfont-dl";
-import { VitePWA } from "vite-plugin-pwa";
-import { FontaineTransform } from "fontaine"; // 👈 ИМПОРТИРУЕМ ПЛАГИН
+// Direct PostCSS Imports
+import postcssSortMediaQueries from "postcss-sort-media-queries";
+import autoprefixer from "autoprefixer";
 
-export default defineConfig(({ command }) => {
-  const plugins = [
-    // 👇 ДОБАВЛЯЕМ ПЛАГИН FONTAINE В САМОЕ НАЧАЛО
-    FontaineTransform.vite({
-      fallbacks: {
-        "JetBrains Mono": ["Courier New", "monospace"],
-        Spectral: ["Georgia", "serif"],
-        "Spectral SC": ["Georgia", "serif"],
-      },
-    }),
+import { resolveBuildTarget } from "./scripts/build-target.js";
+import { getTemplatePlugins } from "./scripts/plugins/templates.js";
+import { getAssetPlugins } from "./scripts/plugins/assets.js";
+import { getPwaPlugins } from "./scripts/plugins/pwa.js";
+import { htmlAssetInjectPlugin } from "./scripts/plugins/vite-html-asset-inject.js";
+import viteNjkTrace from "vite-njk-trace";
 
-    nunjucks({
-      root: "./frontend/src/views",
-      data: ["./frontend/src/data/**/*.json"],
-      fm: true,
-      globals: {
-        site: {
-          production: command === "build",
-        },
-      },
-    }),
+export default defineConfig(({ command, mode }) => {
+  const isDev = mode === "development";
+  const isServe = command === "serve";
+  const projectRoot = path.resolve(import.meta.dirname);
 
-    /*! --- НАСТРОЙКА SVG-СПРАЙТА (АГРЕССИВНАЯ ОЧИСТКА) --- */
-    svgSprite({
-      symbolId: "icon-[name]",
-      svgo: {
-        plugins: [
-          {
-            name: "preset-default",
-            params: {
-              overrides: {
-                removeAttrs: {
-                  attrs: "(fill|stroke)",
-                },
-                cleanupIDs: true,
-              },
-            },
-          },
-        ],
-      },
-    }),
+  // Resolve Target Directory (e.g., .../themes/<project-name>/assets OR dist/)
+  const target = resolveBuildTarget();
+  const finalOutDir = target.dir;
 
-    imagetools(),
+  // Custom Targeted Cleanup Plugin
+  const selectiveCleanPlugin = () => ({
+    name: "vite-selective-clean",
+    apply: "build",
+    buildStart() {
+      console.log(`[Build] Target mode: ${target.mode} (${target.source})`);
+      console.log(`[Selective Clean] Wiping managed assets in: ${finalOutDir}`);
 
-    /*! --- НАСТРОЙКА ГИБРИДНОЙ ЗАГРУЗКИ ШРИФТОВ --- */
-    webfontDl({
-      google: {
-        families: [
-          { name: "JetBrains Mono", weights: ["300", "700"] },
-          { name: "Spectral", weights: ["700"] },
-          { name: "Spectral SC", weights: ["700"] },
-        ],
-      },
-      custom: {
-        families: [
-          {
-            name: "JetBrains Mono",
-            local: "JetBrainsMono-Light",
-            weights: ["300"],
-          },
-          {
-            name: "JetBrains Mono",
-            local: "JetBrainsMono-Bold",
-            weights: ["700"],
-          },
-          { name: "Spectral", local: "Spectral-Bold", weights: ["700"] },
-          {
-            // !Пример, как мы можем дать кастомный алиас.
-            name: "spectral-lc",
-            mapTo: "Spectral SC",
-            local: "SpectralSC-Bold",
-            weights: ["700"],
-          },
-        ],
-        // !ВАЖНО: Эта опция - ключ к созданию fallback'а.
-        injectTo: "google",
-      },
-    }),
+      const MANAGED_DIRS = ["js", "css", "img", "fonts", "favicons", ".vite"];
+      const MANAGED_FILES = ["manifest.json", "registerSW.js", "sw.js", "robots.txt"];
 
-    /*! --- НАСТРОЙКА PWA И ГЕНЕРАЦИИ FAVICONS --- */
-    VitePWA({
-      registerType: "autoUpdate",
-      injectRegister: false,
-      manifest: {
-        name: "Vite Bridge Boilerplate",
-        short_name: "ViteApp",
-        description: "My Awesome App description",
-        theme_color: "#ffffff",
-        background_color: "#da532c",
-        icons: [
-          { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
-          { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
-          { src: "apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-          {
-            src: "maskable-icon-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable",
-          },
-        ],
-      },
-      pwaAssets: {
-        image: "frontend/public/favicon.svg",
-        config: {
-          favicon: true,
-          apple: { precomposed: true },
-          msTile: { tileColor: "#da532c" },
-          android: true,
-          safariPinnedTab: { themeColor: "#5bbad5" },
-        },
-      },
-    }),
-  ];
-
-  /*! --- УСЛОВНОЕ ПОДКЛЮЧЕНИЕ АНАЛИЗАТОРА СБОРКИ --- */
-  if (process.env.ANALYZE) {
-    plugins.push(
-      visualizer({
-        open: true,
-        filename: "dist/stats.html",
-        gzipSize: true,
-        brotliSize: true,
-      }),
-    );
-  }
+      MANAGED_DIRS.forEach(d => rmSync(path.join(finalOutDir, d), { recursive: true, force: true }));
+      MANAGED_FILES.forEach(f => rmSync(path.join(finalOutDir, f), { force: true }));
+    }
+  });
 
   return {
-    /*! --- НАСТРОЙКА DEV-СЕРВЕРА --- */
-    server: {
-      host: true,
+    base: "./",
+    root: "frontend",
+    publicDir: path.resolve(projectRoot, "frontend/public"),
+    server: { host: true },
+
+    plugins: [
+      viteNjkTrace({ projectRoot, pagesDir: "frontend/src/views/pages" }),
+      ...getTemplatePlugins(isServe, { projectRoot, pagesDir: "frontend/src/views/pages" }),
+      ...getAssetPlugins(),
+      ...getPwaPlugins(isDev),
+      htmlAssetInjectPlugin({ sourceRoot: path.resolve(projectRoot, "frontend") }),
+      selectiveCleanPlugin(),
+    ],
+
+    // Inline PostCSS Configuration
+    css: {
+      devSourcemap: true,
+      postcss: {
+        plugins: [
+          postcssSortMediaQueries({ sort: "desktop-first" }),
+          autoprefixer()
+        ]
+      },
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+          loadPaths: [path.resolve(projectRoot, "frontend/src/scss")],
+        },
+      },
     },
 
-    plugins,
-
-    /*! --- НАСТРОЙКА ФИНАЛЬНОЙ СБОРКИ --- */
+    // Direct Build to Dynamic Target
     build: {
-      outDir: "dist",
+      outDir: finalOutDir,
+      emptyOutDir: false, // ⚠️ CRITICAL: Prevents Vite from nuking the outDir (safeguards WP files)
       manifest: true,
       sourcemap: true,
       rollupOptions: {
+        input: {
+          index: path.resolve(projectRoot, "frontend/src/views/pages/index.njk"),
+          "test-fonts": path.resolve(projectRoot, "frontend/src/views/pages/test-fonts.njk"),
+          app: path.resolve(projectRoot, "frontend/src/js/app.js"),
+        },
         output: {
           entryFileNames: "js/[name].[hash].js",
           chunkFileNames: "js/chunk.[hash].js",
           assetFileNames: (assetInfo) => {
-            // ?ИСПРАВЛЕНО: Заменено устаревшее свойство `assetInfo.name` на `assetInfo.fileName`
-            // для соответствия последним версиям Rollup (используется в Vite).
-            // Добавлен fallback `|| assetInfo.name` для максимальной обратной совместимости.
-            const extType = (assetInfo.fileName || assetInfo.name)
-              .split(".")
-              .pop();
-
+            const name =
+              assetInfo.fileName ||
+              assetInfo.name ||
+              (Array.isArray(assetInfo.names) ? assetInfo.names[0] : "") ||
+              "";
+            if (!name) return "assets/[name].[hash][extname]";
+            const extType = name.split(".").pop();
+            if (!extType) return "[name].[hash][extname]";
             if (/css/i.test(extType)) return "css/app.[hash].css";
             if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType))
               return "img/[name].[hash][extname]";

@@ -1,26 +1,19 @@
---- title: Главная | Vite Bridge Boilerplate description: "Это главная страница, собранная с помощью Vite и Nunjucks." body_class: "main-page" canonical_url: "https://example.com/" social_image: "https://example.com/images/social-preview.jpg" ---
-{% extends "../layouts/_default.njk" %}
+---
+title: Согласование перепланировки квартиры в Минске Цена перепланировки Согласование под ключ
+description: Согласование перепланировки через разрешение под ключ, самовольной перепланировки или подготовка отдельных документов. Проект, технадзор, гидроизоляция, отопление
+body_class: "main-page"
+---
+{% extends "layouts/_default.njk" %}
 
 {% block content %}
-
-  {% include "../partials/_header.njk" %}
-
-  <main class="main">
-    {# ... основной контент страницы ... #}
-    <div style="padding: 40px; text-align: center; font-family: sans-serif;">
-      <h1>🚀 Nunjucks-архитектура работает!</h1>
-    </div>
-
-    {# Добавляем видео-компонент для теста #}
-    <div style="max-width: 800px; margin: 40px auto;">
-      {% include "../components/_video.njk" %}
-    </div>
-
-  </main>
-
-  {% include "../partials/_footer.njk" %}
-
-  {# ПОДКЛЮЧАЕМ КОМПОНЕНТ #}
-  {% include "../components/_scroll-to-top.njk" %}
+  {# Перенесено из legacy/src/templates (index.njk). Структура идентична оригиналу: секции лежат ПРЯМЫМИ детьми .out (обёртки-макета), без дополнительного <main class="main"> из boilerplate. #}
+  {% include "partials/_header.njk" %}
+  {% include "partials/_hero.njk" %}
+  {% include "partials/_why.njk" %}
+  {% include "partials/_features.njk" %}
+  {% include "partials/_price.njk" %}
+  {% include "partials/_callme.njk" %}
+  {% include "partials/_howto.njk" %}
+  {% include "partials/_footer.njk" %}
 
 {% endblock %}

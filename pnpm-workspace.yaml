@@ -1,0 +1,10 @@
+minimumReleaseAge: 0
+
+allowBuilds:
+  '@parcel/watcher': true
+  puppeteer: true
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - esbuild
+  - puppeteer
+  - sharp

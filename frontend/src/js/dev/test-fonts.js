@@ -1,45 +1,42 @@
 /*!
  * =================================================================================================
- * font-tester.js
+ * test-fonts.js
  * =================================================================================================
  *
- * Модуль для диагностики загрузки веб-шрифтов.
- * Экспортирует одну функцию initFontTester, которая находит все тестовые карточки
- * на странице и запускает для них проверку.
+ * Dev-only module for diagnosing web font loading.
+ * Exports a single initFontTester function that locates all font test cards
+ * on the page and runs document.fonts.check() against each one.
  *
- * Этот модуль предназначен ТОЛЬКО для режима разработки и будет исключен
- * из финальной сборки с помощью условного импорта в app.js.
+ * This module is imported conditionally in app.js (import.meta.env.DEV)
+ * and is tree-shaken out of production builds.
  *
  * =================================================================================================
  */
 
 /**
- * Проверяет, загружен ли конкретный шрифт.
- * Использует FontFaceSet API (document.fonts.check).
+ * Checks whether a specific font face is loaded in the browser.
  *
- * @param {string} family - Название font-family.
- * @param {string} weight - Значение font-weight.
- * @param {string} style - Значение font-style.
- * @returns {boolean} - true, если шрифт загружен, иначе false.
+ * @param {string} family  The font-family name.
+ * @param {string} weight  The font-weight value.
+ * @param {string} style   The font-style value.
+ * @returns {boolean} true when the font is available for rendering.
  */
 const isFontLoaded = (family, weight, style) => {
-  // Формируем строку для проверки, например: "bold 700 16px 'Spectral SC'"
-  // Размер шрифта (16px) здесь не важен, но синтаксис его требует.
+  // Build the check string, e.g. "normal 700 16px 'Spectral SC'".
+  // The px size is required by the spec but does not affect the result.
   const fontCheckString = `${style} ${weight} 16px "${family}"`;
 
   try {
-    // document.fonts.check() - это современный и надежный способ
-    // проверить, доступен ли шрифт для рендеринга.
     return document.fonts.check(fontCheckString);
   } catch (e) {
-    console.error("Ошибка при проверке шрифта:", e);
+    console.error("[test-fonts] Font check failed:", e);
     return false;
   }
 };
 
 /**
- * Находит все тестовые карточки на странице и запускает для них проверку.
- * @param {HTMLElement} container - DOM-элемент, в котором находятся карточки.
+ * Finds every .font-test-card on the page and updates its status badge.
+ * @param {HTMLElement} container - the #font-tester root element.
  */
 export const initFontTester = (container) => {
   const cards = container.querySelectorAll(".font-test-card");
@@ -48,9 +45,8 @@ export const initFontTester = (container) => {
     return;
   }
 
-  // document.fonts.ready - это промис, который выполняется,
-  // когда все шрифты, указанные в CSS, завершили загрузку (или загрузка провалилась).
-  // Мы ждем этого события, чтобы наши тесты были максимально точными.
+  // Wait for all CSS-declared fonts to finish loading (or fail) before
+  // running checks, so results are as accurate as possible.
   document.fonts.ready.then(() => {
     cards.forEach((card) => {
       const { family, weight, style } = card.dataset;
@@ -64,10 +60,10 @@ export const initFontTester = (container) => {
 
       if (loaded) {
         statusElement.dataset.status = "success";
-        statusElement.textContent = "Успешно";
+        statusElement.textContent = "Loaded";
       } else {
         statusElement.dataset.status = "error";
-        statusElement.textContent = "Ошибка";
+        statusElement.textContent = "Failed";
       }
     });
   });

@@ -5,4 +5,23 @@
 
 .header {
   // Стили для хедера будут здесь
+  text-transform: uppercase;
+}
+
+// Логотип: иконка из SVG-спрайта + текстовый блок
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: rem(12);
+
+  // Цвет марки берётся из currentColor (fill у символа вычищен svgo),
+  // поэтому задаём цвет через CSS-свойство color.
+  .icon-logo {
+    width: rem(41);
+    height: rem(17);
+    color: var(--color-primary);
+  }
+  .hero__descr {
+    @include os(700);
+  }
 }

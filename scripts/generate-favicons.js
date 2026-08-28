@@ -43,8 +43,10 @@ const SOURCE = path.resolve(
   "favicon.svg",
 );
 
-// Dynamic output directory resolved from the active build target.
-const OUTPUT_DIR = path.join(resolveBuildTarget().dir, "favicons");
+// Dynamic output directory: img/favicons/ inside the build target assets directory.
+// This places favicons at backend/wp-content/themes/my-theme/assets/img/favicons/
+// for the wordpress target, or dist/img/favicons/ for the static target.
+const OUTPUT_DIR = path.join(resolveBuildTarget().dir, "img", "favicons");
 
 // Final, user-facing filenames we want to ship in the favicons/ folder.
 // The favicons library generates internally-named assets (e.g.

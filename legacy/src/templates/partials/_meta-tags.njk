@@ -1,0 +1,28 @@
+<meta name="twitter:card" content="{% if twitter_card %}{{ twitter_card }}{% else %}summary_large_image{% endif %}"/>
+<meta name="twitter:title" content="{% if twitter_title %}{{ twitter_title }}{% else %}{{ title }}{% endif %}"/>
+<meta name="twitter:description"
+      content="{% if twitter_description %}{{ twitter_description }}{% else %}{{ description }}{% endif %}"/>
+<meta name="twitter:image:src"
+      content="{% if globals.soc_image %}{{ globals.soc_image }}{% else %}{{ globals.img_src }}{% endif %}"/>
+<meta name="twitter:url" content="{{ canonical }}"/>
+<meta name="twitter:domain" content="{{ globals.domain }}"/>
+<meta name="twitter:site" content="{{ globals.twitter_site }}"/>
+<meta name="twitter:creator"
+      content="{% if twitter_creator %}{{ twitter_creator }}{% else %}{{ globals.twitter_site }}{% endif %}"/>
+<meta name="twitter:image" content="{% if soc_image %}{{ soc_image }}{% else %}{{ globals.img_src }}{% endif %}"/>
+
+<!-- Open Graph data -->
+<meta property="og:type" content="{% if og_type %}{{ og_type }}{% else %}website{% endif %}"/>
+<meta property="og:site_name" content="{{ globals.og_sitename }}"/>
+<meta property="og:title" content="{% if og_title %}{{ og_title }}{% else %}{{ title }}{% endif %}"/>
+<meta property="og:description"
+      content="{% if og_description %}{{ og_description }}{% else %}{{ description }}{% endif %}"/>
+<meta property="og:url" content="{{ canonical }}"/>
+<meta property="og:locale" content="ru_RU"/>
+<meta property="og:image" content="{% if soc_image %}{{ soc_image }}{% else %}{{ globals.img_src }}{% endif %}"/>
+<meta property="og:image:width" content="{% if image_width %}{{ image_width }}{% else %}968{% endif %}"/>
+<meta property="og:image:height" content="{% if image_height %}{{ image_height }}{% else %}504{% endif %}"/>
+{% if fb_admins %}
+  <meta property="fb:admins" content="{{ fb_admins }}"/>{% else %}{% endif %}
+<link rel="image_src" href="{{ globals.image_src }}">
+<link rel="canonical" href="{{ canonical }}">

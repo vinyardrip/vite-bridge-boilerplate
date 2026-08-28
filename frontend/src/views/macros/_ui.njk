@@ -28,10 +28,11 @@
 {% macro icon(name, class) %}
   <svg class="icon icon-{{ name }}{% if class %} {{ class }}{% endif %}" aria-hidden="true" focusable="false">
     {#
-    Путь /img/sprite.svg будет корректно работать после сборки,
-    т.к. Vite поместит спрайт в dist/img/sprite.svg.
-  #}
-    <use xlink:href="/img/sprite.svg#icon-{{ name }}"></use>
+      Локальная ссылка на символ спрайта: vite-plugin-svg-sprite инжектит
+      SVG-символы прямо в DOM при загрузке страницы (см. import ...svg в app.js),
+      поэтому внешний путь к файлу спрайта не нужен — достаточно #icon-{{ name }}.
+    #}
+    <use href="#icon-{{ name }}"></use>
   </svg>
 {% endmacro %}
 

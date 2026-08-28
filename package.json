@@ -5,58 +5,90 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build",
+    "build": "node scripts/compress-images.js && vite build && node scripts/generate-favicons.js && node scripts/optimize-svg.js",
+    "build:static": "BUILD_TARGET=static pnpm build",
+    "build:wordpress": "BUILD_TARGET=wordpress pnpm build",
     "build:stats": "ANALYZE=true pnpm build",
     "preview": "vite preview",
-    "format:code": "biome format --write ./src",
-    "format:templates": "prettier --write \"./src/views/**/*.njk\"",
+    "format:code": "biome format --write ./frontend/src",
+    "format:templates": "prettier --write \"./frontend/src/views/**/*.njk\"",
     "format": "pnpm format:code && pnpm format:templates",
-    "lint:code": "biome lint --apply ./src",
+    "lint:code": "biome lint --write ./frontend/src",
     "check": "pnpm lint:code && pnpm format",
     "verify": "pnpm build && pnpm playwright test",
     "test:ui": "pnpm playwright test --ui",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",
-    "test:fonts": "vite --open /pages/test-fonts.html",
-    "sync:theme": "if [ -n \"$(git status --porcelain)\" ]; then echo '❌ Ошибка: Обнаружены незакоммиченные изменения!'; exit 1; fi && echo '✅ Рабочая директория чиста, начинаю синхронизацию...' && rsync -av --delete dist/ ../backend/wp-content/themes/my-theme/assets/",
+    "test:fonts": "vite --open /test-fonts.html",
     "/*! --- ВСПОМОГАТЕЛЬНЫЕ (UTILITY) СКРИПТЫ --- */": "",
-    "favicons:generate": "pwa-assets-generator --config vite.config.js",
+    "favicons:generate": "node scripts/generate-favicons.js",
     "images:convert": "node scripts/convert-images.js",
     "images:compress": "node scripts/compress-images.js",
     "svg:optimize": "node scripts/optimize-svg.js"
   },
+  "type": "module",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "vinyardrip",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vinyardrip/vite-bridge-boilerplate"
+  },
+  "bugs": {
+    "url": "https://github.com/vinyardrip/vite-bridge-boilerplate/issues"
+  },
+  "homepage": "https://github.com/vinyardrip/vite-bridge-boilerplate#readme",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.2",
-    "@playwright/test": "^1.56.1",
-    "@vituum/vite-plugin-nunjucks": "^1.1.0",
-    "autoprefixer": "^10.4.21",
-    "chalk": "^5.6.2",
-    "critical": "^7.2.1",
-    "dotenv": "^17.2.3",
-    "fontaine": "^0.6.0",
-    "glob": "^11.0.3",
+    "@biomejs/biome": "^2.5.8",
+    "@playwright/test": "^1.62.1",
+    "autoprefixer": "^10.5.4",
+    "baseline-browser-mapping": "^2.11.13",
+    "chalk": "^6.0.0",
+    "critical": "^8.0.0",
+    "debug-css-overflow": "1.0.3",
+    "dotenv": "^17.4.2",
+    "favicons": "^7.3.1",
+    "fontaine": "^0.8.0",
+    "glob": "^13.0.6",
     "gray-matter": "^4.0.3",
-    "ora": "^9.0.0",
-    "postcss-sort-media-queries": "^5.2.0",
+    "nunjucks": "^3.2.4",
+    "ora": "^9.4.1",
+    "postcss-sort-media-queries": "^6.7.1",
     "posthtml": "^0.16.7",
     "posthtml-responsive-images": "^1.0.3",
-    "prettier": "^3.6.2",
-    "prettier-plugin-jinja-template": "^2.1.0",
-    "rollup-plugin-visualizer": "^6.0.5",
-    "sharp": "^0.34.4",
-    "svgo": "^4.0.0",
-    "tinify": "^1.8.2",
-    "vite": "^7.1.12",
-    "vite-plugin-pwa": "^1.1.0",
-    "vite-plugin-svg-sprite": "^0.6.3",
-    "vite-plugin-webfont-dl": "^3.11.1"
+    "prettier": "^3.9.6",
+    "prettier-plugin-jinja-template": "^2.2.0",
+    "rollup-plugin-visualizer": "^7.0.1",
+    "sass-embedded": "^1.100.0",
+    "sharp": "^0.35.3",
+    "svgo": "^4.0.2",
+    "tinify": "^1.8.3",
+    "vite": "^8.2.1",
+    "vite-imagetools": "^12.0.0",
+    "vite-njk-trace": "1.0.1",
+    "vite-plugin-full-reload": "^1.2.0",
+    "vite-plugin-njk-frontmatter": "^1.0.2",
+    "vite-plugin-pwa": "^1.3.0",
+    "vite-plugin-svg-sprite": "^0.7.0",
+    "vite-plugin-webfont-dl": "^3.12.0"
   },
-  "packageManager": "pnpm@10.19.0",
   "dependencies": {
-    "inputmask": "^5.0.9",
-    "swiper": "^12.0.3"
+    "inputmask": "^5.0.10",
+    "swiper": "^14.1.0"
+  },
+  "config": {
+    "buildTarget": "static"
+  },
+  "posthtml": {
+    "plugins": {
+      "posthtml-responsive-images": {
+        "formats": [
+          { "format": "avif", "options": { "quality": 75 } },
+          { "format": "webp", "options": { "quality": 75 } }
+        ],
+        "publicPath": "/assets/images/",
+        "sharp": {}
+      }
+    }
   }
 }

@@ -1,0 +1,88 @@
+.header
+	position: relative
+	+r(768)
+		padding-top: 27px
+	&-wrap
+		display: flex
+		justify-content: space-between
+		align-items: center
+		font-family: 'JetBrains Mono', monospace;
+		position: relative
+		left: -17px
+	&__phone
+		margin-left: auto
+		span
+			+r(580)
+				display: none
+	.phone::before
+		+r(580)
+			display: none
+.logo
+	display: flex
+	justify-content: space-between
+	align-items: center
+	font-family: 'JetBrains Mono', monospace;
+	position: relative
+	width: auto
+	&__name
+		height: 101px
+		width: 255px
+		background: url(../img/logo.svg) no-repeat
+		background-size: contain
+		text-decoration: none
+		position: relative
+		padding-left: 22px
+		text-transform: uppercase
+		color: #FFFEFE
+		font-size: 18px
+		line-height: 1.5
+		font-weight: 300
+		+r(560)
+			height: 47px
+			width: 170px
+		&-part1
+			position: absolute
+			top: 23px
+			font-size: 61px
+			line-height: 61px
+			+r(560)
+				font-size: 27px
+				top: -5px
+				left: 13px
+		&-part2
+			position: absolute
+			top: 52px
+			left: 57px
+			+r(560)
+				top: 20px
+				font-size: 12px
+				left: 29px
+.message
+	margin-right: 12px
+	&-wrap
+		display: flex
+		align-items: center
+		position: relative
+		top: 7px
+		+r(580)
+			top: 15px
+			left: 17px
+		+r(560)
+			top: 4px
+	.icon
+		display: none
+		+r(580)
+			display: block
+			+size(20px)
+		+r(560)
+			+size(16px)
+.header__phone svg
+	display: none
+	+r(580)
+		display: block
+		+size(16px)
+		position: relative
+		top: -7px
+	+r(560)
+		+size(13px)
+

@@ -1,0 +1,78 @@
+.features
+	padding-bottom: 81px
+	position: relative
+	&__container
+		//position: relative
+		display: flex
+		flex-wrap: wrap
+		justify-content: center
+		+r(1200)
+			display: flex
+			flex-direction: column
+			align-items: center
+			+r(760)
+				max-width: 544px
+				margin: 0 auto
+	h2.title
+		margin-bottom: 81px
+	&__list
+		//position: absolute
+		//top: 0
+		//right: 0
+		background: white
+		color: #7989AA
+		//padding: 139px 108px 139px 164px
+		//width: 656px
+		max-width: 544px
+		padding: 56px 81px
+		+r(1200)
+			//position: static
+			align-self: flex-start
+		+r(840)
+			align-self: center
+		+r(760)
+			width: auto
+			padding: 54px 54px 81px
+		+r(580)
+			padding: 27px 27px 81px
+	.list__item:not(:last-of-type)
+		margin-bottom: 27px
+	.wrap-img
+		font-size: 0
+		//position: relative
+		//z-index: 1
+		//top: 56px
+		+r(1200)
+			//top: -54px
+			align-self: flex-end
+		+r(840)
+			align-self: center
+		+r(760)
+			width: 100%
+			height: auto
+			padding: 0
+			//padding: 0 27px
+	&__img
+		+r(760)
+			width: 100%
+	.form-wrap
+		padding-top: 137px
+		//margin-left: 64px
+		display: flex
+		justify-content: center
+		//+r(1200)
+			display: flex
+			justify-content: center
+			padding-top: 0
+			margin: 0 auto
+	//.form__cta::before,
+	//.form__cta::after,
+	//.form__phone::before,
+	//.form__btn::before
+			background: #1a202c
+	//.form__phone::after
+		+r(840)
+			background: #1a202c
+	//.form__btn::before
+		+r(840)
+			background: #688CEA

@@ -1,0 +1,112 @@
+// ==========================================================================
+// LEGACY: Common Styles
+// ==========================================================================
+// Перенесено из legacy/src/sass/_common.sass (без .overlay/.modal — модальную
+// систему сайта теперь покрывает boilerplate components/_modals.scss).
+//
+// Пути к картинкам переписаны: ../img/ -> ../../assets/images/.
+// Закомментированный блок .decor удалён (мёртвый код — сами элементы
+// закомментированы и в шаблонах, и в исходном sass).
+
+@use "mixins" as *
+
+body
+	font-family: 'JetBrains Mono', monospace
+	color: #FFFEFE
+	font-weight: 300
+	font-size: 18px
+	line-height: 1.5
+
+.out
+	background: url(../../assets/images/bg-all.svg) 50% 50% / cover no-repeat
+
+.nowrap
+	white-space: nowrap
+
+h1, h2, h3, h4
+	font-weight: normal
+
+h2.title
+	margin-bottom: 81px
+	+r(580)
+		margin-bottom: 54px
+
+img,
+picture
+	max-width: 100%
+	height: auto
+
+picture
+	display: block
+
+.title
+	color: white
+	font-family: 'Oswald', sans-serif
+	font-weight: 400
+	font-size: 41px
+	line-height: 1.487
+	position: relative
+	+r(1392)
+		padding-left: 72px
+	+r(1200)
+		padding-left: 72px
+	+r(580)
+		font-size: 27px
+		line-height: 1.518
+		padding-left: 32px
+	&::before
+		position: absolute
+		content: ''
+		width: 91px
+		height: 5px
+		background: #688CEA
+		top: 50%
+		left: -118px
+		+r(1392)
+			left: -16px
+			top: 27px
+			width: 61px
+		+r(1200)
+			left: -16px
+			top: 27px
+			width: 61px
+		+r(580)
+			top: 17px
+			width: 34px
+
+.list
+	&__item
+		padding-left: 27px
+		position: relative
+		+r(580)
+			font-size: 16px
+		&::before
+			position: absolute
+			left: 0
+			top: 10px
+			content: ''
+			+size(8px)
+			background: #688CEA
+
+.phone,
+.mail
+	position: relative
+	color: white
+	text-decoration: none
+	padding-bottom: 21px
+	top: 18px
+	transition: color .3s ease
+	&::before
+		position: absolute
+		content: ''
+		width: 91px
+		height: 5px
+		background: #688CEA
+		left: calc( 100% - 91px )
+		bottom: 0px
+		transition: width .3s ease, left .3s ease
+	&:hover
+		color: #688CEA
+		&::before
+			width: 100%
+			left: 0

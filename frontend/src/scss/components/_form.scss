@@ -1,0 +1,173 @@
+// ==========================================================================
+// COMPONENT: Form
+// ==========================================================================
+// ЕДИНСТВЕННЫЙ источник истины для компонента формы (разметка —
+// components/_form.njk). Консолидировано из:
+//   * legacy/src/sass/components/_form.sass — оригинальные стили сайта;
+//   * удалённого boilerplate components/_forms.scss (дубли .form__*).
+// Убраны непреднамеренные переопределения boilerplate (.form__wrap получал
+// flex-wrap/gap/align-items) — восстановлено оригинальное объявление
+// .form__wrap { display: flex; ... }.
+// Закомментированные блоки оригинала (decor-уголки и т.п.) не переносились.
+
+@use "../abstracts" as a;
+
+.form {
+  display: flex;
+  margin-top: a.rem(81);
+
+  @include a.breakpoint-down(840px) {
+    flex-wrap: wrap;
+    flex-direction: column;
+  }
+  @include a.breakpoint-down(580px) {
+    margin-top: a.rem(54);
+  }
+
+  // Подпись кнопки на мобильных (из оригинала)
+  &-small-text {
+    @include a.breakpoint-down(580px) {
+      display: block;
+    }
+  }
+
+  // Оригинальное объявление (из _form.sass):
+  // .form__wrap { display: flex; +r(840){ min-width:500px } +r(580){ width:300px } }
+  &__wrap {
+    display: flex;
+
+    @include a.breakpoint-down(840px) {
+      min-width: 500px;
+    }
+    @include a.breakpoint-down(580px) {
+      min-width: unset;
+      width: 300px;
+    }
+  }
+
+  &__cta {
+    width: a.rem(300);
+    background: #688cea;
+    padding: a.rem(39) a.rem(42) a.rem(29) a.rem(27);
+
+    @include a.breakpoint-down(840px) {
+      width: 100%;
+      padding-bottom: a.rem(54);
+    }
+    @include a.breakpoint-down(580px) {
+      padding: a.rem(27) a.rem(18) a.rem(32);
+    }
+
+    &-title {
+      font-size: a.rem(27);
+      margin-bottom: a.rem(10);
+
+      @include a.breakpoint-down(580px) {
+        font-size: a.rem(18);
+        line-height: 1.5;
+      }
+    }
+
+    &-descr {
+      font-size: a.rem(12);
+      line-height: 1.5;
+      color: #283957;
+
+      @include a.breakpoint-down(840px) {
+        font-size: a.rem(18);
+      }
+      @include a.breakpoint-down(580px) {
+        font-size: a.rem(12);
+      }
+    }
+  }
+
+  &__phone {
+    background: #567edd;
+    padding: a.rem(39) a.rem(27) a.rem(27);
+
+    @include a.breakpoint-down(840px) {
+      width: 50%;
+    }
+    @include a.breakpoint-down(580px) {
+      width: auto;
+      padding: a.rem(18);
+    }
+
+    &-title {
+      margin-bottom: a.rem(18);
+
+      @include a.breakpoint-down(580px) {
+        margin-bottom: a.rem(12);
+      }
+    }
+
+    &-field {
+      width: a.rem(159);
+      height: a.rem(41);
+      font-size: a.rem(12);
+      background: #496ec7;
+      padding: a.rem(12) a.rem(18);
+
+      @include a.breakpoint-down(840px) {
+        width: auto;
+      }
+      @include a.breakpoint-down(580px) {
+        width: a.rem(134);
+        padding: a.rem(10);
+        height: a.rem(27);
+      }
+
+      &:hover::placeholder {
+        color: white;
+      }
+      &::placeholder {
+        color: #3e5585;
+      }
+      &:focus {
+        color: white;
+      }
+    }
+  }
+
+  &__btn {
+    background: #496ec7;
+    display: flex;
+    align-items: center;
+
+    @include a.breakpoint-down(840px) {
+      margin-right: 0;
+      width: a.rem(250);
+    }
+    @include a.breakpoint-down(580px) {
+      width: a.rem(140);
+    }
+
+    .btn {
+      position: relative;
+      display: block;
+      margin: 0 a.rem(27);
+      padding: 0 a.rem(27);
+      height: a.rem(61);
+      background: #d2616e;
+      color: #fffefe;
+      text-transform: uppercase;
+      font-family: var(--font-family-base);
+      font-size: a.rem(18);
+      transition: background 0.3s ease;
+
+      @include a.breakpoint-down(840px) {
+        margin: 0 auto;
+      }
+      @include a.breakpoint-down(580px) {
+        height: a.rem(41);
+        padding: 0 a.rem(8);
+        font-size: a.rem(15);
+      }
+
+      &:hover {
+        background: #c54e5c;
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+<form action="#" class="form">
+  <div class="form__cta">
+    {#<span class="decor">01</span>#}
+    <div class="form__cta-title">Бесплатная консультация</div>
+    <div class="form__cta-descr">Звоните или оставьте свой номер</div>
+  </div>
+  <div class="form__wrap">
+    <div class="form__phone">
+      {#<span class="decor">02</span>#}
+      <div class="form__phone-title">
+        <span class="form-big-text">Номер телефона</span>
+        {#<span class="form-small-text">Ваш телефон</span>#}
+      </div>
+      <input type="hidden" name="url" value="<?php echo $_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];?>">
+      <input type="tel" name="phone" class="form__phone-field" required placeholder="|+375..." pattern="\s*\+375\s?\(?(1[567]|2[12359]|33|44)\)?\s?\d{3}-\d{2}-\d{2}" autocomplete="tel"></div>
+    <div class="form__btn">
+      {#<span class="decor">03</span>#}
+      <button class="btn nowrap">
+        {#<span class="form-big-text">Заказать звонок</span>#}
+        <span class="form-small-text">Перезвоните</span></button>
+    </div>
+  </div>
+</form>

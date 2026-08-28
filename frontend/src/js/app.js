@@ -36,6 +36,14 @@ import '../scss/app.scss';
         initFontTester(fontTester);
       });
     }
+
+    /*! --- Детектор горизонтального переполнения --- */
+    // Загружается динамически ТОЛЬКО в dev-режиме: благодаря import.meta.env.DEV
+    // ветка вырезается при сборке, и модуль debug-css-overflow полностью
+    // выпадает из production-бандла (tree-shaking).
+    import("debug-css-overflow").then(({ initDebugCssOverflow }) => {
+      initDebugCssOverflow();
+    });
   }
 })();
 
@@ -51,6 +59,12 @@ import '../scss/app.scss';
  */
 // Импорт утилит
 import './modules/detect-touch.js';
+
+// Регистрируем SVG-символы в спрайте (vite-plugin-svg-sprite).
+// Символы инжектятся в DOM при загрузке и доступны через <use href="#icon-...">.
+import '../assets/svg/logo.svg';
+// Иконки из папки icons/ (доступны через макрос ui.icon('phone') и т.п.).
+import '../assets/icons/phone.svg';
 
 // Импорт модулей компонентов
 import { initScrollToTop } from './modules/scroll-to-top.js';

@@ -1,0 +1,47 @@
+// ==========================================================================
+// LEGACY: Reset Supplement
+// ==========================================================================
+// Перенесено из legacy/src/sass/base/_reset.sass (только недостающая часть).
+//
+// Современный reset (base/_reset.scss) уже покрывает box-sizing, обнуление
+// отступов и т.п. Здесь оставлены только те правила старого сброса, которых
+// в нём НЕТ, но которые нужны вёрстке сайта: списки без маркеров, кнопки и
+// инпуты без рамок/отступов, схлопнутые таблицы, кастомные инпуты.
+// (Сломанный при переносе в dart-sass блок prefers-reduced-motion удалён —
+// современный reset покрывает и его.)
+
+ul, ol
+	list-style-type: none
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea
+	-webkit-appearance: none
+
+input[type="submit"],
+button
+	cursor: pointer
+	margin: 0
+	padding: 0
+	border: 0
+	&::-moz-focus-inner
+		padding: 0
+		border: 0
+
+textarea
+	overflow: auto
+
+input
+	margin: 0
+	padding: 0
+	border: 0
+
+div, input, textarea, select, button,
+h1, h2, h3, h4, h5, h6, a, span, a:focus
+	outline: none
+
+table
+	border-spacing: 0
+	border-collapse: collapse
+	width: 100%

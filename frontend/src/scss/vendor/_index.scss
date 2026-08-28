@@ -5,10 +5,12 @@
 
 // --- Swiper Slider ---
 // Импортируем только ядро Swiper.
+// ВАЖНО: начиная с Swiper v14 SCSS-сборка больше не поставляется —
+// остались только готовые CSS-файлы. Поэтому используем `swiper/css`.
 // Стили для дополнительных модулей (Navigation, Pagination, etc.)
 // следует подключать здесь же по мере необходимости.
-@use "swiper/scss";
+@use "swiper/css";
 
 // Пример подключения дополнительных модулей:
-// @use "swiper/scss/navigation";
-// @use "swiper/scss/pagination";
+// @use "swiper/css/navigation";
+// @use "swiper/css/pagination";

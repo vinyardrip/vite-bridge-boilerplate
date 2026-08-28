@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Источник для генерации фавикон-комплекта (scripts/generate-favicons.js).
+       Цвета: primary #3b4b66, accent #0091ea. -->
+  <rect width="512" height="512" rx="104" fill="#3b4b66"/>
+  <path d="M116 168 L256 384 L396 168" fill="none" stroke="#0091ea" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="396" r="26" fill="#0091ea"/>
+</svg>

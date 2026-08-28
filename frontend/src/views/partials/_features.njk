@@ -1,0 +1,22 @@
+{# Перенесено из legacy/src/templates/partials/_features.njk.
+   Картинка img1.jpg перенесена в frontend/src/assets/images/. #}
+<section class="features">
+  <div class="container">
+    <div class="layout">
+      <h2 class="features__title title">Особенности нашей услуги</h2>
+      <div class="features__container">
+        <ul class="features__list list">
+          <li class="list__item">Рыночная цена без необоснованных завышений (от 600 рублей за согласование под ключ).</li>
+          <li class="list__item">Начинаем согласование без предоплаты и фиксируем стоимость согласования в договоре. Стоимость не изменится в течение согласования.</li>
+          <li class="list__item">Знаем наизусть все нюансы согласований по всем районам Минска. Поэтому согласуем быстро и с гарантией.</li>
+        </ul>
+        <div class="wrap-img">
+          <img src="/src/assets/images/img1.jpg" width="544" height="544" alt="" class="features__img">
+        </div>
+      </div>
+      <div class="form-wrap">
+        {% include "../components/_form.njk" %}
+      </div>
+    </div>
+  </div>
+</section>

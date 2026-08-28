@@ -1,0 +1,14 @@
+{# Перенесено из legacy/src/templates/partials/_mixins.njk.
+   В новой структуре макросы живут в macros/_ui.njk; этот файл сохранён
+   на случай использования legacy-макросов. #}
+{% macro iconCss(i) %}
+  <svg class="icon icon-{{ i }}">
+    <use xlink:href="img/sprite.svg#icon-{{ i }}"></use>
+  </svg>
+{% endmacro %}
+
+{% macro icon(i) %}
+  <svg class="icon icon-{{ i }}">
+    <use xlink:href="#icon-{{ i }}"></use>
+  </svg>
+{% endmacro %}

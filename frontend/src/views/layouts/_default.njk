@@ -4,27 +4,26 @@ _default.njk (v4.0 - На основе вашего кода)
 ====================================================================================================
 
 Главный макет-обертка для СТАТИЧЕСКОЙ разработки.
-Использует прямое подключение к Vite Dev Server, как и требуется для нашего рабочего процесса.
+
+Dev-клиент Vite (@vite/client) и трансформация модулей подключаются
+АВТОМАТИЧЕСКИ (server.transformIndexHtml в vite-plugin-njk-frontmatter),
+поэтому никакие хардкод-скрипты с портом 5173 в шаблоне не нужны.
 
 ----------------------------------------------------------------------------------------------------
 ШПАРГАЛКА ПО NUNJUCKS
 ----------------------------------------------------------------------------------------------------
-{% extends "./path/to/layout.njk" %}     # Наследование макета (должно быть первой строкой)
-{% block content %}{% endblock %}        # Определение блока для вставки контента
-{% include "../path/to/partial.njk" %}   # Вставка другого шаблона (партиала)
-{{ variable }}                           # Вывод переменной
-{# Это комментарий #}
-# Комментарий, который не попадет в HTML
-{% set myVar = "значение" %}
-# Установка переменной
-{% if user.loggedIn %}{% endif %}
-# Условные операторы
-{% for item in items %}{% endfor %}
-# Циклы
-{{ macro.myMacro(arg1, arg2) }}
-# Вызов макроса
-{{ site.url }}
-# Доступ к глобальным данным из data/site.json ==================================================================================================== #}
+{% extends "./path/to/layout.njk" %}     -- Наследование макета (должно быть первой строкой)
+{% block content %}{% endblock %}        -- Определение блока для вставки контента
+{% include "../path/to/partial.njk" %}   -- Вставка другого шаблона (партиала)
+{{ variable }}                           -- Вывод переменной
+{# Это комментарий --}                  -- Пример комментария Nunjucks
+{% set myVar = "значение" %}             -- Установка переменной
+{% if user.loggedIn %}{% endif %}        -- Условные операторы
+{% for item in items %}{% endfor %}      -- Циклы
+{{ macro.myMacro(arg1, arg2) }}          -- Вызов макроса
+{{ site.url }}                           -- Доступ к глобальным данным из data/site.json
+====================================================================================================
+#}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -38,23 +37,42 @@ _default.njk (v4.0 - На основе вашего кода)
     <meta name="description" content="{{ description or site.description or 'Описание по умолчанию' }}">
     <meta name="keywords" content="{{ keywords or site.keywords or '' }}">
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    {#
+      Фавикон-теги (<link rel="icon|apple-touch-icon|manifest">, theme-color)
+      в продакшн-HTML инжектит плагин vite-html-asset-inject (см. vite.config.js) —
+      в шаблоне их не дублируем. Для dev-режима оставляем ссылку на перенесённый
+      из legacy/src/img/favicons/ фавикон (в продакшне она НЕ попадает в HTML
+      благодаря site.production, а vite-html-asset-inject перепишет /src/... путь
+      на собранный ассет при необходимости).
+    #}
+    {% if not site.production %}
+      <link rel="icon" href="/src/assets/images/favicons/favicon.svg" type="image/svg+xml">
+    {% endif %}
 
     {# ПОДКЛЮЧАЕМ МЕТА-ТЕГИ ДЛЯ СОЦСЕТЕЙ #}
     {% block social_meta %}
       {% include "../partials/_meta-social.njk" %}
     {% endblock %}
 
-    <script type="module" src="http://localhost:5173/@vite/client"></script>
-    <script type="module" src="/frontend/src/js/app.js"></script>
+    {#
+      Dev-скрипты Vite (HMR-клиент и трансформация модулей) инжектятся
+      автоматически через server.transformIndexHtml. В продакшн-HTML этот
+      тег заменяется на собранный чанк плагином vite-html-asset-inject
+      (см. vite.config.js).
+    #}
+    <script type="module" src="/src/js/app.js"></script>
 
     {% block head %}{% endblock %}
   </head>
   <body class="{% if body_class %}{{ body_class }}{% else %}page__body{% endif %}">
 
-    {% include "../partials/_sprite-inline.njk" %}
+    {# SVG-символы (vite-plugin-svg-sprite) инжектятся в DOM из app.js;
+       пустой <svg> из partials/_sprite-inline.njk в legacy-разметке отсутствовал
+       (спрайт был закомментирован) — include убран как фантомный элемент. #}
 
-    <div class="site-container">
+    {# Класс .out — обёртка из legacy-макета: на ней висит фон всего сайта
+       (bg-all.svg, см. scss/legacy/_common.sass). #}
+    <div class="out">
       {% block content %}{% endblock %}
     </div>
 
