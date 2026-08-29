@@ -577,6 +577,98 @@ FontaineTransform.vite({
 
 ---
 
+# TESTING & CLI ARCHITECTURE CHEATSHEET
+
+> Quick-reference for running tests, where artifacts land, and CLI usage.
+
+## Directory Map
+
+```
+tests/
+├── fixtures/                # Static test inputs (images, templates, mock files)
+│   ├── images/              #   small PNG/JPG fixtures
+│   └── templates/           #   Nunjucks/HTML templates
+│
+├── frontend/                # Frontend logic & Playwright specs
+│   ├── unit/                #   JS/UI unit tests
+│   └── e2e/                 #   Playwright E2E scenarios
+│       ├── picture-transform.spec.js
+│       └── smoke.spec.ts
+│
+├── backend/                 # WordPress / PHP / API tests (structure prepared)
+│   ├── unit/
+│   └── integration/
+│
+├── bundler/                 # Vite plugin & build-output helpers
+│   ├── html-inject.test.js
+│   └── picture-transform.test.js
+│
+└── scripts/                 # CLI tool unit tests (Node `node --test`)
+    ├── compress-images.test.js
+    ├── convert-images.test.js
+    ├── sync-theme.test.js
+    └── config.test.js
+```
+
+The legacy `frontend/tests/` directory has been removed; all Playwright
+specs now live under `tests/frontend/e2e/`.
+
+## Artifact Notice
+
+All test reports and run dumps land under `temp/` and are **gitignored**:
+
+| Output | Path |
+|--------|------|
+| Playwright HTML report | `temp/playwright-report/` |
+| Per-test run dumps | `temp/test-results/` |
+| TinyPNG cache | `temp/.tinypng-cache` |
+| Bundler test scratch | `temp/bundler-*/` |
+
+The Playwright `outputDir` is configured to `temp/test-results` in
+`playwright.config.js`. Nothing pollutes the repo root.
+
+## Test Commands
+
+```bash
+# Script unit tests (Node --test)
+node --test --test-concurrency=1 tests/scripts/*.test.js
+pnpm test:scripts
+
+# Bundler / Vite plugin unit tests
+node --test --test-concurrency=1 tests/bundler/*.test.js
+pnpm test:bundler
+
+# Both Node unit suites at once
+pnpm test:all
+
+# Playwright E2E (requires a built dist/)
+pnpm build
+pnpm playwright test
+```
+
+## CLI Reference
+
+All scripts in `scripts/` support `-h` / `--help` for clean usage output.
+
+| Script | Description | Key flags |
+|--------|-------------|-----------|
+| `scripts/compress-images.js` | TinyPNG cascade + local Sharp fallback | `--force`, `--local`, `--skip`, `--key=<keys>` |
+| `scripts/convert-images.js` | Recursive WebP / AVIF generation | `--force` |
+| `scripts/optimize-svg.js` | SVGO optimization with mtime cache | `--force` |
+| `scripts/generate-favicons.js` | Modern favicon set from `frontend/public/favicon.svg` | — |
+| `scripts/sync-theme.js` | Copy `dist/` contents into WordPress theme | — |
+| `scripts/init-project.js` | Interactive config wizard | `--target=`, `--theme=`, `--pwa=` |
+| `scripts/build-target.js` | Resolve build target from env / config | — |
+
+Run any script with `-h` or `--help`:
+
+```bash
+node scripts/compress-images.js -h
+node scripts/convert-images.js --help
+```
+
+---
+
 # SNIPPETS
 
 > Готовые к копированию сниппеты для использования в проекте.

@@ -29,8 +29,30 @@ import ora from "ora";
 import chalk from "chalk";
 
 import { resolveBuildTarget } from "./build-target.js";
+import { wantsHelp, printHelp } from "./_help.js";
 
 const rootDir = path.resolve(import.meta.dirname, "..");
+
+// ---------------------------------------------------------------------------
+// CLI: -h / --help
+// ---------------------------------------------------------------------------
+
+if (wantsHelp()) {
+  printHelp(
+    "convert-images",
+    "Recursively convert PNG/JPG source images to WebP (always) and AVIF (static mode only).",
+    [
+      ["--force",          "Bypass the convert-images cache and re-process all images."],
+      ["-h, --help",       "Show this help message and exit."],
+    ],
+    [
+      "node scripts/convert-images.js",
+      "node scripts/convert-images.js --force",
+      "BUILD_TARGET=static pnpm build",
+    ],
+  );
+  process.exit(0);
+}
 
 /**
  * Load project.config.json once.

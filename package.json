@@ -17,6 +17,8 @@
     "check": "pnpm lint:code && pnpm format",
     "verify": "pnpm build && pnpm playwright test",
     "test:scripts": "node --test --test-concurrency=1 tests/scripts/*.test.js",
+    "test:bundler": "node --test --test-concurrency=1 tests/bundler/*.test.js",
+    "test:all": "node --test --test-concurrency=1 tests/scripts/*.test.js tests/bundler/*.test.js",
     "test:ui": "pnpm playwright test --ui",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",

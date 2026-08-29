@@ -33,7 +33,6 @@
 import tinify from "tinify";
 import dotenv from "dotenv";
 import { glob } from "glob";
-import { promisify } from "util";
 import { createHash } from "node:crypto";
 import path from "path";
 import fs from "fs";
@@ -44,6 +43,32 @@ import ora from "ora";
 import chalk from "chalk";
 
 import { rootDir } from "./build-target.js";
+import { wantsHelp, printHelp } from "./_help.js";
+
+// ---------------------------------------------------------------------------
+// CLI: -h / --help
+// ---------------------------------------------------------------------------
+
+if (wantsHelp()) {
+  printHelp(
+    "compress-images",
+    "Compress PNG/JPG images via TinyPNG (with cascade key rotation) or a local Sharp/MozJPEG fallback.",
+    [
+      ["--force",            "Bypass the temp/.tinypng-cache (re-process all images)."],
+      ["--local",            "Skip TinyPNG; use local Sharp/MozJPEG compression."],
+      ["--skip",             "Skip image compression entirely (exit cleanly)."],
+      ["--key=<keys>",       "Comma-separated TinyPNG keys to use for this run."],
+      ["-h, --help",         "Show this help message and exit."],
+    ],
+    [
+      "node scripts/compress-images.js",
+      "node scripts/compress-images.js --force",
+      "node scripts/compress-images.js --local",
+      "node scripts/compress-images.js --key=ABC,DEF",
+    ],
+  );
+  process.exit(0);
+}
 
 // ---------------------------------------------------------------------------
 // .env resolution — strictly from rootDir/frontend/.env
@@ -166,6 +191,47 @@ function isRotationWorthyError(err) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Tinify Promise wrappers — preserve `this` context and callback binding.
+//
+// Why explicit wrappers? `util.promisify(tinify.validate)` returns a generic
+// function that does NOT preserve the tinify client's `this`/auth context
+// when called as `promisify(tinify.validate)()`. Wrapping the callback
+// manually guarantees the request goes through tinify's internal client
+// with the active `tinify.key` set.
+// ---------------------------------------------------------------------------
+
+/**
+ * Calls `tinify.validate()` and returns a Promise that resolves on success
+ * or rejects with the underlying error. The callback `this` is bound to
+ * the tinify module so the active API key is correctly applied.
+ */
+function tinifyValidateAsync() {
+  return new Promise((resolve, reject) => {
+    try {
+      tinify.validate((err) => (err ? reject(err) : resolve(true)));
+    } catch (err) {
+      // Synchronous throw (e.g. invalid auth before network) — bubble up
+      reject(err);
+    }
+  });
+}
+
+/**
+ * Calls `tinify.fromFile(path).toFile(outPath)` and returns a Promise.
+ * Preserves the chain's `this` so the active API key carries over.
+ */
+function tinifyCompressFileAsync(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    try {
+      const source = tinify.fromFile(inputPath);
+      source.toFile(outputPath, (err) => (err ? reject(err) : resolve()));
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
 /**
  * Tries each key in order via tinify.validate(). Returns the index of the
  * first key that works, or -1 if none work. Logs a soft warning per failed
@@ -177,7 +243,7 @@ async function findFirstValidKey(keys) {
   for (let i = 0; i < keys.length; i++) {
     try {
       tinify.key = keys[i];
-      await promisify(tinify.validate)();
+      await tinifyValidateAsync();
       spinner.succeed(
         chalk.green(
           `[compress-images] Working API key found (key #${i + 1} of ${keys.length}).`,
@@ -404,8 +470,7 @@ async function compressOneTinypng(imagePath, outputPath, rotator) {
   let lastErr = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const source = tinify.fromFile(imagePath);
-      await promisify(source.toFile).call(source, outputPath);
+      await tinifyCompressFileAsync(imagePath, outputPath);
       return;
     } catch (err) {
       lastErr = err;

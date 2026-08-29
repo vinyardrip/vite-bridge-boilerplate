@@ -34,6 +34,26 @@ import path from "node:path";
 import chalk from "chalk";
 
 import { resolveBuildTarget } from "./build-target.js";
+import { wantsHelp, printHelp } from "./_help.js";
+
+// ---------------------------------------------------------------------------
+// CLI: -h / --help
+// ---------------------------------------------------------------------------
+
+if (wantsHelp()) {
+  printHelp(
+    "generate-favicons",
+    "Generate a minimal modern favicon set from frontend/public/favicon.svg into the build target.",
+    [
+      ["-h, --help",   "Show this help message and exit."],
+    ],
+    [
+      "node scripts/generate-favicons.js",
+      "pnpm favicons:generate",
+    ],
+  );
+  process.exit(0);
+}
 
 const SOURCE = path.resolve(
   import.meta.dirname,

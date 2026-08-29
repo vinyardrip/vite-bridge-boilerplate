@@ -32,6 +32,27 @@ import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 
 import { resolveBuildTarget, rootDir } from "./build-target.js";
+import { wantsHelp, printHelp } from "./_help.js";
+
+// ---------------------------------------------------------------------------
+// CLI: -h / --help
+// ---------------------------------------------------------------------------
+
+if (wantsHelp()) {
+  printHelp(
+    "sync-theme",
+    "Copy dist/ contents (no nested folder) into the configured WordPress theme directory.",
+    [
+      ["-h, --help",   "Show this help message and exit."],
+    ],
+    [
+      "pnpm build",
+      "pnpm sync:theme",
+      "BUILD_TARGET=wordpress pnpm build && pnpm sync:theme",
+    ],
+  );
+  process.exit(0);
+}
 
 const PROJECT_NAME = path.basename(rootDir);
 const THEME_ROOT = path.join(

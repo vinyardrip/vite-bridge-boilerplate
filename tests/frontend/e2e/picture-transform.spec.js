@@ -18,7 +18,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(__dirname, "../..");
+const REPO_ROOT = path.resolve(__dirname, "../../..");
 const DIST_DIR = path.join(REPO_ROOT, "dist");
 const FRONTEND_SRC = path.join(REPO_ROOT, "frontend/src");
 const SRC_IMG = path.join(FRONTEND_SRC, "assets/images/img1.jpg");

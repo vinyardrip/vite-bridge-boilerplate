@@ -21,6 +21,27 @@ import ora from "ora";
 import chalk from "chalk";
 
 import { resolveBuildTarget } from "./build-target.js";
+import { wantsHelp, printHelp } from "./_help.js";
+
+// ---------------------------------------------------------------------------
+// CLI: -h / --help
+// ---------------------------------------------------------------------------
+
+if (wantsHelp()) {
+  printHelp(
+    "optimize-svg",
+    "Optimize color SVG illustrations (preserves fill/stroke) using SVGO with mtime caching.",
+    [
+      ["--force",      "Bypass the SVGO cache and re-process all SVGs."],
+      ["-h, --help",   "Show this help message and exit."],
+    ],
+    [
+      "node scripts/optimize-svg.js",
+      "node scripts/optimize-svg.js --force",
+    ],
+  );
+  process.exit(0);
+}
 
 // --- Конфигурация ---
 const SOURCE_DIR = "frontend/src/assets/svg-images"; // !Папка с исходными цветными SVG
