@@ -56,6 +56,9 @@ const { mode: targetMode } = resolveBuildTarget();
 // correctness, which is the single source of truth.
 const targetKey = targetMode; // e.g. "static" or "cms"
 
+// Master switch: config.compression.imageConvert.enabled (default true).
+const ENABLED = config.compression?.imageConvert?.enabled !== false;
+
 // Resolve source directory: prefer the explicit override in config.targets[target].sourceRoot,
 // otherwise default to frontend/src/assets/
 const targetCfg = config.targets?.[targetKey] ?? {};
@@ -75,8 +78,12 @@ const AVIF_QUALITY = cfg.quality?.avif ?? defaults.avif.quality;
 const GENERATE_WEBP = cfg.webp !== false;
 const GENERATE_AVIF = cfg.avif === true && targetKey === "static";
 
-// Cache file stored at the project root.
-const CACHE_FILE = path.join(rootDir, ".convert-images-cache.json");
+// Cache file stored at the project root. Path can be overridden via
+// project.config.json → compression.imageConvert.cacheFile.
+const CACHE_FILE = path.resolve(
+  rootDir,
+  config.compression?.imageConvert?.cacheFile || ".convert-images-cache.json",
+);
 
 // ---------------------------------------------------------------------------
 // Cache helpers (mtime-based)
@@ -159,6 +166,15 @@ async function convertImage(srcPath) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  if (!ENABLED) {
+    console.log(
+      chalk.gray(
+        "[convert-images] Disabled in project.config.json (compression.imageConvert.enabled=false). Skipping.",
+      ),
+    );
+    return;
+  }
+
   const spinner = ora("[convert-images] Scanning for images...").start();
 
   // Recursively find all raster images under frontend/src/assets/

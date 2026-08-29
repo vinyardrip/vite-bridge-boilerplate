@@ -16,7 +16,7 @@
     "lint:code": "biome lint --write ./frontend/src",
     "check": "pnpm lint:code && pnpm format",
     "verify": "pnpm build && pnpm playwright test",
-    "test:scripts": "node --test tests/scripts/*.test.js",
+    "test:scripts": "node --test --test-concurrency=1 tests/scripts/*.test.js",
     "test:ui": "pnpm playwright test --ui",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",
@@ -25,7 +25,9 @@
     "favicons:generate": "node scripts/generate-favicons.js",
     "images:convert": "node scripts/convert-images.js",
     "images:compress": "node scripts/compress-images.js",
-    "svg:optimize": "node scripts/optimize-svg.js"
+    "svg:optimize": "node scripts/optimize-svg.js",
+    "init:project": "node scripts/init-project.js",
+    "sync:theme": "node scripts/sync-theme.js"
   },
   "type": "module",
   "keywords": [],

@@ -58,7 +58,7 @@ function touchFile(p) {
   fs.utimesSync(p, now, now);
 }
 
-describe("scripts/convert-images.js", () => {
+describe("scripts/convert-images.js", { concurrency: 1 }, () => {
   let originalConfig = null;
   let hadConfig = false;
 

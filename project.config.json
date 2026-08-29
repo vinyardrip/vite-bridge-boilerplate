@@ -2,6 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "projectName": "vite-bridge-boilerplate",
   "version": "0.0.11",
+  "themeSlug": "my-theme",
+  "pwa": true,
+  "compression": {
+    "tinypng": {
+      "enabled": true,
+      "sourceDir": "frontend/src/assets/images",
+      "outputDir": "frontend/src/assets/images-tiny",
+      "cacheFile": "frontend/.tinypng-cache",
+      "envVar": "TINYPNG_API_KEYS"
+    },
+    "imageConvert": {
+      "enabled": true,
+      "cacheFile": ".convert-images-cache.json"
+    }
+  },
   "targets": {
     "static": {
       "description": "Static site build — full image optimization with WebP + AVIF",

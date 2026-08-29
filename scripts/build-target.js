@@ -2,20 +2,47 @@ import path from "node:path";
 import { readFileSync, existsSync } from "node:fs";
 
 export const rootDir = path.resolve(import.meta.dirname, "..");
+const repoProjectName = path.basename(rootDir);
 
-const projectName = path.basename(rootDir);
+/**
+ * Returns the CMS theme slug (folder name under wp-content/themes).
+ * Priority: project.config.json → repo folder name (fallback).
+ */
+function resolveThemeSlug() {
+  try {
+    const cfg = JSON.parse(readFileSync(path.join(rootDir, "project.config.json"), "utf-8"));
+    const slug = (cfg.themeSlug || "").trim();
+    if (slug) return slug;
+  } catch {
+    // ignore
+  }
+  return repoProjectName;
+}
 
-export const TARGET_MAP = {
-  static: path.join(rootDir, "dist"),
-  wordpress: path.join(rootDir, "backend", "wp-content", "themes", projectName, "assets"),
-  wp: path.join(rootDir, "backend", "wp-content", "themes", projectName, "assets"),
-  bitrix: path.join(rootDir, "backend", "local", "templates", projectName, "assets"),
-  drupal: path.join(rootDir, "backend", "web", "themes", "custom", projectName, "assets"),
-};
+/**
+ * Resolves the output directory for a given target key.
+ * CMS targets use project.config.json's `themeSlug` for the theme folder name
+ * (not the raw repo name) so the WordPress theme is named cleanly.
+ */
+function dirForTarget(targetKey, themeSlug) {
+  switch (targetKey) {
+    case "static":
+      return path.join(rootDir, "dist");
+    case "wordpress":
+    case "wp":
+      return path.join(rootDir, "backend", "wp-content", "themes", themeSlug, "assets");
+    case "bitrix":
+      return path.join(rootDir, "backend", "local", "templates", themeSlug, "assets");
+    case "drupal":
+      return path.join(rootDir, "backend", "web", "themes", "custom", themeSlug, "assets");
+    default:
+      return path.join(rootDir, "dist");
+  }
+}
 
 /**
  * Loads and caches project.config.json once per process.
- * @returns {{ target: string, imageProcessing: object }}
+ * @returns {object}
  */
 function loadProjectConfig() {
   try {
@@ -30,6 +57,21 @@ function loadProjectConfig() {
 }
 
 const _config = loadProjectConfig();
+const _themeSlug = resolveThemeSlug();
+
+/**
+ * Static map of well-known targets. CMS targets are resolved dynamically via
+ * `dirForTarget()` using project.config.json's themeSlug.
+ */
+export const TARGET_MAP = {
+  static: dirForTarget("static", _themeSlug),
+  wordpress: dirForTarget("wordpress", _themeSlug),
+  wp: dirForTarget("wp", _themeSlug),
+  bitrix: dirForTarget("bitrix", _themeSlug),
+  drupal: dirForTarget("drupal", _themeSlug),
+};
+
+export { _themeSlug as themeSlug };
 
 /**
  * Resolves the active build target (static/cms) from:
@@ -37,7 +79,7 @@ const _config = loadProjectConfig();
  *  2. project.config.json  → defaults.target
  *  3. package.json        → config.buildTarget
  *
- * @returns {{ mode: string, dir: string, source: string, config: object }}
+ * @returns {{ mode: string, dir: string, source: string, config: object, themeSlug: string }}
  */
 export function resolveBuildTarget() {
   let targetKey = "static";
@@ -80,6 +122,7 @@ export function resolveBuildTarget() {
     dir: TARGET_MAP[targetKey],
     source,
     config: _config,
+    themeSlug: _themeSlug,
   };
 }
 
