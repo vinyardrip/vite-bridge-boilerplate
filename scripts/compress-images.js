@@ -6,24 +6,26 @@
  * TinyPNG-driven image compression with local Sharp/MozJPEG fallback.
  *
  *   1. Resolves .env strictly from rootDir/frontend/.env (NOT process.cwd()).
- *   2. Reads TINYPNG_API_KEYS and validates each key against the TinyPNG API.
- *   3. If no key works, prompts the developer interactively:
+ *   2. Parses TINYPNG_API_KEYS as a comma-separated list (whitespace stripped).
+ *   3. Validates each key sequentially; the first working key becomes the
+ *      "active" key. The script ROTATES to the next key automatically if a
+ *      key's quota is exhausted mid-batch (HTTP 429 or similar).
+ *   4. If NO key in the pool is valid, prompts the developer:
  *        - Enter API Key(s):   prompt for keys, save into frontend/.env, retry
- *        - Use Local Compression: process images via Sharp/MozJPEG (Sharp is already
- *                                 a dev dep, no extra cost)
- *        - Skip:               exit cleanly without errors
- *   4. Stores content-hash cache in temp/.tinypng-cache. Pass --force to bypass.
+ *        - Use Local Compression: process images via Sharp/MozJPEG
+ *        - Skip:               exit cleanly
+ *   5. Stores content-hash cache in temp/.tinypng-cache. Pass --force to bypass.
  *
  * Configuration: project.config.json → compression.tinypng
- *   { enabled, sourceDir, outputDir, envVar, cacheFile, force }
+ *   { enabled, sourceDir, outputDir, envVar, cacheFile }
  *
  * Usage:
  *   pnpm images:compress
  *   node scripts/compress-images.js
  *   node scripts/compress-images.js --force
- *   node scripts/compress-images.js --local        # non-interactive: skip TinyPNG, use Sharp
- *   node scripts/compress-images.js --skip         # non-interactive: skip entirely
- *   node scripts/compress-images.js --key=ABC,DEF  # non-interactive: use these keys
+ *   node scripts/compress-images.js --local    # non-interactive: skip TinyPNG, use Sharp
+ *   node scripts/compress-images.js --skip     # non-interactive: skip entirely
+ *   node scripts/compress-images.js --key=ABC,DEF
  *
  * =================================================================================================
  */
@@ -35,7 +37,7 @@ import { promisify } from "util";
 import { createHash } from "node:crypto";
 import path from "path";
 import fs from "fs";
-import { mkdir, readFile, writeFile, stat, access, copyFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import readline from "node:readline";
 import sharp from "sharp";
 import ora from "ora";
@@ -78,7 +80,6 @@ function resolveTinyPng() {
     envVar: t.envVar || "TINYPNG_API_KEYS",
     sourceDir: t.sourceDir || "frontend/src/assets/images",
     outputDir: t.outputDir || "frontend/src/assets/images-tiny",
-    // Cache is now under temp/ for clean separation from source code.
     cacheFile: t.cacheFile || "temp/.tinypng-cache",
   };
 }
@@ -113,9 +114,154 @@ async function saveCache(cache) {
 }
 
 /** Compute SHA-256 hash of a file's contents. */
-async function hashFile(absPath) {
+export async function hashFile(absPath) {
   const data = await readFile(absPath);
   return createHash("sha256").update(data).digest("hex");
+}
+
+// ---------------------------------------------------------------------------
+// Key parsing — robust comma-separated + whitespace stripping
+// ---------------------------------------------------------------------------
+
+/**
+ * Parses the env var into a clean array of non-empty, trimmed keys.
+ * Always treats the env value as a comma-separated list, never a single key.
+ */
+export function parseApiKeys(rawValue) {
+  if (typeof rawValue !== "string") return [];
+  return rawValue
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => k && k.length > 0);
+}
+
+function getApiKeysNow() {
+  return parseApiKeys(process.env[tinypng.envVar]);
+}
+
+// ---------------------------------------------------------------------------
+// Cascade key rotator
+// ---------------------------------------------------------------------------
+
+/**
+ * Detects whether a TinyPNG error is a quota/auth issue that should trigger
+ * rotation to the next key. The Tinify client throws plain Errors with the
+ * response message attached; quota errors include "429" or "limit" or
+ * "exceed" or "Unauthorized"/"Bad credentials".
+ */
+function isRotationWorthyError(err) {
+  const msg = String(err?.message || err || "").toLowerCase();
+  if (!msg) return false;
+  return (
+    msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("limit") ||
+    msg.includes("exceed") ||
+    msg.includes("unauthorized") ||
+    msg.includes("bad credentials") ||
+    msg.includes("invalid") ||
+    msg.includes("forbidden") ||
+    msg.includes("401") ||
+    msg.includes("403")
+  );
+}
+
+/**
+ * Tries each key in order via tinify.validate(). Returns the index of the
+ * first key that works, or -1 if none work. Logs a soft warning per failed
+ * key so the developer can rotate their key pool.
+ */
+async function findFirstValidKey(keys) {
+  if (keys.length === 0) return -1;
+  const spinner = ora("Validating API keys...").start();
+  for (let i = 0; i < keys.length; i++) {
+    try {
+      tinify.key = keys[i];
+      await promisify(tinify.validate)();
+      spinner.succeed(
+        chalk.green(
+          `[compress-images] Working API key found (key #${i + 1} of ${keys.length}).`,
+        ),
+      );
+      return i;
+    } catch {
+      // try next
+      if (i < keys.length - 1) {
+        spinner.stop();
+        console.log(
+          chalk.yellow(
+            `[compress-images] Key #${i + 1} invalid or limit reached. Trying next key...`,
+          ),
+        );
+        spinner.start("Validating API keys...");
+      }
+    }
+  }
+  spinner.warn(
+    chalk.yellow(
+      "[compress-images] Warning: No valid TinyPNG API keys found.",
+    ),
+  );
+  return -1;
+}
+
+/**
+ * Manages cascade rotation across multiple keys during a single compression
+ * run. If a key's quota is exhausted mid-batch, rotate to the next valid key
+ * without restarting the build.
+ */
+class KeyRotator {
+  /**
+   * @param {string[]} keys
+   * @param {{ onKeyUsed?: (idx: number) => void }} [opts]
+   */
+  constructor(keys, opts = {}) {
+    this.keys = keys.slice();
+    this.currentIndex = -1;
+    this.onKeyUsed = opts.onKeyUsed;
+  }
+
+  hasKeys() {
+    return this.keys.length > 0;
+  }
+
+  currentKey() {
+    return this.currentIndex >= 0 ? this.keys[this.currentIndex] : null;
+  }
+
+  /**
+   * Sets the tinify global to the given key. Returns the key.
+   */
+  _use(idx) {
+    this.currentIndex = idx;
+    tinify.key = this.keys[idx];
+    if (this.onKeyUsed) this.onKeyUsed(idx);
+    return this.keys[idx];
+  }
+
+  /**
+   * Try the next key in the pool. Returns true on success, false if exhausted.
+   */
+  rotateNext() {
+    const next = this.currentIndex + 1;
+    if (next >= this.keys.length) return false;
+    this._use(next);
+    return true;
+  }
+
+  /**
+   * Returns true if the error suggests we should rotate to the next key.
+   */
+  shouldRotate(err) {
+    return isRotationWorthyError(err);
+  }
+
+  /**
+   * Returns the error message describing why rotation is happening.
+   */
+  rotationReason(err) {
+    return String(err?.message || err);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -133,7 +279,7 @@ function getArg(name) {
   return null;
 }
 
-function isYesFlag() {
+function isLocalFlag() {
   return process.argv.includes("--local") || getArg("local") === "true";
 }
 
@@ -195,7 +341,7 @@ async function promptForKey() {
 }
 
 async function saveKeysToFrontendEnv(keys) {
-  // Update or insert TINYPNG_API_KEYS in frontend/.env
+  // Update or insert the env var in frontend/.env
   const lines = fs.existsSync(FRONTEND_ENV)
     ? fs.readFileSync(FRONTEND_ENV, "utf-8").split(/\r?\n/)
     : [];
@@ -211,50 +357,29 @@ async function saveKeysToFrontendEnv(keys) {
   });
   if (!found) newLines.push(`${envVar}=${keys.join(",")}`);
 
-  // Ensure the file ends with a newline
   const finalText = newLines.join("\n") + (newLines.length ? "\n" : "");
   await writeFile(FRONTEND_ENV, finalText, "utf-8");
 }
 
-// ---------------------------------------------------------------------------
-// TinyPNG key validation
-// ---------------------------------------------------------------------------
-
-function getApiKeysNow() {
-  const { envVar } = tinypng;
-  return (process.env[envVar] || "")
-    .split(",")
-    .map((k) => k.trim())
-    .filter((k) => k && k.length > 0);
-}
-
-async function validateAndSetApiKey() {
-  tinypng = resolveTinyPng();
-  const keys = getApiKeysNow();
-  const spinner = ora("Validating API keys...").start();
-  for (const key of keys) {
-    try {
-      tinify.key = key.trim();
-      await promisify(tinify.validate)();
-      spinner.succeed(chalk.green("[compress-images] Working API key found."));
-      return true;
-    } catch {
-      // try next key
-    }
-  }
-  spinner.warn(
-    chalk.yellow(
-      "[compress-images] Warning: No valid TinyPNG API keys found. Skipping image compression.",
-    ),
-  );
-  return false;
-}
-
-function printKeyWarning() {
+function printExhaustedWarning() {
   console.log();
   console.log(
     chalk.yellow(
-      "[compress-images] TinyPNG API key missing or exhausted (Free tier: 500 images/mo per key).",
+      "[compress-images] All provided TinyPNG API keys are invalid or exhausted (Free tier: 500 images/mo per key).",
+    ),
+  );
+  console.log(
+    chalk.yellow(
+      "[compress-images] Get free API keys at: https://tinypng.com/developers",
+    ),
+  );
+}
+
+function printMissingKeyWarning() {
+  console.log();
+  console.log(
+    chalk.yellow(
+      `[compress-images] No API keys found in ${tinypng.envVar} (frontend/.env).`,
     ),
   );
   console.log(
@@ -265,12 +390,39 @@ function printKeyWarning() {
 }
 
 // ---------------------------------------------------------------------------
-// TinyPNG compression path
+// TinyPNG compression path (with mid-batch rotation)
 // ---------------------------------------------------------------------------
 
-async function compressOneTinypng(imagePath, outputPath) {
-  const source = tinify.fromFile(imagePath);
-  await promisify(source.toFile).call(source, outputPath);
+/**
+ * Compresses one image via TinyPNG, using the active key on the rotator.
+ * If the request fails and the rotator has more keys, rotates and retries
+ * exactly once.
+ *
+ * @returns {Promise<void>} rejects on permanent failure.
+ */
+async function compressOneTinypng(imagePath, outputPath, rotator) {
+  let lastErr = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const source = tinify.fromFile(imagePath);
+      await promisify(source.toFile).call(source, outputPath);
+      return;
+    } catch (err) {
+      lastErr = err;
+      if (rotator && rotator.shouldRotate(err) && rotator.rotateNext()) {
+        console.log(
+          chalk.yellow(
+            `[compress-images] Key exhausted mid-batch: ${rotator.rotationReason(err)}. Rotated to next key.`,
+          ),
+        );
+        // retry on next iteration
+      } else {
+        throw err;
+      }
+    }
+  }
+  // unreachable, but for type-safety
+  throw lastErr;
 }
 
 // ---------------------------------------------------------------------------
@@ -278,15 +430,11 @@ async function compressOneTinypng(imagePath, outputPath) {
 // ---------------------------------------------------------------------------
 
 async function compressOneLocal(imagePath, outputPath) {
-  // Sharp's default .jpeg() is libmozjpeg-compatible for re-encoding.
-  // We keep the original extension (jpg → jpg, png → png).
   const ext = path.extname(imagePath).toLowerCase();
   const img = sharp(imagePath, { failOn: "none" });
   if (ext === ".png") {
-    // PNG → re-encode at moderate compression (deflate level)
     await img.png({ compressionLevel: 9, effort: 10 }).toFile(outputPath);
   } else {
-    // JPEG (or jpg) → mozjpeg via sharp's jpeg encoder
     await img
       .jpeg({
         quality: 82,
@@ -302,10 +450,8 @@ async function compressOneLocal(imagePath, outputPath) {
 // Shared processing loop
 // ---------------------------------------------------------------------------
 
-async function processImages({ strategy, cache, force }) {
-  const sourceDirAbs = path.resolve(rootDir, tinypng.sourceDir);
+async function processImages({ strategy, cache, force, rotator }) {
   const outputDirAbs = path.resolve(rootDir, tinypng.outputDir);
-
   const imagePaths = await glob(`${tinypng.sourceDir}/**/*.{png,jpg,jpeg}`);
 
   if (!fs.existsSync(outputDirAbs)) {
@@ -317,6 +463,7 @@ async function processImages({ strategy, cache, force }) {
 
   let processed = 0;
   let skipped = 0;
+  let permanentFailures = 0;
 
   for (const relPath of imagePaths) {
     const absPath = path.resolve(rootDir, relPath);
@@ -328,7 +475,6 @@ async function processImages({ strategy, cache, force }) {
     try {
       hash = await hashFile(absPath);
     } catch {
-      // can't read → skip
       continue;
     }
 
@@ -339,13 +485,14 @@ async function processImages({ strategy, cache, force }) {
 
     try {
       if (strategy === "tinypng") {
-        await compressOneTinypng(absPath, outPath);
+        await compressOneTinypng(absPath, outPath, rotator);
       } else {
         await compressOneLocal(absPath, outPath);
       }
       cache[key] = hash;
       processed++;
     } catch (err) {
+      permanentFailures++;
       spinner.fail(
         chalk.red(
           `[compress-images] Failed to compress ${path.basename(relPath)}: ${err.message || err}`,
@@ -357,7 +504,7 @@ async function processImages({ strategy, cache, force }) {
   await saveCache(cache);
   spinner.stop();
 
-  return { processed, skipped, total: imagePaths.length };
+  return { processed, skipped, total: imagePaths.length, permanentFailures };
 }
 
 // ---------------------------------------------------------------------------
@@ -401,7 +548,109 @@ export function getApiKeys() {
   return getApiKeysNow();
 }
 
-export { loadCache, saveCache, hashFile, loadEnv, getApiKeysNow };
+export {
+  loadCache,
+  saveCache,
+  loadEnv,
+  getApiKeysNow,
+  isRotationWorthyError,
+  findFirstValidKey,
+  KeyRotator,
+};
+
+// ---------------------------------------------------------------------------
+// Strategy resolution (tinypng vs local)
+// ---------------------------------------------------------------------------
+
+/**
+ * Determines the compression strategy:
+ *   - "skip"  → caller should exit cleanly
+ *   - "tinypng" → use cascade rotation
+ *   - "local" → Sharp/MozJPEG fallback
+ *
+ * Side effects: prints warnings / prompts the user, updates process.env.
+ */
+async function resolveStrategy() {
+  // Honor explicit non-interactive flags first
+  if (isSkipFlag()) {
+    console.log(chalk.gray("[compress-images] --skip flag: exiting cleanly."));
+    return "skip";
+  }
+  if (isLocalFlag()) {
+    if (getApiKeysNow().length > 0) {
+      printExhaustedWarning();
+    } else {
+      printMissingKeyWarning();
+    }
+    console.log(
+      chalk.gray(
+        "[compress-images] --local flag: using local Sharp/MozJPEG compression.",
+      ),
+    );
+    return "local";
+  }
+
+  // No keys defined at all → prompt (or fall back to local in CI)
+  const keys = getApiKeysNow();
+  if (keys.length === 0) {
+    printMissingKeyWarning();
+    if (NON_INTERACTIVE) {
+      return "local";
+    }
+    return await promptForStrategyChoice();
+  }
+
+  // Validate keys (cascade); first valid wins
+  const firstValid = await findFirstValidKey(keys);
+  if (firstValid >= 0) {
+    // Active key is now set on tinify
+    return "tinypng";
+  }
+
+  // All keys failed
+  printExhaustedWarning();
+  if (NON_INTERACTIVE) {
+    return "local";
+  }
+  return await promptForStrategyChoice();
+}
+
+async function promptForStrategyChoice() {
+  const choice = await promptForChoice();
+  if (choice === "key") {
+    const newKey = await promptForKey();
+    if (!newKey) {
+      console.log(
+        chalk.yellow(
+          "[compress-images] No key entered. Falling back to local compression.",
+        ),
+      );
+      return "local";
+    }
+    const newKeys = parseApiKeys(newKey);
+    if (newKeys.length === 0) {
+      console.log(
+        chalk.yellow(
+          "[compress-images] No valid keys entered. Falling back to local compression.",
+        ),
+      );
+      return "local";
+    }
+    await saveKeysToFrontendEnv(newKeys);
+    loadEnv();
+    // Retry validation
+    const firstValid = await findFirstValidKey(getApiKeysNow());
+    if (firstValid >= 0) return "tinypng";
+    console.log(
+      chalk.yellow(
+        "[compress-images] Saved keys are not valid. Falling back to local compression.",
+      ),
+    );
+    return "local";
+  }
+  if (choice === "skip") return "skip";
+  return "local";
+}
 
 // ---------------------------------------------------------------------------
 // Main
@@ -423,79 +672,43 @@ async function main() {
   // Inline key (--key=...) bypasses the interactive prompt entirely
   const inlineKey = getInlineKey();
   if (inlineKey) {
-    process.env[tinypng.envVar] = inlineKey;
+    // Use parseApiKeys so a single quoted key still works, but multi-key
+    // strings are split.
+    const parsed = parseApiKeys(inlineKey);
+    process.env[tinypng.envVar] = parsed.join(",");
   }
 
-  // Validate TinyPNG keys
-  const keys = getApiKeysNow();
-  let isValidKey = false;
-  if (keys.length > 0) {
-    isValidKey = await validateAndSetApiKey();
+  const strategy = await resolveStrategy();
+  if (strategy === "skip") {
+    console.log(
+      chalk.gray("[compress-images] Skipping image compression (user choice)."),
+    );
+    return;
   }
 
-  // Determine strategy
-  let strategy = "tinypng";
+  // Build the rotator only when using TinyPNG
+  const rotator =
+    strategy === "tinypng"
+      ? new KeyRotator(getApiKeysNow(), {
+          // The active key was already set by findFirstValidKey in
+          // resolveStrategy(). We mirror that index here.
+          onKeyUsed: () => {},
+        })
+      : null;
 
-  if (!isValidKey) {
-    // Honor explicit flags first
-    if (isSkipFlag()) {
-      console.log(
-        chalk.gray("[compress-images] --skip flag: exiting cleanly."),
-      );
-      return;
-    }
-    if (isYesFlag()) {
-      printKeyWarning();
-      console.log(
-        chalk.gray(
-          "[compress-images] --local flag: using local Sharp/MozJPEG compression.",
-        ),
-      );
-      strategy = "local";
-    } else {
-      printKeyWarning();
-      const choice = await promptForChoice();
-      if (choice === "key") {
-        const newKey = await promptForKey();
-        if (!newKey) {
-          console.log(
-            chalk.yellow(
-              "[compress-images] No key entered. Falling back to local compression.",
-            ),
-          );
-          strategy = "local";
-        } else {
-          const newKeys = newKey.split(",").map((k) => k.trim()).filter(Boolean);
-          await saveKeysToFrontendEnv(newKeys);
-          // Reload env from the file we just wrote
-          loadEnv();
-          // Retry validation
-          isValidKey = await validateAndSetApiKey();
-          if (!isValidKey) {
-            console.log(
-              chalk.yellow(
-                "[compress-images] Saved keys are not valid. Falling back to local compression.",
-              ),
-            );
-            strategy = "local";
-          } else {
-            strategy = "tinypng";
-          }
-        }
-      } else if (choice === "skip") {
-        console.log(
-          chalk.gray("[compress-images] Skipping image compression (user choice)."),
-        );
-        return;
-      } else {
-        strategy = "local";
-      }
-    }
+  // Set the initial active key to the one that already passed validation.
+  // (resolveStrategy() → findFirstValidKey() already set it on the
+  // tinify global; KeyRotator needs to know the index to rotate forward.)
+  if (strategy === "tinypng") {
+    // We don't know which index the validator chose from inside resolveStrategy,
+    // so find it by matching the active tinify.key against our key list.
+    const activeKey = tinify.key;
+    const idx = getApiKeysNow().indexOf(activeKey);
+    if (idx >= 0) rotator.currentIndex = idx;
   }
 
-  // Run the compression loop
   const cache = await loadCache();
-  const result = await processImages({ strategy, cache, force: FORCE });
+  const result = await processImages({ strategy, cache, force: FORCE, rotator });
 
   if (result.total === 0) {
     console.log(
