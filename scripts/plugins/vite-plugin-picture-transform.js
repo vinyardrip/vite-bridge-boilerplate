@@ -200,12 +200,66 @@ function transformHtml(html, imageMap, enableAvif) {
 }
 
 // ---------------------------------------------------------------------------
+// Source-image sibling scanner (for dev mode)
+// ---------------------------------------------------------------------------
+
+/**
+ * In dev mode the dist/ folder doesn't exist yet, so we scan the source
+ * assets directory instead. We check for siblings (foo.webp, foo.avif) for
+ * each image referenced in the HTML. Returns the same Map<string, ...>
+ * shape as `buildImageMap` but keyed by relative path under the Vite root.
+ */
+function buildSourceImageMap(sourceDir) {
+  const map = new Map();
+  if (!fs.existsSync(sourceDir)) return map;
+
+  // Directories to skip when walking the source tree. These are build
+  // outputs (TinyPNG cache, generated webp/avif) that should NOT influence
+  // the picture-transform map.
+  const SKIP_DIRS = new Set(["images-tiny", "node_modules", ".cache"]);
+
+  const walk = (current, relBase) => {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        if (SKIP_DIRS.has(entry.name)) continue;
+        walk(full, relBase ? `${relBase}/${entry.name}` : entry.name);
+        continue;
+      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (![".jpg", ".jpeg", ".png", ".webp", ".avif"].includes(ext)) continue;
+
+      const base = path.parse(entry.name).name; // e.g. "img1"
+      const relPath = relBase ? `${relBase}/${entry.name}` : entry.name;
+      const key = `/${relPath.replace(/\\/g, "/")}`;
+      const normalizedRel = key;
+      // Use the basename (without extension) as the canonical key so all
+      // formats (jpg/webp/avif) of the same image share one entry object.
+      if (!map.has(base)) {
+        map.set(base, { original: null, webp: null, avif: null });
+      }
+      const entry2 = map.get(base);
+      if (ext === ".webp") entry2.webp = normalizedRel;
+      else if (ext === ".avif") entry2.avif = normalizedRel;
+      else entry2.original = normalizedRel;
+      // Also key by the full path for completeness (not currently used)
+      map.set(key, entry2);
+    }
+  };
+
+  walk(sourceDir, "");
+  return map;
+}
+
+// ---------------------------------------------------------------------------
 // Vite plugin
 // ---------------------------------------------------------------------------
 
-export function pictureTransformPlugin({ sourceRoot: _sourceRootOption } = {}) {
+export function pictureTransformPlugin({ sourceRoot: sourceRootOption } = {}) {
   let enableAvif = false;
   let resolvedOutDir = "";
+  let resolvedSourceRoot = "";
+  let isDev = false;
 
   return {
     name: "vite-plugin-picture-transform",
@@ -213,6 +267,7 @@ export function pictureTransformPlugin({ sourceRoot: _sourceRootOption } = {}) {
     configResolved(config) {
       const { mode: targetMode } = resolveBuildTarget();
       enableAvif = targetMode === "static";
+      isDev = config.command === "serve";
 
       const viteRoot = config.root
         ? path.resolve(process.cwd(), config.root)
@@ -220,6 +275,31 @@ export function pictureTransformPlugin({ sourceRoot: _sourceRootOption } = {}) {
       resolvedOutDir = path.isAbsolute(config.build?.outDir ?? "")
         ? config.build.outDir
         : path.resolve(viteRoot, config.build?.outDir ?? "dist");
+      resolvedSourceRoot = sourceRootOption
+        ? path.resolve(process.cwd(), sourceRootOption)
+        : viteRoot;
+    },
+
+    /**
+     * Dev-mode hook. Runs on every HTML page served by Vite's dev server.
+     * Scans the source assets directory for webp/avif siblings of local
+     * images and wraps <img> tags in <picture> on the fly.
+     *
+     * Why this is needed: in dev, the dist/ output directory does not
+     * exist yet, so closeBundle (which runs only at build time) is never
+     * executed. Without this hook, local <img> tags in the browser are
+     * never wrapped in <picture>, and the user only sees the original
+     * jpg/png without avif/webp fallbacks.
+     */
+    transformIndexHtml: {
+      order: "post",
+      handler(html, ctx) {
+        if (!isDev) return html;
+        const sourceAssetsDir = path.join(resolvedSourceRoot, "src/assets");
+        const imageMap = buildSourceImageMap(sourceAssetsDir);
+        if (imageMap.size === 0) return html;
+        return transformHtml(html, imageMap, enableAvif);
+      },
     },
 
     /**
@@ -228,6 +308,8 @@ export function pictureTransformPlugin({ sourceRoot: _sourceRootOption } = {}) {
      * build a map of image base names → hashed output files.
      */
     async closeBundle() {
+      if (isDev) return; // skip in dev
+
       // Build the image map from the output directory
       const imgDir = path.join(resolvedOutDir, "img");
       const imageMap = buildImageMap(imgDir);
