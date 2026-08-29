@@ -9,7 +9,7 @@
       "enabled": true,
       "sourceDir": "frontend/src/assets/images",
       "outputDir": "frontend/src/assets/images-tiny",
-      "cacheFile": "frontend/.tinypng-cache",
+      "cacheFile": "temp/.tinypng-cache",
       "envVar": "TINYPNG_API_KEYS"
     },
     "imageConvert": {

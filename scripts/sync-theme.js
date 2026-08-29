@@ -210,8 +210,11 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(chalk.red("[sync-theme] Error:"));
-  console.error(err);
-  process.exit(1);
-});
+// Only run when invoked as a script, not when imported by tests.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(chalk.red("[sync-theme] Error:"));
+    console.error(err);
+    process.exit(1);
+  });
+}

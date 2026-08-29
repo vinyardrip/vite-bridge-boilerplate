@@ -112,7 +112,7 @@ describe("project.config.json — config wizard + TinyPNG utility", { concurrenc
       enabled: true,
       sourceDir: "frontend/src/assets/images",
       outputDir: "frontend/src/assets/images-tiny",
-      cacheFile: "frontend/.tinypng-cache",
+      cacheFile: "temp/.tinypng-cache",
       envVar: "TINYPNG_API_KEYS",
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
@@ -128,8 +128,13 @@ describe("project.config.json — config wizard + TinyPNG utility", { concurrenc
     assert.strictEqual(tpConfig.envVar, "TINYPNG_API_KEYS");
     assert.strictEqual(tpConfig.sourceDir, "frontend/src/assets/images");
     assert.strictEqual(tpConfig.outputDir, "frontend/src/assets/images-tiny");
-    assert.strictEqual(tpConfig.cacheFile, "frontend/.tinypng-cache");
+    assert.strictEqual(tpConfig.cacheFile, "temp/.tinypng-cache");
     assert.strictEqual(tpConfig.envValue, "key1, key2 ,key3,, ");
+    // .env path is strictly rootDir/frontend/.env (NOT process.cwd())
+    assert.ok(
+      tpConfig.envPath.endsWith("frontend/.env"),
+      `envPath should be <rootDir>/frontend/.env, got ${tpConfig.envPath}`,
+    );
 
     // getApiKeys() should trim + filter empty entries
     const keys = mod.getApiKeys();
