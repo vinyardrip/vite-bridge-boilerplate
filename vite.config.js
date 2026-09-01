@@ -6,6 +6,8 @@ import { rmSync } from "node:fs";
 import postcssSortMediaQueries from "postcss-sort-media-queries";
 import autoprefixer from "autoprefixer";
 
+import { visualizer } from "rollup-plugin-visualizer";
+
 import { resolveBuildTarget } from "./scripts/build-target.js";
 import { getTemplatePlugins } from "./scripts/plugins/templates.js";
 import { getAssetPlugins } from "./scripts/plugins/assets.js";
@@ -53,6 +55,17 @@ export default defineConfig(({ command, mode }) => {
       pictureTransformPlugin({ sourceRoot: path.resolve(projectRoot, "frontend") }),
       htmlAssetInjectPlugin({ sourceRoot: path.resolve(projectRoot, "frontend") }),
       selectiveCleanPlugin(),
+      // Bundle visualizer — emits a stats.html treemap of the production
+      // bundle into <finalOutDir>/stats.html. Build-only so dev never
+      // touches it. gzipSize + brotliSize include the pre-compressed
+      // sizes alongside the raw output for a quick bandwidth sanity check.
+      visualizer({
+        filename: path.join(finalOutDir, "stats.html"),
+        open: false,
+        gzipSize: true,
+        brotliSize: true,
+        template: "treemap",
+      }),
     ],
 
     // Inline PostCSS Configuration

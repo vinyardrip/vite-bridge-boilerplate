@@ -178,8 +178,31 @@ function init(root) {
 
   // =====================================================================
   // 3. Viewport switching
+  //
+  // Implementation notes:
+  //  - When the user selects "Custom…", the number input is revealed and
+  //    auto-focused exactly once (so the cursor lands at the end, ready to
+  //    type a fresh width). We do NOT call .select() on every keystroke
+  //    because that would replace all subsequent characters the user types.
+  //  - We update the iframe width on every "input" event so the developer
+  //    sees the preview resize live as they type. We only mutate
+  //    iframe.style.width and the indicator text — we never touch the
+  //    input element's value, so the cursor and selection are preserved.
+  //  - The Enter key applies the final value and is also useful for
+  //    committing (some browsers re-format the value on Enter).
   // =====================================================================
-  function applyViewport() {
+  function applyCustomWidth() {
+    if (!iframe) return;
+    const px = parseInt(viewportCustom?.value, 10);
+    if (Number.isFinite(px) && px > 0) {
+      iframe.style.width = `${px}px`;
+      if (viewportIndicator) viewportIndicator.textContent = `${px} px`;
+    } else {
+      if (viewportIndicator) viewportIndicator.textContent = "Custom…";
+    }
+  }
+
+  function applyViewport({ initial = false } = {}) {
     if (!iframe) return;
     const value = viewportSelect ? viewportSelect.value : "1440";
     if (value === "100%") {
@@ -187,21 +210,22 @@ function init(root) {
       // container. The iframe wrapper centers it.
       iframe.style.width = "100%";
       if (viewportIndicator) viewportIndicator.textContent = "100%";
+      if (viewportCustom) viewportCustom.hidden = true;
     } else if (value === "custom") {
       if (viewportCustom) {
         viewportCustom.hidden = false;
-        // Auto-focus so the user can type immediately
-        viewportCustom.focus();
-        viewportCustom.select();
+        // Auto-focus the custom input exactly once when entering custom
+        // mode, so the user can type a fresh value. The select() call
+        // pre-selects any pre-existing text so the first keystroke
+        // replaces it (which is the natural "type a new value" intent).
+        // We only do this on the initial transition into custom mode —
+        // we never touch selection on subsequent input events.
+        if (initial) {
+          viewportCustom.focus();
+          viewportCustom.select();
+        }
       }
-      const px = parseInt(viewportCustom?.value, 10);
-      if (Number.isFinite(px) && px > 0) {
-        iframe.style.width = `${px}px`;
-        if (viewportIndicator) viewportIndicator.textContent = `${px} px`;
-      } else {
-        if (viewportIndicator) viewportIndicator.textContent = "Custom…";
-      }
-      return;
+      applyCustomWidth();
     } else {
       if (viewportCustom) viewportCustom.hidden = true;
       iframe.style.width = `${value}px`;
@@ -209,18 +233,27 @@ function init(root) {
     }
   }
 
-  if (viewportSelect) viewportSelect.addEventListener("change", applyViewport);
+  if (viewportSelect) {
+    viewportSelect.addEventListener("change", () => applyViewport({ initial: true }));
+  }
   if (viewportCustom) {
-    viewportCustom.addEventListener("input", applyViewport);
+    // Live preview as the user types — but DO NOT touch cursor / selection
+    // by reading the value, NOT re-setting it. This is the key fix for
+    // the "second character overwrites" bug.
+    viewportCustom.addEventListener("input", applyCustomWidth);
     // Pressing Enter in the custom input also applies
     viewportCustom.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        applyViewport();
+        applyCustomWidth();
+        viewportCustom.blur();
       }
     });
+    // blur/change also commits the value (useful for tabbing out)
+    viewportCustom.addEventListener("change", applyCustomWidth);
+    viewportCustom.addEventListener("blur", applyCustomWidth);
   }
-  applyViewport();
+  applyViewport({ initial: true });
 
   // =====================================================================
   // 4. Font fallback toggle (postMessage to iframe)

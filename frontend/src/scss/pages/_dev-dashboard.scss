@@ -39,6 +39,18 @@
   *::after {
     box-sizing: border-box;
   }
+
+  // Reset top spacing inherited from global / legacy selectors. The
+  // dashboard itself owns the viewport (100vh) so any inherited
+  // padding-top or margin-top on section/header/main would create
+  // a visible gap before our grid header.
+  section,
+  div,
+  header,
+  main {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
 }
 
 // Full-height workspace. html/body are unstyled by us; the dashboard
