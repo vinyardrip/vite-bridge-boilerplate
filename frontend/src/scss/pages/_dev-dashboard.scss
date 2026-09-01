@@ -1,0 +1,391 @@
+/*!
+ * =================================================================================================
+ * _dev-dashboard.scss
+ * =================================================================================================
+ *
+ * Styles exclusively for the dev-dashboard page (dev-dashboard.njk).
+ *
+ * This page is a development-only utility:
+ *   - Renders a sidebar of all available pages
+ *   - Hosts an <iframe> sandbox to preview pages in real-time
+ *   - Provides a viewport switcher for responsive testing
+ *   - Provides a font & fallback inspector to audit typography
+ *
+ * All selectors are scoped under `.page-dev-dashboard` to prevent
+ * styles from leaking out into the iframe preview (which loads the
+ * real production page with its own styles).
+ *
+ * The page is intentionally NOT in `rollupOptions.input` in vite.config.js
+ * so it is dev-only and does not pollute production builds.
+ *
+ * =================================================================================================
+ */
+
+.page-dev-dashboard {
+  // CSS custom properties for the font-fallback switch. The default values
+  // are the actual web-font stacks configured in templates.js. Switching the
+  // font fallback simply overrides these variables, so we don't have to
+  // touch the @font-face declarations themselves.
+  --dev-dash-font-base: "JetBrains Mono", "Courier New", monospace;
+  --dev-dash-font-headings: Oswald, Arial, sans-serif;
+  --dev-dash-font-serif: Spectral, Georgia, serif;
+
+  font-family: var(--dev-dash-font-base);
+  background: #1e1e2e;
+  color: #cdd6f4;
+  min-height: 100vh;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}
+
+.dev-dash {
+  // ----- Layout: header + 3-column body -----
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header"
+    "body";
+  min-height: 100vh;
+}
+
+.dev-dash__header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.875rem 1.25rem;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+
+  h1 {
+    margin: 0;
+    font-family: var(--dev-dash-font-headings);
+    font-size: 1.125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #cdd6f4;
+  }
+
+  &-meta {
+    font-size: 0.75rem;
+    color: #a6adc8;
+    font-family: var(--dev-dash-font-base);
+  }
+}
+
+.dev-dash__body {
+  grid-area: body;
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  min-height: 0; // allow inner scroll containers
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 180px 1fr 280px;
+  }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 60vh auto;
+  }
+}
+
+// ----- Sidebar (page list) -----
+.dev-dash__sidebar {
+  background: #181825;
+  border-right: 1px solid #313244;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+
+  h2 {
+    margin: 0 0 0.5rem;
+    padding: 0 0.5rem;
+    font-family: var(--dev-dash-font-headings);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a6adc8;
+  }
+}
+
+.dev-dash__pages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dev-dash__page-link {
+  display: block;
+  padding: 0.5rem 0.625rem;
+  border-radius: 4px;
+  color: #cdd6f4;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-family: var(--dev-dash-font-base);
+  border-left: 2px solid transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    background: #1e1e2e;
+    color: #f5e0dc;
+  }
+
+  &[aria-current="true"] {
+    background: #313244;
+    color: #f9e2af;
+    border-left-color: #f9e2af;
+  }
+
+  &-slug {
+    display: block;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6c7086;
+    margin-top: 2px;
+  }
+}
+
+// ----- Main viewport (iframe) -----
+.dev-dash__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #11111b;
+}
+
+.dev-dash__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #1e1e2e;
+  border-bottom: 1px solid #313244;
+  flex-wrap: wrap;
+
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #a6adc8;
+    font-family: var(--dev-dash-font-base);
+  }
+
+  select,
+  input[type="text"] {
+    background: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    font-size: 0.75rem;
+    font-family: var(--dev-dash-font-base);
+  }
+}
+
+.dev-dash__viewport-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1.5rem;
+  overflow: auto;
+  background: repeating-linear-gradient(
+    45deg,
+    #181825 0,
+    #181825 12px,
+    #11111b 12px,
+    #11111b 24px
+  );
+}
+
+.dev-dash__viewport {
+  background: #fff;
+  width: 100%;
+  max-width: 100%;
+  min-height: 60vh;
+  border: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: width 0.2s ease;
+}
+
+.dev-dash__viewport-meta {
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  color: #6c7086;
+  text-align: center;
+  font-family: var(--dev-dash-font-base);
+}
+
+// ----- Font inspector -----
+.dev-dash__inspector {
+  background: #181825;
+  border-left: 1px solid #313244;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h2 {
+    margin: 0;
+    font-family: var(--dev-dash-font-headings);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #cdd6f4;
+  }
+
+  h3 {
+    margin: 0.5rem 0 0.25rem;
+    font-family: var(--dev-dash-font-headings);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a6adc8;
+  }
+}
+
+.dev-dash__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #a6adc8;
+  font-family: var(--dev-dash-font-base);
+
+  label {
+    color: #a6adc8;
+    font-weight: 600;
+  }
+
+  select,
+  input {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    padding: 0.375rem 0.5rem;
+    font: inherit;
+    font-size: 0.75rem;
+  }
+}
+
+.dev-dash__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #a6adc8;
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    width: 32px;
+    height: 18px;
+    appearance: none;
+    background: #45475a;
+    border-radius: 9px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin: 0;
+    flex-shrink: 0;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #cdd6f4;
+      transition: transform 0.15s ease;
+    }
+
+    &:checked {
+      background: #f9e2af;
+
+      &::after {
+        transform: translateX(14px);
+      }
+    }
+  }
+}
+
+.dev-dash__sample {
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  // The font-fallback switch toggles these classes on .dev-dash
+  --sample-font-body: var(--dev-dash-font-base);
+  --sample-font-headings: var(--dev-dash-font-headings);
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--sample-font-headings);
+    color: #cdd6f4;
+    margin: 0;
+  }
+
+  p {
+    font-family: var(--sample-font-body);
+    color: #a6adc8;
+    margin: 0;
+  }
+}
+
+.dev-dash__sample-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+
+  .dev-dash__sample-tag {
+    width: 24px;
+    text-align: right;
+    font-size: 0.625rem;
+    color: #6c7086;
+    font-family: var(--dev-dash-font-base);
+    flex-shrink: 0;
+  }
+}
+
+.dev-dash__h1 { font-size: 2rem; font-weight: 700; }
+.dev-dash__h2 { font-size: 1.5rem; font-weight: 700; }
+.dev-dash__h3 { font-size: 1.25rem; font-weight: 700; }
+.dev-dash__h4 { font-size: 1rem; font-weight: 700; }
+.dev-dash__h5 { font-size: 0.875rem; font-weight: 700; }
+.dev-dash__h6 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.dev-dash__symbol-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-family: var(--sample-font-headings);
+
+  span {
+    background: #313244;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    color: #f5e0dc;
+    font-size: 0.875rem;
+  }
+}

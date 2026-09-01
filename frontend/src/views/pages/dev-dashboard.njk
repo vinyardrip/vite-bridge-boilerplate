@@ -1,0 +1,199 @@
+---
+# =================================================================================================
+# dev-dashboard.njk
+# =================================================================================================
+#
+# DEVELOPMENT-ONLY page. Provides:
+#   1. A sidebar listing all available pages in the project
+#   2. An iframe-based sandbox viewer for any page
+#   3. A viewport switcher (Mobile / Tablet / Laptop / Desktop / Full Width)
+#   4. A font & fallback inspector — toggles between the configured web
+#      fonts and the system fallback stack, with a typography sample
+#      (h1–h6, paragraphs, bold/italic, custom symbols) for visual audit
+#      of CLS and metrics alignment.
+#
+# This page is intentionally NOT registered in `rollupOptions.input`
+# (see vite.config.js), so it is served only by the dev server and never
+# ships in the production build. All styles are scoped under
+# `.page-dev-dashboard` to prevent leakage into the iframe preview.
+# =================================================================================================
+title: "Dev Dashboard"
+layout: "layouts/_default.njk"
+body_class: "page-dev-dashboard"
+is_dev_dashboard: true
+---
+{% extends "layouts/_default.njk" %}
+
+{% block content %}
+<div class="dev-dash" data-dev-dashboard>
+  <header class="dev-dash__header">
+    <h1>Dev Dashboard</h1>
+    <span class="dev-dash__header-meta">
+      Local sandbox · {{ site.name or 'Vite Bridge Boilerplate' }}
+    </span>
+  </header>
+
+  <div class="dev-dash__body">
+    {# ============ SIDEBAR: page list ============ #}
+    <nav class="dev-dash__sidebar" aria-label="Pages">
+      <h2>Pages</h2>
+      <ul class="dev-dash__pages" data-page-list>
+        {% for page in [
+          { name: "Home",          path: "/" },
+          { name: "Web Fonts",     path: "/test-fonts.html" }
+        ] %}
+          <li>
+            <a
+              href="#"
+              class="dev-dash__page-link"
+              data-page-link
+              data-src="{{ page.path }}"
+              aria-current="false"
+            >
+              {{ page.name }}
+              <span class="dev-dash__page-link-slug">{{ page.path }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </nav>
+
+    {# ============ MAIN: viewport + iframe ============ #}
+    <section class="dev-dash__main">
+      <div class="dev-dash__toolbar" role="toolbar" aria-label="Viewport controls">
+        <label for="dev-dash-viewport">Viewport:</label>
+        <select id="dev-dash-viewport" data-viewport-select>
+          <option value="375">Mobile — 375px</option>
+          <option value="768">Tablet — 768px</option>
+          <option value="1024">Laptop — 1024px</option>
+          <option value="1440" selected>Desktop — 1440px</option>
+          <option value="100%">Full Width</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <input
+          type="number"
+          min="240"
+          max="3840"
+          step="1"
+          data-viewport-custom
+          placeholder="width in px"
+          hidden
+        />
+        <label>
+          <input type="checkbox" data-fallback-toggle checked />
+          Use system fallback fonts in preview
+        </label>
+        <span class="dev-dash__viewport-meta" data-viewport-meta>1440 px</span>
+      </div>
+
+      <div class="dev-dash__viewport-wrap">
+        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+          <iframe
+            class="dev-dash__viewport"
+            data-preview-iframe
+            src="/"
+            title="Page preview"
+            loading="lazy"
+          ></iframe>
+          <span class="dev-dash__viewport-meta" data-viewport-meta-bottom>1440 px</span>
+        </div>
+      </div>
+    </section>
+
+    {# ============ INSPECTOR: font & fallback audit ============ #}
+    <aside class="dev-dash__inspector" aria-label="Font inspector">
+      <h2>Font &amp; Fallback Inspector</h2>
+
+      <div class="dev-dash__field">
+        <label for="dev-dash-font-stack">Font stack</label>
+        <select id="dev-dash-font-stack" data-font-stack>
+          <option value="web" selected>Web fonts (current build)</option>
+          <option value="fallback">System fallback only</option>
+        </select>
+      </div>
+
+      <div class="dev-dash__field">
+        <label for="dev-dash-base-font">Base font</label>
+        <select id="dev-dash-base-font" data-base-font>
+          <option value="JetBrains Mono">JetBrains Mono</option>
+          <option value="Oswald">Oswald</option>
+          <option value="Spectral">Spectral</option>
+          <option value="Spectral SC">Spectral SC</option>
+          <option value="monospace">monospace</option>
+          <option value="sans-serif">sans-serif</option>
+          <option value="serif">serif</option>
+        </select>
+      </div>
+
+      <label class="dev-dash__toggle">
+        <input type="checkbox" data-bold-italic checked />
+        Show bold &amp; italic
+      </label>
+
+      <h3>Typography sample</h3>
+      <div class="dev-dash__sample" data-typo-sample>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H1</span>
+          <h1 class="dev-dash__h1">The quick brown fox</h1>
+        </div>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H2</span>
+          <h2 class="dev-dash__h2">The quick brown fox</h2>
+        </div>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H3</span>
+          <h3 class="dev-dash__h3">The quick brown fox</h3>
+        </div>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H4</span>
+          <h4 class="dev-dash__h4">The quick brown fox</h4>
+        </div>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H5</span>
+          <h5 class="dev-dash__h5">The quick brown fox</h5>
+        </div>
+        <div class="dev-dash__sample-row">
+          <span class="dev-dash__sample-tag">H6</span>
+          <h6 class="dev-dash__h6">The quick brown fox</h6>
+        </div>
+        <div class="dev-dash__sample-row" data-para-row>
+          <span class="dev-dash__sample-tag">P</span>
+          <p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua. The
+            quick brown fox jumps over the lazy dog 0123456789.
+          </p>
+        </div>
+        <div class="dev-dash__sample-row" data-bold-row>
+          <span class="dev-dash__sample-tag">B</span>
+          <p>
+            <strong>Bold text — sit amet consectetur 0123456789.</strong>
+          </p>
+        </div>
+        <div class="dev-dash__sample-row" data-italic-row>
+          <span class="dev-dash__sample-tag">I</span>
+          <p>
+            <em>Italic text — eiusmod tempor incididunt 0123456789.</em>
+          </p>
+        </div>
+        <h3>Symbols &amp; numbers</h3>
+        <div class="dev-dash__symbol-row">
+          <span>$ € ¥ £</span>
+          <span>1 0 8 6 9</span>
+          <span>! ? . , : ;</span>
+          <span>( ) [ ] { }</span>
+          <span>&amp; * + =</span>
+          <span>" ' `</span>
+          <span>← → ↑ ↓</span>
+          <span>★ ✓ ✗</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+{# Dashboard script — handles page switching, viewport sizing, font
+   fallback toggling. Vanilla JS, no dependencies. Loaded only inside the
+   dev dashboard page (its own JS, not the global app.js). #}
+<script type="module" src="/src/js/modules/dev-dashboard.js"></script>
+{% endblock %}
