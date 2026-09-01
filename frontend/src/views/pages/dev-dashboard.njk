@@ -3,14 +3,19 @@
 # dev-dashboard.njk
 # =================================================================================================
 #
-# DEVELOPMENT-ONLY page. Provides:
-#   1. A sidebar listing all available pages in the project
-#   2. An iframe-based sandbox viewer for any page
-#   3. A viewport switcher (Mobile / Tablet / Laptop / Desktop / Full Width)
-#   4. A font & fallback inspector — toggles between the configured web
-#      fonts and the system fallback stack, with a typography sample
-#      (h1–h6, paragraphs, bold/italic, custom symbols) for visual audit
-#      of CLS and metrics alignment.
+# DEVELOPMENT-ONLY page. Single tabbed sidebar + full-height iframe.
+#
+#   Tab "Pages"        — auto-discovered list of all *.njk pages in
+#                         frontend/src/views/pages/ (excluding dev-dashboard
+#                         itself). Click to load in the iframe.
+#   Tab "Typography"   — font stack toggle, base-font selector, bold/italic
+#                         switch, active-font-family display, and a live
+#                         preview block (H1-H6, P, B, I, symbols).
+#
+#   Toolbar            — viewport preset selector (Mobile / Tablet /
+#                         Laptop / Desktop / Full Width / Custom) with
+#                         a width indicator. Custom input matches the
+#                         dashboard's dark-UI tokens.
 #
 # This page is intentionally NOT registered in `rollupOptions.input`
 # (see vite.config.js), so it is served only by the dev server and never
@@ -34,29 +39,142 @@ is_dev_dashboard: true
   </header>
 
   <div class="dev-dash__body">
-    {# ============ SIDEBAR: page list ============ #}
-    <nav class="dev-dash__sidebar" aria-label="Pages">
-      <h2>Pages</h2>
-      <ul class="dev-dash__pages" data-page-list>
-        {% for page in [
-          { name: "Home",          path: "/" },
-          { name: "Web Fonts",     path: "/test-fonts.html" }
-        ] %}
-          <li>
-            <a
-              href="#"
-              class="dev-dash__page-link"
-              data-page-link
-              data-src="{{ page.path }}"
-              aria-current="false"
-            >
-              {{ page.name }}
-              <span class="dev-dash__page-link-slug">{{ page.path }}</span>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    </nav>
+    {# ============ UNIFIED LEFT SIDEBAR (tabbed) ============ #}
+    <aside class="dev-dash__sidebar" aria-label="Tools">
+      <div class="dev-dash__tabs" role="tablist">
+        <button
+          type="button"
+          class="dev-dash__tab"
+          role="tab"
+          data-tab="pages"
+          aria-selected="true"
+          aria-controls="dev-dash-panel-pages"
+        >Pages</button>
+        <button
+          type="button"
+          class="dev-dash__tab"
+          role="tab"
+          data-tab="typography"
+          aria-selected="false"
+          aria-controls="dev-dash-panel-typography"
+        >Typography &amp; Fonts</button>
+      </div>
+
+      <div class="dev-dash__panels">
+        {# ---------- Tab: Pages ---------- #}
+        <section
+          class="dev-dash__panel"
+          id="dev-dash-panel-pages"
+          data-panel="pages"
+          role="tabpanel"
+        >
+          <ul class="dev-dash__pages" data-page-list aria-label="Available pages"></ul>
+          <p class="dev-dash__pages-empty" data-pages-empty hidden>
+            No pages discovered in <code>src/views/pages/</code>.
+          </p>
+        </section>
+
+        {# ---------- Tab: Typography ---------- #}
+        <section
+          class="dev-dash__panel"
+          id="dev-dash-panel-typography"
+          data-panel="typography"
+          role="tabpanel"
+          hidden
+        >
+          <div class="dev-dash__field">
+            <label for="dev-dash-font-stack">Font stack</label>
+            <select id="dev-dash-font-stack" data-font-stack>
+              <option value="web" selected>Web fonts (current build)</option>
+              <option value="fallback">System fallback only</option>
+            </select>
+          </div>
+
+          <div class="dev-dash__field">
+            <label for="dev-dash-base-font">Base font</label>
+            <select id="dev-dash-base-font" data-base-font>
+              <option value="JetBrains Mono">JetBrains Mono</option>
+              <option value="Oswald">Oswald</option>
+              <option value="Spectral">Spectral</option>
+              <option value="Spectral SC">Spectral SC</option>
+              <option value="monospace">monospace</option>
+              <option value="sans-serif">sans-serif</option>
+              <option value="serif">serif</option>
+            </select>
+          </div>
+
+          <label class="dev-dash__toggle">
+            <input type="checkbox" data-bold-italic checked />
+            Show bold &amp; italic rows
+          </label>
+
+          <div class="dev-dash__active-font" data-active-font aria-live="polite">
+            <span class="dev-dash__active-font-label">Active font:</span>
+            <code data-active-font-name>JetBrains Mono</code>
+            <span class="dev-dash__active-font-hint" data-active-font-hint>Web fonts</span>
+          </div>
+
+          <h3 class="dev-dash__subhead">Typography sample</h3>
+          <div class="dev-dash__sample" data-typo-sample>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H1</span>
+              <h1 class="dev-dash__h1">The quick brown fox</h1>
+            </div>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H2</span>
+              <h2 class="dev-dash__h2">The quick brown fox</h2>
+            </div>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H3</span>
+              <h3 class="dev-dash__h3">The quick brown fox</h3>
+            </div>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H4</span>
+              <h4 class="dev-dash__h4">The quick brown fox</h4>
+            </div>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H5</span>
+              <h5 class="dev-dash__h5">The quick brown fox</h5>
+            </div>
+            <div class="dev-dash__sample-row">
+              <span class="dev-dash__sample-tag">H6</span>
+              <h6 class="dev-dash__h6">The quick brown fox</h6>
+            </div>
+            <div class="dev-dash__sample-row" data-para-row>
+              <span class="dev-dash__sample-tag">P</span>
+              <p>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua. The
+                quick brown fox jumps over the lazy dog 0123456789.
+              </p>
+            </div>
+            <div class="dev-dash__sample-row" data-bold-row>
+              <span class="dev-dash__sample-tag">B</span>
+              <p>
+                <strong>Bold text — sit amet consectetur 0123456789.</strong>
+              </p>
+            </div>
+            <div class="dev-dash__sample-row" data-italic-row>
+              <span class="dev-dash__sample-tag">I</span>
+              <p>
+                <em>Italic text — eiusmod tempor incididunt 0123456789.</em>
+              </p>
+            </div>
+            <h3 class="dev-dash__subhead dev-dash__subhead--small">Symbols &amp; numbers</h3>
+            <div class="dev-dash__symbol-row">
+              <span>$ € ¥ £</span>
+              <span>1 0 8 6 9</span>
+              <span>! ? . , : ;</span>
+              <span>( ) [ ] { }</span>
+              <span>&amp; * + =</span>
+              <span>" ' `</span>
+              <span>← → ↑ ↓</span>
+              <span>★ ✓ ✗</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
 
     {# ============ MAIN: viewport + iframe ============ #}
     <section class="dev-dash__main">
@@ -76,18 +194,19 @@ is_dev_dashboard: true
           max="3840"
           step="1"
           data-viewport-custom
-          placeholder="width in px"
+          class="dev-dash__custom-input"
+          placeholder="px"
           hidden
         />
-        <label>
+        <span class="dev-dash__viewport-indicator" data-viewport-indicator>1440 px</span>
+        <label class="dev-dash__toggle dev-dash__toggle--inline">
           <input type="checkbox" data-fallback-toggle checked />
-          Use system fallback fonts in preview
+          <span>Use system fallback fonts in preview</span>
         </label>
-        <span class="dev-dash__viewport-meta" data-viewport-meta>1440 px</span>
       </div>
 
-      <div class="dev-dash__viewport-wrap">
-        <div style="display:flex; flex-direction:column; align-items:center; width:100%;">
+      <div class="dev-dash__viewport-wrap" data-viewport-wrap>
+        <div class="dev-dash__viewport-frame">
           <iframe
             class="dev-dash__viewport"
             data-preview-iframe
@@ -95,105 +214,11 @@ is_dev_dashboard: true
             title="Page preview"
             loading="lazy"
           ></iframe>
-          <span class="dev-dash__viewport-meta" data-viewport-meta-bottom>1440 px</span>
         </div>
       </div>
     </section>
-
-    {# ============ INSPECTOR: font & fallback audit ============ #}
-    <aside class="dev-dash__inspector" aria-label="Font inspector">
-      <h2>Font &amp; Fallback Inspector</h2>
-
-      <div class="dev-dash__field">
-        <label for="dev-dash-font-stack">Font stack</label>
-        <select id="dev-dash-font-stack" data-font-stack>
-          <option value="web" selected>Web fonts (current build)</option>
-          <option value="fallback">System fallback only</option>
-        </select>
-      </div>
-
-      <div class="dev-dash__field">
-        <label for="dev-dash-base-font">Base font</label>
-        <select id="dev-dash-base-font" data-base-font>
-          <option value="JetBrains Mono">JetBrains Mono</option>
-          <option value="Oswald">Oswald</option>
-          <option value="Spectral">Spectral</option>
-          <option value="Spectral SC">Spectral SC</option>
-          <option value="monospace">monospace</option>
-          <option value="sans-serif">sans-serif</option>
-          <option value="serif">serif</option>
-        </select>
-      </div>
-
-      <label class="dev-dash__toggle">
-        <input type="checkbox" data-bold-italic checked />
-        Show bold &amp; italic
-      </label>
-
-      <h3>Typography sample</h3>
-      <div class="dev-dash__sample" data-typo-sample>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H1</span>
-          <h1 class="dev-dash__h1">The quick brown fox</h1>
-        </div>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H2</span>
-          <h2 class="dev-dash__h2">The quick brown fox</h2>
-        </div>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H3</span>
-          <h3 class="dev-dash__h3">The quick brown fox</h3>
-        </div>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H4</span>
-          <h4 class="dev-dash__h4">The quick brown fox</h4>
-        </div>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H5</span>
-          <h5 class="dev-dash__h5">The quick brown fox</h5>
-        </div>
-        <div class="dev-dash__sample-row">
-          <span class="dev-dash__sample-tag">H6</span>
-          <h6 class="dev-dash__h6">The quick brown fox</h6>
-        </div>
-        <div class="dev-dash__sample-row" data-para-row>
-          <span class="dev-dash__sample-tag">P</span>
-          <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. The
-            quick brown fox jumps over the lazy dog 0123456789.
-          </p>
-        </div>
-        <div class="dev-dash__sample-row" data-bold-row>
-          <span class="dev-dash__sample-tag">B</span>
-          <p>
-            <strong>Bold text — sit amet consectetur 0123456789.</strong>
-          </p>
-        </div>
-        <div class="dev-dash__sample-row" data-italic-row>
-          <span class="dev-dash__sample-tag">I</span>
-          <p>
-            <em>Italic text — eiusmod tempor incididunt 0123456789.</em>
-          </p>
-        </div>
-        <h3>Symbols &amp; numbers</h3>
-        <div class="dev-dash__symbol-row">
-          <span>$ € ¥ £</span>
-          <span>1 0 8 6 9</span>
-          <span>! ? . , : ;</span>
-          <span>( ) [ ] { }</span>
-          <span>&amp; * + =</span>
-          <span>" ' `</span>
-          <span>← → ↑ ↓</span>
-          <span>★ ✓ ✗</span>
-        </div>
-      </div>
-    </aside>
   </div>
 </div>
 
-{# Dashboard script — handles page switching, viewport sizing, font
-   fallback toggling. Vanilla JS, no dependencies. Loaded only inside the
-   dev dashboard page (its own JS, not the global app.js). #}
 <script type="module" src="/src/js/modules/dev-dashboard.js"></script>
 {% endblock %}
