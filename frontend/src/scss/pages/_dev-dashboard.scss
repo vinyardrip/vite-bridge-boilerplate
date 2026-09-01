@@ -40,16 +40,14 @@
     box-sizing: border-box;
   }
 
-  // Reset top spacing inherited from global / legacy selectors. The
-  // dashboard itself owns the viewport (100vh) so any inherited
-  // padding-top or margin-top on section/header/main would create
-  // a visible gap before our grid header.
-  section,
-  div,
-  header,
-  main {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
+  // Reset top spacing ONLY on the direct top-level <section> of the
+  // dashboard's body. This is a narrowly-scoped reset (body > section),
+  // NOT a blanket !important override on every section/div/header/main.
+  // The header itself keeps its proper padding so the title and meta
+  // line up cleanly.
+  body.page-dev-dashboard > section {
+    padding-top: 0;
+    margin-top: 0;
   }
 }
 
@@ -102,10 +100,18 @@
 }
 
 // ----- Sidebar (tabbed) -----
+// Fixed-width left sidebar. The flex-shrink: 0 + explicit width +
+// min-width combination guarantees the sidebar is exactly 280px wide in
+// the row layout of .dev-dash__body, regardless of content. Tab panels
+// inside .dev-dash__panels are then constrained to that 280px width.
 .dev-dash__sidebar {
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0; // allow panels to scroll inside the flex parent
+  height: 100%;
+  overflow-y: auto;
   background: #181825;
   border-right: 1px solid #313244;
 }
