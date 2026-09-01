@@ -92,11 +92,27 @@ export default defineConfig(({ command, mode }) => {
       manifest: true,
       sourcemap: true,
       rollupOptions: {
-        input: {
-          index: path.resolve(projectRoot, "frontend/src/views/pages/index.njk"),
-          "test-fonts": path.resolve(projectRoot, "frontend/src/views/pages/test-fonts.njk"),
-          app: path.resolve(projectRoot, "frontend/src/js/app.js"),
-        },
+        // Entrypoints included in the production bundle.
+        //   - `index`    — the main landing page (always built)
+        //   - `app`      — the global JS entry (always built)
+        // Dev-only pages (`test-fonts`, `dev-dashboard`) are deliberately
+        // excluded here. They are served by `vite-plugin-njk-frontmatter`'s
+        // dev-server middleware in `pnpm dev` but never reach the
+        // production output, so the shipped bundle stays free of internal
+        // debugging / diagnostic tools.
+        input: isServe
+          ? {
+              index: path.resolve(projectRoot, "frontend/src/views/pages/index.njk"),
+              "test-fonts": path.resolve(
+                projectRoot,
+                "frontend/src/views/pages/test-fonts.njk",
+              ),
+              app: path.resolve(projectRoot, "frontend/src/js/app.js"),
+            }
+          : {
+              index: path.resolve(projectRoot, "frontend/src/views/pages/index.njk"),
+              app: path.resolve(projectRoot, "frontend/src/js/app.js"),
+            },
         output: {
           entryFileNames: "js/[name].[hash].js",
           chunkFileNames: "js/chunk.[hash].js",
