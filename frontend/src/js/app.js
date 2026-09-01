@@ -12,20 +12,11 @@
 // собрать и внедрить CSS в страницу.
 import '../scss/app.scss';
 
-// 2. Inline webp/avif detector — runs before DOMContentLoaded to add
-// .webp / .avif classes to <html> so CSS background-image mixins work.
-(function () {
-  const html = document.documentElement;
-  const img = new Image();
-  img.onload = function () {
-    if (img.width > 0 && img.height > 0) html.classList.add('webp');
-  };
-  img.onerror = function () {
-    // WebP not supported — browser will fall back to original images
-  };
-  img.src =
-    'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvAQAAAAfQ//73v/+BiOh/AAA=';
-})();
+// 2. Modern image-format detector — runs immediately on import (no
+// DOMContentLoaded wait) and adds `.webp` / `.avif` classes to <html> so
+// CSS background-image mixins such as `@include bg-responsive(...)` can
+// serve the right format per browser. See ./modules/detect-formats.js.
+import './modules/detect-formats.js';
 /*!
  * =================================================================================================
  * !ВАЖНО: СКРИПТЫ ТОЛЬКО ДЛЯ РАЗРАБОТКИ
