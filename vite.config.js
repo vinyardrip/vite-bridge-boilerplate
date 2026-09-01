@@ -117,20 +117,29 @@ export default defineConfig(({ command, mode }) => {
           entryFileNames: "js/[name].[hash].js",
           chunkFileNames: "js/chunk.[hash].js",
           assetFileNames: (assetInfo) => {
+            // All emitted asset URLs are RELATIVE to the final build target
+            // (finalOutDir, typically backend/wp-content/themes/<slug>/assets/).
+            // We deliberately do NOT use a leading "assets/" prefix here so
+            // that no nested /assets/assets/ subfolder is created. The
+            // custom function below routes every supported type into a
+            // well-known subdirectory (css/, js/, img/, fonts/) and falls
+            // back to the target root for anything else.
             const name =
               assetInfo.fileName ||
               assetInfo.name ||
               (Array.isArray(assetInfo.names) ? assetInfo.names[0] : "") ||
               "";
-            if (!name) return "assets/[name].[hash][extname]";
-            const extType = name.split(".").pop();
-            if (!extType) return "[name].[hash][extname]";
+            const extType = name.split(".").pop().toLowerCase();
             if (/css/i.test(extType)) return "css/app.[hash].css";
             if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType))
               return "img/[name].[hash][extname]";
             if (/woff|woff2|eot|ttf|otf/i.test(extType))
               return "fonts/[name].[hash][extname]";
-            return "[name].[hash][extname]";
+            // Fallback: emit at the target root (not under an "assets/"
+            // subfolder). The leading "./" prefix tells Rollup the path is
+            // already relative.
+            if (name) return "[name].[hash][extname]";
+            return "asset.[hash][extname]";
           },
           manualChunks(id) {
             if (id.includes("node_modules")) return "vendor";
