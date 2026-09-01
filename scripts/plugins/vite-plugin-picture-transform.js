@@ -44,9 +44,13 @@ function isTransformableSrc(src) {
 /**
  * Scans a directory for image files and builds a map:
  *   baseName (no ext) → { webp?: string, avif?: string, original?: string }
- * where each value is the relative path from the directory root.
+ * where each value is the path as it should appear in the <source srcset>
+ * attribute, RELATIVE TO the emitted HTML file. The HTML file sits at the
+ * root of the build output, so paths must include the "./" prefix to be
+ * resolved correctly by the browser.
  *
- * @param {string} dir - absolute directory to scan (recursive)
+ * @param {string} dir - absolute directory to scan (recursive, typically the
+ *                       output img/ directory)
  * @returns {Map<string, { webp?: string, avif?: string, original?: string }>}
  */
 function buildImageMap(dir) {
@@ -73,11 +77,18 @@ function buildImageMap(dir) {
       // file's location (which is at the out root, not in img/).
       const outDir = path.dirname(dir); // parent of img/
       const rel = path.relative(outDir, full).replace(/\\/g, "/");
+      // Prefix with "./" so the HTML resolves the path correctly. Without
+      // this, browsers resolve the path relative to the current document's
+      // URL, but many build pipelines emit HTML files that need explicit
+      // relative URLs to avoid breaking under sub-paths.
+      const prefixed = rel.startsWith("./") || rel.startsWith("/")
+        ? rel
+        : `./${rel}`;
       if (!map.has(base)) map.set(base, {});
       const entry2 = map.get(base);
-      if (ext === ".webp") entry2.webp = rel;
-      else if (ext === ".avif") entry2.avif = rel;
-      else entry2.original = rel;
+      if (ext === ".webp") entry2.webp = prefixed;
+      else if (ext === ".avif") entry2.avif = prefixed;
+      else entry2.original = prefixed;
     }
   };
 
@@ -86,7 +97,19 @@ function buildImageMap(dir) {
 }
 
 /**
- * Builds a <picture> element from the original <img> tag and hashed output paths.
+ * Builds a <picture> element from the original <img> tag and the source
+ * (or hashed output) paths to its webp/avif siblings.
+ *
+ * The paths in `webpFile` / `avifFile` may be:
+ *  - dev mode:    absolute paths like "/src/assets/images/img1.webp"
+ *  - build mode:  relative-from-html paths like "img/img1.feab7a40.webp"
+ *
+ * The function uses each path verbatim in the <source srcset> — no "./"
+ * prefix is added, so paths like ".//images/img1.webp" never appear.
+ *
+ * The original <img> `src` attribute is preserved as-is (preserving the
+ * .jpg/.png fallback). The browser will use the .avif/.webp <source> if
+ * supported, and fall back to the original image otherwise.
  */
 function buildPicture(tag, webpFile, avifFile, enableAvif) {
   const attrs = new Map();
@@ -98,16 +121,17 @@ function buildPicture(tag, webpFile, avifFile, enableAvif) {
 
   attrs.delete("srcset");
   attrs.delete("sizes");
+  // DO NOT overwrite the original src — preserve the .jpg/.png fallback
+  // for browsers that don't support <picture>.
 
   const sources = [];
   if (enableAvif && avifFile) {
-    sources.push(`  <source type="image/avif" srcset="./${avifFile}">`);
+    sources.push(`  <source type="image/avif" srcset="${avifFile}">`);
   }
   if (webpFile) {
-    sources.push(`  <source type="image/webp" srcset="./${webpFile}">`);
+    sources.push(`  <source type="image/webp" srcset="${webpFile}">`);
   }
 
-  if (webpFile) attrs.set("src", `./${webpFile}`);
   const fallbackAttrs = [...attrs.entries()].map(([k, v]) => `${k}="${v}"`).join(" ");
 
   return `<picture>\n${sources.join("\n")}\n  <img ${fallbackAttrs}>\n</picture>`;
@@ -230,9 +254,11 @@ function buildSourceImageMap(sourceDir) {
       if (![".jpg", ".jpeg", ".png", ".webp", ".avif"].includes(ext)) continue;
 
       const base = path.parse(entry.name).name; // e.g. "img1"
+      // Store paths as a /src/assets/...-style absolute path so the dev
+      // server can serve them directly. Do NOT prepend "./" here — that
+      // was producing broken output like ".//images/img1.webp".
       const relPath = relBase ? `${relBase}/${entry.name}` : entry.name;
-      const key = `/${relPath.replace(/\\/g, "/")}`;
-      const normalizedRel = key;
+      const normalizedRel = `/src/assets/${relPath}`.replace(/\\/g, "/");
       // Use the basename (without extension) as the canonical key so all
       // formats (jpg/webp/avif) of the same image share one entry object.
       if (!map.has(base)) {
@@ -243,7 +269,7 @@ function buildSourceImageMap(sourceDir) {
       else if (ext === ".avif") entry2.avif = normalizedRel;
       else entry2.original = normalizedRel;
       // Also key by the full path for completeness (not currently used)
-      map.set(key, entry2);
+      map.set("/src/assets/" + relPath.replace(/\\/g, "/"), entry2);
     }
   };
 
