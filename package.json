@@ -1,6 +1,6 @@
 {
   "name": "vite-bridge-boilerplate",
-  "version": "0.0.11",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -89,8 +89,18 @@
     "plugins": {
       "posthtml-responsive-images": {
         "formats": [
-          { "format": "avif", "options": { "quality": 75 } },
-          { "format": "webp", "options": { "quality": 75 } }
+          {
+            "format": "avif",
+            "options": {
+              "quality": 75
+            }
+          },
+          {
+            "format": "webp",
+            "options": {
+              "quality": 75
+            }
+          }
         ],
         "publicPath": "/assets/images/",
         "sharp": {}
