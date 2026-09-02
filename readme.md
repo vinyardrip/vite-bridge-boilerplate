@@ -941,29 +941,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
 ```njk
 {# Viber #}
-<a href="viber://chat?number=%2B375296664690" class="message">
+<a href="viber://chat?number=%2B375291234567" class="message">
   {{ ui.icon('viber') }}
 </a>
 
 {# Telegram #}
-<a href="https://t.me/dmitriev_partners" class="message">
+<a href="https://t.me/telegram_chat" class="message">
   {{ ui.icon('tg') }}
 </a>
 
 {# WhatsApp #}
-<a href="https://wa.me/375447732833" class="message">
+<a href="https://wa.me/375291234567" class="message">
   {{ ui.icon('whats') }}
 </a>
 
 {# Email #}
-<a href="mailto:info@kdmitriev.by" class="message">
+<a href="mailto:info@domain.com" class="message">
   {{ ui.icon('mail') }}
 </a>
 
 {# Телефон #}
-<a href="tel:+375296664690" class="header__phone phone nowrap">
+<a href="tel:+375291234567" class="header__phone phone nowrap">
   {{ ui.icon('phone') }}
-  <span>+375 29 666 46 90</span>
+  <span>+375 29 123 45 67</span>
 </a>
 ```
 
