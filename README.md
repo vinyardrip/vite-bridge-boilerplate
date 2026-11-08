@@ -18,9 +18,27 @@
 
 ## Требования
 
+**⚠️ Node.js LTS (v20 или v22) — строго обязательно.** На «свежих» не-LTS
+версиях (например, v24) нет пребилдов нативных модулей (sharp и др.) —
+`pnpm install` падает в компиляцию через node-gyp и обрывается с ошибкой
+сборки. Проверка встроена в установку: `preinstall`-скрипт
+`scripts/check-node.js` читает `process.version` и на не-LTS Node
+прерывает `pnpm install` красным баннером с инструкцией. Исправление:
+
+```bash
+mise use node@22   # переключить проект на LTS и прописать в .tool-versions
+pnpm install       # повторить установку
+```
+
+Если на машине есть **системный libvips** (пакет `libvips` в репозитории
+дистрибутива): не возвращайте sharp в `onlyBuiltDependencies` — его
+install-скрипт увидит системный libvips и уйдет в сборку из исходников,
+похоронив `pnpm install`. Пребилды sharp работают без этого скрипта
+(подробности — комментарий в `pnpm-workspace.yaml`).
+
 - [Docker](https://docs.docker.com/get-docker/) — среда контейнеров для локального WordPress-окружения.
 - [DDEV](https://ddev.readthedocs.io/en/stable/) — управление бэкенд-окружением в `backend/` (`ddev start`, `ddev wp ...`).
-- [mise](https://mise.jdx.dev/) (версии node/pnpm берутся из `.tool-versions`)
+- [mise](https://mise.jdx.dev/) (версии node/pnpm берутся из `.tool-versions`; проект — Node 22 LTS)
 - rsync (для `sync:theme`)
 - DPX (опционально) — надстройка над DDEV (`~/.local/bin/dpx`): создание проектов (`dpx new-wp`), публичные туннели, `db pull` с продакшена.
 - CK — Context Keeper (опционально, `~/.local/bin/ck`) — «внешняя память» разработчика: задачи и контекст сессий (папка `.ck/` в корне репозитория).

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "preinstall": "node scripts/check-node.js",
     "dev": "vite",
     "full": "concurrently -n \"VITE,DDEV\" -c \"blue,green\" \"pnpm dev\" \"echo 'Start DDEV manually'\"",
     "build": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build",
@@ -71,11 +72,6 @@
     "vituum": "^2.0.2"
   },
   "packageManager": "pnpm@10.19.0",
-  "pnpm": {
-    "overrides": {
-      "sharp": "0.34.4"
-    }
-  },
   "dependencies": {
     "inputmask": "^5.0.9",
     "swiper": "^12.0.3"
