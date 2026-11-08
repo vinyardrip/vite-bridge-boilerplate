@@ -140,6 +140,34 @@ ddev wp theme activate my-theme
 - Полезные команды: `ddev describe` (URL и порты), `ddev wp ...` (WP-CLI),
   `ddev ssh`, `ddev logs`, `ddev poweroff` (остановить все проекты).
 
+### DPX — обёртка над DDEV
+
+`dpx` (опционально, `~/.local/bin/dpx`) умеет выполнять любые DDEV-команды за вас:
+внутри папки проекта команда уходит напрямую в DDEV, вне проектов dpx показывает
+интерактивное меню выбора проекта.
+
+```bash
+cd backend
+dpx ddev restart            # то же, что ddev restart
+dpx ddev wp rewrite flush   # WP-CLI через обёртку (сброс ЧПУ)
+dpx ddev logs -f            # логи с любыми флагами DDEV
+
+dpx list                    # проекты, зарегистрированные в dpx (metadata ~/.config/dpx/projects.json)
+dpx info                    # отчет: окружение, зависимости и запущенные DDEV-проекты
+```
+
+Нюансы:
+
+- `dpx` определяет проект по наличию `.ddev` в текущей папке — команды
+  выполняются из `backend/`, из корня репозитория dpx проект не видит
+  (`.ddev/` лежит в `backend/`).
+- `dpx list` показывает только проекты, созданные через dpx; проект
+  `boiler-vite` создавался `ddev config` напрямую, поэтому его нет в этом
+  списке — его статус виден в `dpx info` и обычном `ddev list`.
+
+Остальные возможности dpx (создание проектов `dpx new-wp`, публичные туннели
+`dpx tunnel`, `db pull` с продакшена, бэкапы `dpx site backup`) — см. `dpx --help`.
+
 Тема лежит в `backend/wp-content/themes/my-theme/`. `functions.php` — только
 точка входа: он ничего не содержит, кроме `require_once` модулей из `inc/`.
 
@@ -151,7 +179,7 @@ backend/wp-content/themes/my-theme/
 └── inc/
     ├── theme-support.php      # add_theme_support, register_nav_menus
     ├── enqueue-assets.php     # get_asset() + подключение CSS/JS из manifest.json
-    └── custom-post-types.php  # CPT и таксономии (заглушка — логику ведет владелец проекта)
+    └── custom-post-types.php  # CPT и таксономии (первый CPT: Портфолио)
 ```
 
 Как работает подключение ассетов (`inc/enqueue-assets.php`):

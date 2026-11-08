@@ -68,3 +68,5 @@ STATUS.md
 .ck/*.bak
 .ck/*.md.gz
 .ck/state.json
+# DPX: журналы сессий (создаются в каталоге запуска команд).
+.dpx/

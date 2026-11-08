@@ -9,7 +9,7 @@
  *
  *   inc/theme-support.php       — add_theme_support, меню, виджеты
  *   inc/enqueue-assets.php      — подключение ассетов из manifest.json (+ get_asset())
- *   inc/custom-post-types.php   — CPT и таксономии (заглушка)
+ *   inc/custom-post-types.php   — CPT и таксономии
  *
  * Новую логику добавлять новым модулем в /inc и подключать его здесь.
  *
