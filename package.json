@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
+    "full": "concurrently -n \"VITE,DDEV\" -c \"blue,green\" \"pnpm dev\" \"echo 'Start DDEV manually'\"",
     "build": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build",
     "build:wp": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build --mode wordpress",
     "build:stats": "ANALYZE=true pnpm build",
@@ -39,6 +40,7 @@
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.11.13",
     "chalk": "^5.6.2",
+    "concurrently": "^10.0.7",
     "critical": "^7.2.1",
     "debug-css-overflow": "^1.1.1",
     "dotenv": "^17.2.3",

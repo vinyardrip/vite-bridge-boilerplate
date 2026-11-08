@@ -4,11 +4,12 @@
  * index.php
  * =================================================================================================
  *
- * Минимальный fallback-шаблон, обязательный для активации темы в WordPress.
+ * Базовый fallback-шаблон WordPress: использует общие header.php/footer.php
+ * и выводит контент через WP-цикл.
  *
- * !ВАЖНО: Каркас не задает разметку сайта — реальные шаблоны (front-page.php,
- * single.php, archive.php, header.php, footer.php и т.д.) добавляются по мере
- * развития проекта. WP-цикл ниже — технический минимум, чтобы тема не падала.
+ * !ВАЖНО: Это технический минимум для архивов и страниц без отдельного
+ * шаблона. Главная страница оформляется во front-page.php; по мере развития
+ * проекта добавляются single.php, archive.php, page.php и т.д.
  *
  * =================================================================================================
  */
@@ -16,16 +17,9 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+get_header();
 ?>
-<!DOCTYPE html>
-<html <?php language_attributes(); ?>>
-<head>
-	<meta charset="<?php bloginfo( 'charset' ); ?>">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<?php wp_head(); ?>
-</head>
-<body <?php body_class(); ?>>
-<?php wp_body_open(); ?>
 
 <main class="main">
 	<?php
@@ -38,6 +32,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 	?>
 </main>
 
-<?php wp_footer(); ?>
-</body>
-</html>
+<?php
+get_footer();
