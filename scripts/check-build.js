@@ -154,6 +154,33 @@ for (const publicFile of expectedPublicFiles) {
   );
 }
 
+/*! --- 7. Конфигурация сборки (исходники, а не артефакты) --- */
+// PWA-плагин выключен, но его справочный код обязан жить в конфиге
+// закомментированным: пользователь включает PWA раскомментированием,
+// не раскапывая Git-историю.
+const viteConfigSource = fs.readFileSync("vite.config.js", "utf-8");
+check(
+  "vite.config.js: закомментированный импорт vite-plugin-pwa на месте",
+  viteConfigSource.includes('// import { VitePWA } from "vite-plugin-pwa";'),
+);
+check(
+  "vite.config.js: закомментированные блоки VitePWA на месте (3 шт.)",
+  (viteConfigSource.match(/\/\/\s*VitePWA\(\{/g) || []).length === 3,
+);
+
+// .env для TinyPNG должен искаться в frontend/ (архитектура проекта),
+// а путь не должен зависеть от process.cwd().
+const compressScriptSource = fs.readFileSync("scripts/compress-images.js", "utf-8");
+check(
+  "compress-images.js: .env ищется в frontend/, путь привязан к скрипту",
+  compressScriptSource.includes('import.meta.dirname') &&
+    compressScriptSource.includes('"frontend", ".env"') &&
+    !compressScriptSource.includes('process.cwd()'),
+);
+// Само поведение «нет ключей → warning, сборка не падает» проверяет
+// `pnpm build`: compress-images.js стоит первым в цепочке и обязан
+// завершиться с кодом 0.
+
 /*! --- Отчет --- */
 const failed = checks.filter((c) => !c.ok).length;
 const passed = checks.length - failed;

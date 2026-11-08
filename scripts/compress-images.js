@@ -10,8 +10,13 @@ import ora from "ora";
 import chalk from "chalk";
 
 // --- Конфигурация ---
-// Загружаем переменные окружения из /frontend/.env
-dotenv.config({ path: path.resolve(process.cwd(), "frontend", ".env") });
+// .env лежит в frontend/ (архитектура проекта). Путь привязан к папке
+// самого скрипта (<root>/scripts → <root>/frontend/.env), а не к текущей
+// рабочей директории, поэтому ключи находятся при любом способе запуска.
+// Нет файла или ключей → предупреждение и пропуск сжатия, сборка не падает.
+dotenv.config({
+  path: path.resolve(import.meta.dirname, "..", "frontend", ".env"),
+});
 
 const SOURCE_DIR = "frontend/src/assets/images"; // Папка с исходными изображениями
 const OUTPUT_DIR = "frontend/src/assets/images-tiny"; // Папка для сжатых изображений

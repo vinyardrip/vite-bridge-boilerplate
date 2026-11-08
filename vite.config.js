@@ -20,6 +20,7 @@ import viteNjkTrace from "vite-njk-trace";
 
 import { imagetools } from "vite-imagetools";
 import webfontDl from "vite-plugin-webfont-dl";
+// import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
 
 /*! --- ГЛОБАЛЬНЫЕ ДАННЫЕ САЙТА --- */
@@ -220,10 +221,69 @@ export default defineConfig(({ command }) => {
       },
     }),
 
-    /*! --- PWA ---
-    VitePWA намеренно отключен. Включить, когда проекту понадобится
-    офлайн-кэш; иконки генерируются через `pnpm favicons:generate`
-    (настройки pwaAssets — в доках vite-plugin-pwa). */
+    /*! --- PWA (отключен по умолчанию) ---
+    Чтобы включить PWA: 1) раскомментируйте импорт vite-plugin-pwa вверху
+    файла; 2) раскомментируйте ОДИН из вариантов VitePWA ниже; 3) иконки
+    генерируются командой `pnpm favicons:generate` (vite.config.js —
+    см. pwaAssets). */
+
+    /*! --- НАСТРОЙКА PWA И ГЕНЕРАЦИИ FAVICONS --- */
+    // VitePWA({
+    //   registerType: "autoUpdate",
+    //   injectRegister: false,
+    //   manifest: {
+    //     name: "Vite Bridge Boilerplate",
+    //     short_name: "ViteApp",
+    //     description: "My Awesome App description",
+    //     theme_color: "#ffffff",
+    //     background_color: "#da532c",
+    //     icons: [
+    //       { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
+    //       { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
+    //       { src: "apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    //       {
+    //         src: "maskable-icon-512x512.png",
+    //         sizes: "512x512",
+    //         type: "image/png",
+    //         purpose: "maskable",
+    //       },
+    //     ],
+    //   },
+      // pwaAssets: {
+      //   image: "frontend/public/favicon.svg",
+      //   config: {
+      //     favicon: true,
+      //     apple: { precomposed: true },
+      //     msTile: { tileColor: "#da532c" },
+      //     android: true,
+      //     safariPinnedTab: { themeColor: "#5bbad5" },
+      //   },
+      // },
+    // }),
+
+// VitePWA({
+//   disable: isDev,
+//   registerType: 'autoUpdate',
+//   workbox: { globPatterns: ['**/*.{js,css,html,svg,png,ico}'] },
+//   manifest: {
+//     name: 'Vite Bridge Boilerplate',
+//     short_name: 'ViteApp',
+//     theme_color: '#ffffff',
+//     icons: []
+//   }
+// })
+
+// VitePWA({
+//   registerType: 'autoUpdate',
+//   // pwaAssets: { ... }        ← УБИРАЕМ полностью
+//   manifest: {
+//     name: 'Vite Bridge Boilerplate',
+//     short_name: 'ViteApp',
+//     theme_color: '#ffffff',
+//     icons: []
+//   }
+// })
+//
 
     /*! --- ИНЖЕКТ ТЕГОВ В HTML ИЗ .NJK (см. комментарий выше) --- */
     injectTagsIntoNjkHtml(),
