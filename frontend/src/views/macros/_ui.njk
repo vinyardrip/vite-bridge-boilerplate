@@ -40,6 +40,30 @@
 {% endmacro %}
 
 {#
+  Макрос INLINE-SVG-иконки: файл frontend/src/assets/icons/<name>.svg читается
+  на этапе сборки (фильтр svgIcon в vite.config.js) и вставляется в HTML целиком —
+  без внешнего спрайта и HTTP-запроса.
+
+  Отличия от ui.icon() (спрайт):
+  • каждый вызов инлайнит полный <svg> — для единичных и/или сложных иконок;
+  • цвет наследуется от CSS-свойства color: зашитые fill/stroke="#hex" фильтр
+    заменяет на currentColor (подробнее — svgIconFilter в vite.config.js);
+  • размер управляется CSS: класс .svg-icon (base/_icons.scss) задает 1em,
+    ваш класс может переопределить.
+
+  Пример:
+    {{ ui.svg('phone') }}
+    {{ ui.svg('phone', 'contacts__icon') }}
+
+  @param {string} name - Имя файла иконки без расширения (assets/icons/name.svg).
+  @param {string} [class] - Дополнительный CSS-класс для тега <svg>.
+#}
+{% macro svg(name, class) -%}
+  {%- set classes = 'svg-icon' ~ ((' ' ~ class) if class else '') -%}
+  {{- name | svgIcon(classes) | safe -}}
+{%- endmacro %}
+
+{#
   Макрос кнопки. Если передан href — рендерит <a>, иначе <button>.
   Стили: components/_buttons.scss (.btn + модификаторы BEM).
 

@@ -146,8 +146,28 @@
 }
 
 // --------------------------------------------------------------------------
-// Контакты: форма, примечание и демо-кнопка
+// Контакты: демо inline-SVG, форма, примечание и демо-кнопка
 // --------------------------------------------------------------------------
+.contacts__svg-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 34rem;
+  margin: 0 auto 1.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+// Иконка из ui.svg(): цвет наследуется через currentColor (атрибуты в
+// разметке, см. svgIconFilter), размер задается CSS-классом.
+.contacts__svg-demo-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
 .contacts__form {
   max-width: 34rem;
   margin-inline: auto;

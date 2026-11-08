@@ -40,6 +40,74 @@ const readSiteData = () => {
   }
 };
 
+/*! --- ФИЛЬТР NUNJUCKS: ИНЛАЙН SVG-ИКОНОК (используется макросом ui.svg) ---
+Читает файл frontend/src/assets/icons/<name>.svg и возвращает готовую
+разметку корневого <svg> для прямой вставки в HTML. Вызывается из
+макроса ui.svg() (macros/_ui.njk) с модификатором | safe: содержимое —
+файл из репозитория, доверенный источник на этапе сборки.
+
+Обработка под наследование цвета через CSS color:
+  • вырезаются XML-пролог, DOCTYPE и комментарии;
+  • fill="#hex" / stroke="#hex" заменяются на currentColor ПО ВСЕМУ файлу
+    (fill="none" не трогаем — он легитимен для stroke-иконок, а собственный
+    fill элемента перекрывает унаследованный от корня);
+  • если у корневого <svg> не задан fill вовсе — добавляется
+    fill="currentColor" (иначе пути рисуются дефолтным черным);
+  • класс макроса сливается с классом иконки, если она его уже имела;
+  • декоративные иконки: aria-hidden="true" focusable="false".
+Отсутствие файла не роняет сборку: предупреждение + HTML-комментарий в разметке. */
+const svgIconFilter = (name, classes) => {
+  const iconPath = path.resolve(
+    __dirname,
+    "frontend/src/assets/icons",
+    `${name}.svg`,
+  );
+
+  let source;
+  try {
+    source = fs.readFileSync(iconPath, "utf-8");
+  } catch {
+    console.warn(`svgIcon: иконка "${name}" не найдена в frontend/src/assets/icons/`);
+    return `<!-- svgIcon: иконка "${name}" не найдена -->`;
+  }
+
+  // 1. Пролог/DOCTYPE/комментарии в inline-разметке не нужны.
+  source = source
+    .replace(/<\?xml[\s\S]*?\?>/g, "")
+    .replace(/<!DOCTYPE[^>]*>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .trim();
+
+  // 2. Зашитые цвета → currentColor (по всему файлу, не только в корне).
+  source = source
+    .replace(/fill="#[0-9a-fA-F]{3,8}"/g, 'fill="currentColor"')
+    .replace(/stroke="#[0-9a-fA-F]{3,8}"/g, 'stroke="currentColor"');
+
+  // 3. Корневой <svg>: class, aria-атрибуты и fill="currentColor" по умолчанию.
+  const rootMatch = source.match(/<svg\b([^>]*)>/i);
+  if (!rootMatch) {
+    console.warn(`svgIcon: в "${name}.svg" нет корневого <svg>`);
+    return "";
+  }
+
+  let attrs = rootMatch[1];
+  if (/\bclass\s*=/i.test(attrs)) {
+    attrs = attrs.replace(/\bclass\s*=\s*"([^"]*)"/i, (_, existing) => {
+      const merged = `${existing} ${classes}`.trim();
+      return `class="${merged}"`;
+    });
+  } else {
+    attrs += ` class="${classes}"`;
+  }
+  if (!/\bfill\s*=/i.test(attrs)) {
+    attrs += ' fill="currentColor"';
+  }
+  attrs += ' aria-hidden="true" focusable="false"';
+  source = source.replace(/<svg\b[^>]*>/i, `<svg${attrs}>`);
+
+  return source;
+};
+
 /*! --- ТОЧКИ ВХОДА ДЛЯ СБОРКИ --- */
 // Nunjucks-страницы подхватывает vite-plugin-njk-frontmatter (хук load →
 // generateBundle: рендерит .njk и эмитит .html). app.js нужен как отдельная
@@ -307,6 +375,9 @@ export default defineConfig(({ command, mode }) => {
           ...readSiteData(),
           production: command === "build",
         },
+      },
+      filters: {
+        svgIcon: svgIconFilter,
       },
     }),
 

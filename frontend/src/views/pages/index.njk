@@ -142,6 +142,14 @@ social_image: "https://example.com/images/social-preview.jpg"
             под ваш проект.
           </p>
         </div>
+        {# ================================================================
+           ДЕМО INLINE-SVG: иконка инлайнится на сборке (ui.svg → фильтр
+           svgIcon в vite.config.js), цвет наследуется от CSS color.
+        ================================================================ #}
+        <p class="contacts__svg-demo">
+          {{ ui.svg('phone', 'contacts__svg-demo-icon') }}
+          Это inline-SVG через ui.svg() — цвет наследуется от текста (currentColor).
+        </p>
         <div class="contacts__form">
           {% include "components/_form.njk" %}
         </div>
