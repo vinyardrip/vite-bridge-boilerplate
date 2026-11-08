@@ -91,6 +91,16 @@ social_image: "https://example.com/images/social-preview.jpg"
         <figure class="showcase">
           <img class="showcase__img" src="assets/images/boiler-demo.jpg" alt="Абстрактный пейзаж в палитре проекта — демонстрация автоматической конвертации изображений">
         </figure>
+
+        {# ================================================================
+           ДЕМО CSS-ФОНА: миксин bgset() (abstracts/_mixins.scss) —
+           AVIF/WebP генерирует imagetools на сборке (?format= на исходнике),
+           фолбэк — сам исходник; Firefox получает image-set() с type()-хинтами
+           через @-moz-document url-prefix().
+        ================================================================ #}
+        <div class="test-bg" role="img"
+             aria-label="Демонстрация CSS-фона через миксин bgset: AVIF/WebP с фолбэками и image-set для Firefox">
+        </div>
       </div>
     </section>
 

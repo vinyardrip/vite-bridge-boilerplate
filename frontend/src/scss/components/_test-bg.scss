@@ -1,0 +1,26 @@
+/*!
+ * =================================================================================================
+ * _test-bg.scss
+ * =================================================================================================
+ *
+ * Демо CSS-фона через миксин bgset() (abstracts/_mixins.scss).
+ * Проверяет весь каскад: AVIF/WebP генерируются imagetools на сборке
+ * (?format= на исходнике), фолбэк — сам исходник. В Firefox добавляется
+ * image-set() с type()-хинтами через @-moz-document url-prefix().
+ *
+ * Живой пример — блок .test-bg в секции #images на главной (index.njk),
+ * e2e-проверка — frontend/tests/bg-image.spec.js.
+ *
+ * =================================================================================================
+ */
+
+@use "../abstracts" as a;
+
+.test-bg {
+  @include a.bgset("cnt-four-room2");
+  @include a.cover-background();
+
+  min-height: a.rem(320);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-4dp);
+}
