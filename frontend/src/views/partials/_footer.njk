@@ -1,8 +1,26 @@
 <footer class="footer">
-  <div class="container">
+  <div class="layout">
     <div class="footer__inner">
-      {# Содержимое футера: копирайт, ссылки и т.д. #}
-      <p>Это Footer из <code>frontend/src/views/partials/_footer.njk</code></p>
+      <div class="footer__brand">
+        <span class="footer__name">LOGO</span>
+        <span class="footer__descr">Vite Bridge Boilerplate</span>
+      </div>
+
+      <nav class="footer__nav" aria-label="Навигация в футере">
+        <a class="footer__link" href="#features">Возможности</a>
+        <a class="footer__link" href="#video">Видео</a>
+        <a class="footer__link" href="#faq">Вопросы</a>
+        <a class="footer__link" href="#contacts">Контакты</a>
+        <a class="footer__link" href="./styleguide.html">Styleguide</a>
+      </nav>
+
+      <button type="button" class="footer__policy" data-modal-trigger="policy">
+        Политика конфиденциальности
+      </button>
     </div>
+
+    <p class="footer__copy">
+      © 2026 Vite Bridge Boilerplate. Шаблон для статических сайтов.
+    </p>
   </div>
 </footer>

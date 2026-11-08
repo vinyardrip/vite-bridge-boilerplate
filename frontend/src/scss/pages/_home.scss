@@ -1,0 +1,164 @@
+// ==========================================================================
+// PAGES: Home (landing)
+// ==========================================================================
+// Разметка главной: views/pages/index.njk. Компоненты (кнопки, карточки,
+// аккордеон, форма, видео) берутся из scss/components/ — здесь только
+// «оправа» лендинга: hero, секции, сетка возможностей и контакты.
+// Все цвета и размеры — через дизайн-токены из abstracts/_variables.scss.
+
+@use "../abstracts" as *;
+
+// --------------------------------------------------------------------------
+// Hero — темная «шапка» лендинга
+// --------------------------------------------------------------------------
+.hero {
+  padding: clamp(3.5rem, 8vw, 6rem) 0 clamp(3rem, 7vw, 5rem);
+  background-image: linear-gradient(
+    160deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 100%
+  );
+  color: var(--color-white);
+  text-align: center;
+}
+
+.hero__inner {
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.hero__badge {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  padding: 0.375rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.08);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero__title {
+  margin-bottom: 1rem;
+}
+
+.hero__descr {
+  max-width: 56ch;
+  margin-inline: auto;
+  margin-bottom: 2rem;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+// Обводка кнопки на темном фоне: --color-primary почти не виден,
+// поэтому светлый вариант бордера и текста, инверсия при наведении.
+.hero__btn-outline {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--color-white);
+
+  &:hover {
+    border-color: var(--color-white);
+    background-color: var(--color-white);
+    color: var(--color-primary);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Секции лендинга
+// --------------------------------------------------------------------------
+.section {
+  padding: clamp(3rem, 6vw, 4.5rem) 0;
+}
+
+.section--muted {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+}
+
+.section__head {
+  max-width: 46rem;
+  margin-inline: auto;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.section__descr {
+  margin-bottom: 0;
+  color: var(--color-text-muted);
+}
+
+// --------------------------------------------------------------------------
+// Сетка карточек «Что внутри» (ui.card)
+// --------------------------------------------------------------------------
+.features__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 1.25rem;
+}
+
+// --------------------------------------------------------------------------
+// Видео: компонент .video-wrap имеет свою ширину — центрируем
+// --------------------------------------------------------------------------
+.section__video {
+  display: flex;
+  justify-content: center;
+}
+
+// --------------------------------------------------------------------------
+// FAQ: сужаем колонку и гасим родной нижний отступ аккордеона
+// (он рассчитан на «самостоятельную» посадку, не для секции)
+// --------------------------------------------------------------------------
+.faq__list {
+  max-width: 48rem;
+  margin-inline: auto;
+
+  .accordion {
+    margin-bottom: 0;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Контакты: форма, примечание и демо-кнопка
+// --------------------------------------------------------------------------
+.contacts__form {
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+.contacts__note {
+  margin-top: 1rem;
+  margin-bottom: 0;
+  font-size: 0.875rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+// Кнопка-ссылка внутри примечания (открывает модалку «Политика»)
+.contacts__policy-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--color-link);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-link-hover);
+  }
+}
+
+.contacts__demo {
+  margin-top: 1.5rem;
+  text-align: center;
+}

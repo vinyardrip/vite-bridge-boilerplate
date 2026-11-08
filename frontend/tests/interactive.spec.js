@@ -62,6 +62,9 @@ test.describe('Модуль modals', () => {
 
 test.describe('Модуль mobile-menu', () => {
   test('переключает .active и aria-expanded по клику', async ({ page }) => {
+    // Бургер существует только в мобильном брейкпоинте (<=940px):
+    // на десктопе он скрыт, поэтому тест гоняем в мобильном вьюпорте
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
     const menu = page.locator('.menu');

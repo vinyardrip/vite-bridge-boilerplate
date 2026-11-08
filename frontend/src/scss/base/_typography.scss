@@ -9,6 +9,7 @@ body {
   font-family: var(--font-family-base); // Используем CSS-переменную для гибкости
   font-size: var(--font-size-base);
   color: var(--color-text-base);
+  background-color: var(--color-background); // Фон по токену: прозрачный body в темной теме браузера покажет черный холст
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

@@ -14,7 +14,7 @@ test.describe('Собранные страницы', () => {
   test('главная страница открывается с корректным заголовком', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Главная \| Vite Bridge Boilerplate/);
-    await expect(page.locator('h1')).toContainText('Nunjucks-архитектура работает!');
+    await expect(page.locator('h1')).toContainText('Стартовый шаблон для быстрых статических сайтов');
   });
 
   test('разметка компонентов присутствует на главной', async ({ page }) => {
