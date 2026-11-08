@@ -145,7 +145,18 @@ const removeOrphanSourcemaps = () => ({
   },
 });
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
+  /*! --- РЕЖИМ WORDPRESS (pnpm build:wp, `vite build --mode wordpress`) ---
+  Ассеты собираются сразу в тему: backend/wp-content/themes/my-theme/assets/
+  (каталог в .gitignore). manifest.json кладется в корень этой папки —
+  его читает get_asset() из inc/enqueue-assets.php.
+  Отличия от обычной сборки: только outDir и точки входа. HTML-страницы
+  из .njk в WP-режиме не собираются — разметку рендерит PHP, а base
+  остается относительным: чанки/шрифты лежат рядом и резолвятся
+  от URL файла независимо от домена. */
+  const isWpBuild = mode === "wordpress";
+  const wpAssetsDir = "backend/wp-content/themes/my-theme/assets";
+
   const plugins = [
     // Fontaine должен идти первым: подменяет @font-face на fallback-метрики.
     FontaineTransform.vite({
@@ -333,14 +344,21 @@ export default defineConfig(({ command }) => {
 
     /*! --- НАСТРОЙКА ФИНАЛЬНОЙ СБОРКИ --- */
     build: {
-      outDir: "dist",
-      // manifest.json кладем в корень dist, чтобы PHP-хелпер get_asset()
-      // находил его по пути <theme>/assets/manifest.json после sync:theme.
+      // dist — обычная статическая сборка; в WP-режиме (build:wp) — сразу
+      // в assets/ темы. emptyOutDir вычищает устаревшие хешированные файлы.
+      outDir: isWpBuild ? wpAssetsDir : "dist",
+      emptyOutDir: true,
+      // manifest.json кладем в корень выходной папки, чтобы PHP-хелпер
+      // get_asset() находил его по пути <theme>/assets/manifest.json
+      // (и после build:wp, и после sync:theme из dist).
       manifest: "manifest.json",
       sourcemap: true,
       rollupOptions: {
         // Точки входа: все Nunjucks-страницы + JS-точка входа (см. collectRollupInputs).
-        input: collectRollupInputs(),
+        // В WP-режиме HTML не нужен (шаблоны рендерит PHP) — только JS-точка входа.
+        input: isWpBuild
+          ? { app: "frontend/src/js/app.js" }
+          : collectRollupInputs(),
         output: {
           entryFileNames: "js/[name].[hash].js",
           chunkFileNames: "js/chunk.[hash].js",

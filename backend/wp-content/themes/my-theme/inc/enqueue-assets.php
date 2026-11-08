@@ -37,8 +37,10 @@ function get_asset( $entry ) {
 
 	if ( $manifest === null ) {
 		if ( ! file_exists( $manifest_path ) ) {
+			// $entry уже содержит полный путь от корня проекта
+			// ('frontend/src/js/app.js'), поэтому дописываем только домен.
 			$dev_server_url = 'http://localhost:5173';
-			return $dev_server_url . '/frontend/src/' . $entry;
+			return $dev_server_url . '/' . $entry;
 		}
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		$manifest = json_decode( file_get_contents( $manifest_path ), true );

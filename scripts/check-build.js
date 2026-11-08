@@ -181,6 +181,37 @@ check(
 // `pnpm build`: compress-images.js стоит первым в цепочке и обязан
 // завершиться с кодом 0.
 
+/*! --- 8. WordPress-сборка (pnpm build:wp, исходники) --- */
+// Артефакты WP-сборки лежат в gitignored assets/ темы, поэтому здесь
+// проверяем исходники: режим в конфиге, команда в package.json и
+// корректный dev-fallback в PHP. Сам вывод валидирует `pnpm build:wp`.
+const pkgSource = fs.readFileSync("package.json", "utf-8");
+check(
+  "package.json: есть команда build:wp с режимом wordpress",
+  pkgSource.includes('"build:wp"') &&
+    pkgSource.includes("vite build --mode wordpress"),
+);
+check(
+  "vite.config.js: WP-режим складывает ассеты в assets/ темы",
+  viteConfigSource.includes('mode === "wordpress"') &&
+    viteConfigSource.includes(
+      '"backend/wp-content/themes/my-theme/assets"',
+    ),
+);
+check(
+  "vite.config.js: в WP-режиме manifest.json остается в корне вывода",
+  viteConfigSource.includes('manifest: "manifest.json"'),
+);
+const enqueuePhpSource = fs.readFileSync(
+  "backend/wp-content/themes/my-theme/inc/enqueue-assets.php",
+  "utf-8",
+);
+check(
+  "enqueue-assets.php: dev-fallback без дублирования frontend/src",
+  enqueuePhpSource.includes("$dev_server_url . '/' . $entry") &&
+    !enqueuePhpSource.includes("'/frontend/src/' . $entry"),
+);
+
 /*! --- Отчет --- */
 const failed = checks.filter((c) => !c.ok).length;
 const passed = checks.length - failed;

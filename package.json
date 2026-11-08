@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build",
+    "build:wp": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build --mode wordpress",
     "build:stats": "ANALYZE=true pnpm build",
     "build:wp-strip-avif": "node scripts/strip-avif.js",
     "preview": "vite preview",
