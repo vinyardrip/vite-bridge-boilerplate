@@ -21,8 +21,24 @@
 # =================================
 # Локальная конфигурация и данные DDEV.
 /backend/.ddev
-# Конфигурационный файл WP с секретными ключами.
-/backend/wp-config.php
+# Ядро WordPress: ставится через `ddev wp core download`, в Git не отслеживается.
+# В репозитории живут только исходники темы (wp-content/themes/my-theme)
+# и собственные файлы проекта.
+/backend/index.php
+/backend/license.txt
+/backend/readme.html
+/backend/wp-*.php
+/backend/xmlrpc.php
+/backend/wp-admin/
+/backend/wp-includes/
+/backend/wp-content/index.php
+# Штатные плагины ядра (akismet, hello.php) — тема и свои плагины не трогаем.
+/backend/wp-content/plugins/*
+!/backend/wp-content/plugins/.gitkeep
+# Дистрибутивные темы ядра (twentytwentythree и т.д.) — отслеживаем только my-theme.
+/backend/wp-content/themes/*
+!/backend/wp-content/themes/my-theme
+# Конфигурационный файл WP с секретными ключами (покрывается маской wp-*.php).
 # Собранные фронтенд-ассеты темы (копия dist/, создается pnpm sync:theme).
 /backend/wp-content/themes/my-theme/assets/
 # Загруженные пользователем медиафайлы.

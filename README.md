@@ -18,8 +18,12 @@
 
 ## Требования
 
+- [Docker](https://docs.docker.com/get-docker/) — среда контейнеров для локального WordPress-окружения.
+- [DDEV](https://ddev.readthedocs.io/en/stable/) — управление бэкенд-окружением в `backend/` (`ddev start`, `ddev wp ...`).
 - [mise](https://mise.jdx.dev/) (версии node/pnpm берутся из `.tool-versions`)
 - rsync (для `sync:theme`)
+- DPX (опционально) — надстройка над DDEV (`~/.local/bin/dpx`): создание проектов (`dpx new-wp`), публичные туннели, `db pull` с продакшена.
+- CK — Context Keeper (опционально, `~/.local/bin/ck`) — «внешняя память» разработчика: задачи и контекст сессий (папка `.ck/` в корне репозитория).
 
 ## Быстрый старт
 
@@ -56,7 +60,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 
 ```
 .
-├── backend/                  # WordPress (wp-content: темы и плагины)
+├── backend/                  # WordPress: ядро (gitignored), DDEV-конфиг (.ddev/), тема wp-content/themes/my-theme
 │   └── wp-content/themes/my-theme/
 ├── frontend/
 │   ├── public/               # Статика, копируемая в сборку как есть
@@ -108,6 +112,33 @@ WebKit временно отключён в конфиге — в песочни
 в `playwright.config.js`.
 
 ## Бэкенд: модульная тема WordPress
+
+### Локальное окружение (DDEV)
+
+Бэкенд поднимается в DDEV: проект `boiler-vite`, тип `wordpress`, docroot `backend/`,
+конфигурация — `backend/.ddev/config.yaml` (создаётся командой
+`ddev config --project-type=wordpress --docroot=. --project-name=boiler-vite --auto`).
+
+```bash
+cd backend
+ddev start                 # поднять окружение → https://boiler-vite.ddev.site
+ddev wp core download      # скачать ядро WordPress (при инициализации уже выполнено)
+ddev wp core install --url=https://boiler-vite.ddev.site --title="Boiler Vite" \
+  --admin_user=admin --admin_password=admin --admin_email=admin@example.com
+ddev wp theme activate my-theme
+```
+
+- При первом `ddev start` DDEV сам создаёт `backend/wp-config.php` (метка
+  `#ddev-generated`) — отдельный `wp config create` не нужен: доступы к БД
+  (`db`/`db`/`db`) подключаются из `wp-config-ddev.php` внутри контейнера.
+- Админка: https://boiler-vite.ddev.site/wp-admin (`admin`/`admin` — только
+  для локального окружения, на продакшен эти доступы не переносятся).
+- Ядро WordPress (`wp-admin/`, `wp-includes/`, `wp-*.php`, `xmlrpc.php`,
+  дистрибутивные темы и плагины), `backend/.ddev/` и `wp-config-ddev.php`
+  добавлены в `.gitignore`: в Git отслеживаются только исходники темы
+  (`wp-content/themes/my-theme/`) и собственные файлы проекта.
+- Полезные команды: `ddev describe` (URL и порты), `ddev wp ...` (WP-CLI),
+  `ddev ssh`, `ddev logs`, `ddev poweroff` (остановить все проекты).
 
 Тема лежит в `backend/wp-content/themes/my-theme/`. `functions.php` — только
 точка входа: он ничего не содержит, кроме `require_once` модулей из `inc/`.
