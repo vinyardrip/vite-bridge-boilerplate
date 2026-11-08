@@ -45,6 +45,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | `pnpm check` | Линт (Biome) + форматирование (Biome + Prettier). |
 | `pnpm test:build` | Build-smoke: проверка артефактов сборки в `dist/` (см. `scripts/check-build.js`). |
 | `pnpm sync:theme` | Синхронизация `dist/` в тему WordPress (блокируется при грязном `git status`). |
+| `pnpm build:wp-strip-avif` | Вырезает AVIF-фрагменты из PHP/HTML/CSS темы (перед деплоем на шаред-хостинг, см. «Деплой»). |
 
 ### Вспомогательные (utility) скрипты
 
@@ -76,6 +77,53 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 └── PLAN.md                   # Архитектура и чек-лист фаз (источник правды)
 ```
 
+## Image-пайплайн: AVIF/WebP и `<picture>`
+
+В шаблонах пишут обычный `<img>` — сборка сама оборачивает его в
+`<picture>` и генерирует AVIF/WebP-варианты. Живой пример — секция
+«Оптимизация изображений» на главной: в `index.njk` написан чистый
+`<img>`, в `dist/index.html` он уже внутри `<picture>`.
+
+**Картинки контента** (для `<img>` в Nunjucks):
+
+1. Положите исходник в `frontend/src/assets/images/` — в размере 2x
+   (ретина): 1x-вариант сборка получает ресайзом пополам.
+2. Подключите в шаблоне: `<img src="assets/images/foo.jpg" alt="...">`.
+3. `pnpm build` сделает остальное: в `dist/img/` появятся `foo.avif`,
+   `foo.webp`, `foo.jpg` и их `@2x`-пары, а `<img>` превратится в
+   `<picture>` с `<source type="image/avif">`, `<source type="image/webp">`
+   и фолбэком-`<img>` (1x + 2x в srcset, `sizes`, `loading="lazy"`).
+
+**Картинки по прямому URL** (CSS `background-image`, og:image, разметка
+PHP-шаблонов) кладите в `frontend/public/img/`: они копируются в сборку
+как есть, а `vite-plugin-image-optimize` генерирует рядом `.webp`/`.avif`-
+сиблинги — ссылайтесь через CSS `image-set()` или вручную собранный
+`<picture>`. Сгенерированные сиблинги — артефакт сборки, в git не
+попадают (`.gitignore`). В WP-режиме HTML не собирается, поэтому для
+PHP-разметки `<picture>` собирается руками (пример — превью YouTube в
+`front-page.php`).
+
+Как это устроено (порядок в `vite.config.js` важен — сначала генерация
+форматов, потом HTML-трансформация):
+
+| Шаг | Что делает |
+| --- | --- |
+| `vite-plugin-image-optimize` | До сборки — сиблинги AVIF/WebP для `public/img`; после — дожимает jpg/png/svg в `dist/img`. AVIF/WebP из дожима исключены: их уже сгенерировал img-to-picture, повторное перекодирование портило бы качество. |
+| `@atrocityz/vite-plugin-html-img-to-picture` | Генерирует варианты (1x/2x × AVIF/WebP/JPG) и оборачивает `<img>` в `<picture>`. Умеет обрабатывать только реальные HTML-файлы, а страницы этого проекта собираются из `.njk` — поэтому… |
+| обертка `njkImgToPicture` (локальный плагин) | …делегирует ему каждый собранный HTML-asset в `generateBundle` и после трансформации чинит `height` по реальному аспекту исходника (плагин пишет `height=width`). Подробности — комментарий в `vite.config.js`. |
+
+Нюансы:
+
+- `outputDir: "img"` у img-to-picture — пути в `<picture>` относительные
+  (`img/...`), это требование `base: './'` (file://-открытие dist);
+  абсолютные пути к ассетам запрещает build-smoke (`pnpm test:build`).
+- Качество конвертации — `quality: 80` (img-to-picture); сжатие
+  исходников до сборки — `compress-images.js` (TinyPNG): нет валидных
+  ключей — warning, сборка не падает. Сжатые копии (`images-tiny/`) —
+  артефакт, в `<picture>`-пайплайн они не подмешиваются.
+- Не обрабатываются: внешние `http(s)`-ссылки, data-URI, абсолютные пути
+  (`/...`) и SVG.
+
 ## Статус реализации
 
 Подробный чек-лист — в `PLAN.md`, раздел "11. План реализации".
@@ -95,7 +143,8 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 сборки: HTML-страницы собраны, `manifest.json` валиден и все его файлы существуют,
 в HTML нет dev-артефактов (`@vite/client`, адрес dev-сервера, NJK-комментариев),
 в исполняемом JS нет `debug-css-overflow`, нет осиротевших sourcemap'ов, статика
-из `frontend/public` скопирована.
+из `frontend/public` скопирована, в `index.html` есть `<picture>` с AVIF-источником
+и все файлы из srcset лежат в `dist/img`.
 
 **E2E** (`pnpm playwright test`) — тесты в `frontend/tests/` против собранной версии
 (preview-сервер, порты из `playwright.config.js`):
@@ -104,9 +153,11 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 - `interactive.spec.js` — модули modals (открытие/закрытие, Esc, оверлей, кнопка закрытия),
   mobile-menu (`.active` + `aria-expanded`), accordion, scroll-to-top, video (iframe по клику);
 - `forms.spec.js` — санитайзер телефона + маска Inputmask, honeypot, скрытое поле `loc`,
-  блокировка отправки невалидной формы.
+  блокировка отправки невалидной формы;
+- `picture.spec.js` — image-пайплайн: `<picture>` с AVIF/WebP на главной,
+  атрибуты обернутого `<img>`, варианты отдаются сервером, браузер выбирает AVIF.
 
-Прогон: **34 теста (chromium + firefox) — все зелёные**; build-smoke: **19/19**.
+Прогон: **64 теста (chromium + firefox) — все зелёные**; build-smoke: **42/42**.
 WebKit временно отключён в конфиге — в песочнице нет системных зависимостей
 (нужен `pnpm playwright install-deps webkit` с sudo); как вернуть — см. комментарий
 в `playwright.config.js`.

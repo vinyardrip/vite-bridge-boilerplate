@@ -125,6 +125,42 @@ for (const htmlFile of htmlFiles) {
   );
 }
 
+/*! --- 3.5 Image-пайплайн: <picture> в собранном HTML --- */
+// Чистый <img> из .njk должен быть обернут в <picture> с AVIF/WebP
+// (обертка njkImgToPicture в vite.config.js), а все файлы из srcset —
+// существовать в dist/img (их пишет writeBundle img-to-picture).
+const indexHtmlPath = path.join(DIST_DIR, "index.html");
+if (fs.existsSync(indexHtmlPath)) {
+  const indexHtml = fs.readFileSync(indexHtmlPath, "utf-8");
+
+  check(
+    "index.html: есть <picture> (обертка <img> из .njk)",
+    /<picture[\s>]/.test(indexHtml),
+  );
+  check(
+    "index.html: <picture> содержит AVIF-источник",
+    /<source[^>]+type="image\/avif"/.test(indexHtml),
+  );
+
+  // Каждый локальный файл из srcset <source>/<img> обязан лежать в dist:
+  // битый srcset = картинка не загрузится вообще.
+  const srcsetFiles = new Set();
+  for (const [, srcsetList] of indexHtml.matchAll(/srcset="([^"]+)"/g)) {
+    for (const entry of srcsetList.split(",")) {
+      const file = entry.trim().split(/\s+/)[0];
+      if (file && !/^(https?:|data:)/.test(file)) {
+        srcsetFiles.add(file);
+      }
+    }
+  }
+  for (const file of srcsetFiles) {
+    check(
+      `Вариант картинки существует: ${file}`,
+      fs.existsSync(path.join(DIST_DIR, file)),
+    );
+  }
+}
+
 /*! --- 4. Dev-код в исполняемых JS --- */
 const jsFiles = globSync(`${DIST_DIR}/js/*.js`, { ignore: ["**/*.map"] });
 for (const jsFile of jsFiles) {
@@ -180,6 +216,16 @@ check(
 // Само поведение «нет ключей → warning, сборка не падает» проверяет
 // `pnpm build`: compress-images.js стоит первым в цепочке и обязан
 // завершиться с кодом 0.
+
+// Image-пайплайн: генерация AVIF/WebP и обертка <img> в <picture>
+// должны быть подключены в конфиге (сам вывод проверяют тесты выше
+// и frontend/tests/picture.spec.js).
+check(
+  "vite.config.js: image-пайплайн подключен (image-optimize + img-to-picture + обертка .njk)",
+  viteConfigSource.includes("imageOptimize(") &&
+    viteConfigSource.includes("imgToPicturePlugin") &&
+    viteConfigSource.includes("njkImgToPicture("),
+);
 
 /*! --- 8. WordPress-сборка (pnpm build:wp, исходники) --- */
 // Артефакты WP-сборки лежат в gitignored assets/ темы, поэтому здесь

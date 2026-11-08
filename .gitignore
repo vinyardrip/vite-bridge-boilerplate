@@ -53,6 +53,12 @@
 # =================================
 # Файл с переменными окружения для фронтенда (например, ключи API).
 /frontend/.env
+# Сгенерированные при сборке AVIF/WebP-сиблинги для картинок из public/img
+# (vite-plugin-image-optimize пишет их рядом с исходниками).
+/frontend/public/img/*.webp
+/frontend/public/img/*.avif
+# Сжатые TinyPNG-копии (scripts/compress-images.js) — артефакт, не исходник.
+/frontend/src/assets/images-tiny/
 # Отчеты и артефакты прогонов Playwright.
 /test-results
 /playwright-report

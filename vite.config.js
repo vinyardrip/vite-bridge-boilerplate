@@ -20,6 +20,9 @@ import viteNjkTrace from "vite-njk-trace";
 
 import { imagetools } from "vite-imagetools";
 import webfontDl from "vite-plugin-webfont-dl";
+
+import imageOptimize from "vite-plugin-image-optimize";
+import { imgToPicture } from "@atrocityz/vite-plugin-html-img-to-picture";
 // import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
 
@@ -145,6 +148,133 @@ const removeOrphanSourcemaps = () => ({
   },
 });
 
+/*!
+ * Локальный плагин: обертка <img> в <picture> для HTML, собранного из .njk.
+ *
+ * !ПОЧЕМУ НУЖЕН: @atrocityz/vite-plugin-html-img-to-picture умеет
+ * обрабатывать файлы только через хук transform (id должен совпадать
+ * с include-регэкспом \.html$). Страницы этого проекта — .njk: их рендерит
+ * vite-plugin-njk-frontmatter в load() и эмитит готовый HTML через
+ * emitFile в generateBundle (см. комментарий к injectTagsIntoNjkHtml) —
+ * transform их никогда не увидит.
+ *
+ * Решение: делегируем обработку самому плагину. В generateBundle (после
+ * того как njk-frontmatter эмитит HTML-ассеты) вызываем
+ * picturePlugin.transform() вручную для каждого HTML-ассета и записываем
+ * результат обратно в asset.source. Плагин при этом честно добавлен в
+ * plugins — его writeBundle записывает сгенерированные AVIF/WebP-варианты
+ * в dist/img/, closeBundle печатает статистику.
+ *
+ * !ВАЖНО ПРО ПУТИ: transform резолвит src <img> относительно каталога
+ * виртуального id. Виртуальный файл кладем в frontend/src — поэтому
+ * в шаблонах пишут src="assets/images/foo.jpg" (файл в
+ * frontend/src/assets/images/foo.jpg). В <picture> плагин подставляет
+ * пути из outputDir ("img") — они относительные, что совместимо с
+ * base: './' (абсолютные пути к ассетам запрещает check-build.js).
+ *
+ * !ИЗВЕСТНАЯ ОСОБЕННОСТЬ ПЛАГИНА: width/height обернутого <img> он пишет
+ * как width=height=ширине 1x-варианта (без аспекта). После делегирования
+ * чиним height по реальному аспекту исходника — иначе браузер до загрузки
+ * CSS резервирует место по неверной пропорции (CLS). Метаданные читаем
+ * из исходников ДО трансформации (варианты в dist появляются позже, в
+ * writeBundle плагина).
+ */
+const njkImgToPicture = (picturePlugin) => {
+  // Метаданные исходников: имя файла без расширения → { width, height }.
+  const metaCache = new Map();
+
+  const getMeta = async (src) => {
+    const baseName = path.basename(src, path.extname(src));
+    if (metaCache.has(baseName)) {
+      return metaCache.get(baseName);
+    }
+
+    try {
+      const sharp = (await import("sharp")).default;
+      const imagePath = path.resolve(__dirname, "frontend/src", src);
+      const meta = await sharp(imagePath).metadata();
+      const value = { width: meta.width, height: meta.height };
+      metaCache.set(baseName, value);
+      return value;
+    } catch (error) {
+      console.warn(`njkImgToPicture: не удалось прочитать ${src}: ${error.message}`);
+      metaCache.set(baseName, null);
+      return null;
+    }
+  };
+
+  return {
+    name: "njk-img-to-picture",
+    apply: "build",
+    async generateBundle(_, bundle) {
+      const htmlFiles = Object.values(bundle).filter(
+        (file) => file.type === "asset" && file.fileName.endsWith(".html"),
+      );
+      if (htmlFiles.length === 0) {
+        return;
+      }
+
+      // Виртуальный id: должен заканчиваться на .html (include-фильтр плагина),
+      // его каталог frontend/src — база для относительных src в шаблонах.
+      const virtualId = path.resolve(
+        __dirname,
+        "frontend/src",
+        "__virtual__.html",
+      );
+
+      // Тот же регэксп, что внутри плагина: src картинок ДО трансформации.
+      const imgRegex = /<img[^>]+src="(assets\/images\/[^">]+\.(?:jpg|jpeg|png))"[^>]*>/gi;
+
+      for (const html of htmlFiles) {
+        const source = String(html.source);
+
+        // 1. Метаданные исходников (для починки height после трансформации).
+        for (const match of source.matchAll(imgRegex)) {
+          await getMeta(match[1]);
+        }
+
+        // 2. Делегация оборачивания в <picture> самому плагину.
+        const result = await picturePlugin.transform(source, virtualId);
+        if (!result?.code) {
+          continue;
+        }
+
+        // 3. Починка height: плагин пишет height=width; у не-квадратных
+        //    картинок подставляем реальный аспект (width=1x-вариант,
+        //    аспект совпадает с исходником). Пару находим по совпадающим
+        //    значениям width/height, имя файла — по src того же тега.
+        html.source = result.code.replace(
+          /src="([^"]*\.(?:jpg|jpeg|png))"[^>]*width="(\d+)"\s+height="\2"/gi,
+          (match, src, width) => {
+            const baseName = path.basename(src, path.extname(src));
+            const meta = metaCache.get(baseName);
+            if (!meta?.width) {
+              return match;
+            }
+            const height = Math.round((width * meta.height) / meta.width);
+            return match.replace(/height="\d+"(?=\s|$|>)/, `height="${height}"`);
+          },
+        );
+      }
+    },
+  };
+};
+
+/*!
+ * ЕДИНСТВЕННЫЙ экземпляр imgToPicture (см. комментарий к image-пайплайну
+ * ниже). Обертка njkImgToPicture делегирует обработку HTML именно в этот
+ * экземпляр — накопленные варианты пишет в dist/img его собственный
+ * writeBundle. Два разных экземпляра не видели бы память друг друга.
+ */
+const imgToPicturePlugin = imgToPicture({
+  // AVIF первым: браузер выбирает первый поддерживаемый <source>.
+  formats: ["avif", "webp"],
+  quality: 80,
+  outputDir: "img",
+  isRetinaSupport: true,
+  lazyLoading: true,
+});
+
 export default defineConfig(({ command, mode }) => {
   /*! --- РЕЖИМ WORDPRESS (pnpm build:wp, `vite build --mode wordpress`) ---
   Ассеты собираются сразу в тему: backend/wp-content/themes/my-theme/assets/
@@ -196,6 +326,43 @@ export default defineConfig(({ command, mode }) => {
     макрос ui.icon() из macros/_ui.njk уже ссылается на него). */
 
     imagetools(),
+
+    /*! --- ГЕНЕРАЦИЯ AVIF/WEBP + ОПТИМИЗАЦИЯ КАРТИНОК ---
+    Порядок важен (см. план image-пайплайна): сначала image-optimize
+    (генерирует современные форматы ДО обработки HTML), затем
+    HTML-трансформация в <picture>.
+
+    1) image-optimize:
+       • buildStart — для .jpg/.png из frontend/public/img генерирует
+         .webp/.avif-сиблинги РЯДОМ с исходником (папка копируется в dist
+         и в assets/ темы как есть). Сюда кладут картинки, на которые
+         ссылаются по URL: CSS background-image с image-set(), og:image,
+         разметка PHP-шаблонов.
+       • closeBundle — дожимает jpg/png/svg в dist/img. WebP/AVIF исключены:
+         их уже сгенерировал imgToPicture (см. ниже), повторное перекодирование
+         только портило бы качество.
+    2) imgToPicture: для каждого <img src="assets/images/*.jpg"> в HTML
+       генерирует комплект вариантов (1x из 2x-исходника + 2x, AVIF/WebP/JP),
+       оборачивает <img> в <picture> с <source> и пишет варианты в dist/img.
+       • outputDir "img" — ОБЯЗАТЕЛЬНО относительный: собранный HTML
+         открывается через file:// (base: './'), а check-build.js запрещает
+         абсолютные пути к ассетам.
+       • isRetinaSupport: true — исходники грузим в 2x, 1x-вариант плагин
+         получает ресайзом пополам.
+       • Картинки контента живут в frontend/src/assets/images/ (их сжимает
+         compress-images.js, путь резолвит обертка njkImgToPicture). */
+    imageOptimize({
+      webpEnable: true,
+      avifEnable: true,
+      // Не перекодировать сгенерированные imgToPicture форматы в dist/img.
+      exclude: ["**/*.webp", "**/*.avif"],
+      logListings: true,
+    }),
+
+    imgToPicturePlugin,
+
+    /*! --- ОБЕРТКА <IMG> В <PICTURE> ДЛЯ .NJK-СТРАНИЦ (см. выше) --- */
+    njkImgToPicture(imgToPicturePlugin),
 
     /*! --- НАСТРОЙКА ГИБРИДНОЙ ЗАГРУЗКИ ШРИФТОВ --- */
     webfontDl({
