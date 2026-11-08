@@ -609,6 +609,12 @@ export default defineConfig(({ command, mode }) => {
               .pop();
 
             if (/css/i.test(extType)) return "css/app.[hash].css";
+            // !ВСЕ картинки (jpg/png/svg/webp/avif/...) — в ПЛОСКУЮ img/:
+            // никаких img/avif/, img/webp/ (совместимость с WP-плагинами).
+            // get_asset() клеит путь из manifest.json к URL как есть,
+            // strip-avif.js удаляет *.avif по маске **/*.avif — оба ожидают
+            // одноуровневую структуру. imgToPicture и image-optimize тоже
+            // пишут варианты рядом (outputDir + имя файла, без подпапок).
             if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType))
               return "img/[name].[hash][extname]";
             if (/woff|woff2|eot|ttf|otf/i.test(extType))

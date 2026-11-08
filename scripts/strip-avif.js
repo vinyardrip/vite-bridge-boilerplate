@@ -19,13 +19,28 @@
  * Правила вырезания (из заметок проекта):
  *   1. <source srcset="… .avif …">            — тег целиком
  *   2. background-image: image-set(…avif…)    — декларация целиком
- *   3. ", }" → "}"                            — чистка запятых после вырезки
+ *   3. background-image: url(… .avif …)       — декларация целиком (каскад
+ *                                               миксина bgset: после вырезки
+ *                                               image-set остается плоский
+ *                                               url-каскад с .avif строкой)
+ *   4. ", }" → "}"                            — чистка запятых после вырезки
  *                                               (только в файлах, где были вырезки)
  *
+ * Плюс (плоская структура img/ — все форматы лежат РЯДОМ, img/name.hash.avif):
+ *   5. файлы *.avif в теме (рекурсивно)        — удаляются (сироты после
+ *                                               вырезки ссылок; шаред-хостинг
+ *                                               не должен таскать AVIF-байты)
+ *   6. manifest.json: записи с file=*.avif     — удаляются целиком, а из
+ *                                               массивов assets других записей
+ *                                               вырезаются .avif-пути (get_asset()
+ *                                                   возвращает file как есть —
+ *                                               ссылки на удаленные файлы стали
+ *                                               бы битыми)
+ *
  * Плюс контрольная проверка: если после вырезки в теме остались упоминания
- * AVIF (например, в <img srcset> или <link rel=preload>), скрипт перечислит
- * их с файлами и строками и завершится с ошибкой — деплой с битыми
- * картинками хуже падающей сборки.
+ * AVIF (php/html/css + manifest.json, например в <img srcset> или
+ * <link rel=preload>), скрипт перечислит их с файлами и строками и завершится
+ * с ошибкой — деплой с битыми картинками хуже падающей сборки.
  *
  * Использование:
  *   pnpm build:wp-strip-avif
@@ -34,7 +49,7 @@
  * =================================================================================================
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { globSync } from "glob";
 import chalk from "chalk";
@@ -60,6 +75,23 @@ const STRIP_RULES = [
     regex: /background-image\s*:\s*image-set\(((?:[^()]|\([^()]*\))*)\)\s*;?/gi,
     // Вырезаем матч только при наличии avif в содержимом image-set().
     shouldStrip: (_match, inner) => /avif/i.test(inner || ""),
+  },
+  {
+    // 3. Вырезать плоскую декларацию background-image: url(… .avif …) —
+    //    каскад миксина bgset (abstracts/_mixins.scss) после вырезки
+    //    image-set из правила 2: остаются url-строки с .avif, и браузер
+    //    без поддержки AVIF получил бы 404 вместо фолбэка (каскад CSS
+    //    не откатывается к предыдущей декларации при 404 ресурса).
+    //    Идет ПОСЛЕ правила 2 (image-set уже вырезан, остатки — только
+    //    плоские url).
+    //    !ГРАНИЦА ДЕКЛАРАЦИИ: [^;{}]* — semicolon НЕ единственная граница
+    //    в минифицированном CSS: `[^;]*` пересекал бы `}` и @-правила
+    //    (@-moz-document url-prefix(){...}) и съедал соседние декларации
+    //    (проверено: матч глотал background-repeat:no-repeat следующего
+    //    правила). Фигурные скобки и `;` вместе честно ограничивают одну
+    //    декларацию; .avif внутри url() — единственное условие вырезки.
+    name: "background-image: url() с AVIF",
+    regex: /background-image\s*:\s*[^;{}]*\.avif[^;{}]*;?/gi,
   },
 ];
 
@@ -132,10 +164,63 @@ for (const file of files) {
   console.log(`  ${chalk.yellow("✂")} ${file}: ${appliedRules.join("; ")}`);
 }
 
-/*! --- Контрольная проверка: не осталось ли упоминаний AVIF --- */
-const leftovers = [];
+/*! --- Удаление файлов *.avif (правило 5, плоская img/) ---
+После вырезки ссылок в php/html/css файлы-сироты удаляются: деплой не
+должен таскать AVIF-байты, которые никто не запросит (а на шаред-хостинге
+AVIF мог бы и не отдаться). Удаляем рекурсивно все *.avif от корня темы —
+все варианты в плоской img/ лежат РЯДОМ с webp/jpg (см. assetFileNames
+в vite.config.js), подпапок форматов нет и появиться не должно. */
+const avifFiles = globSync("**/*.avif", { cwd: ROOT }).sort();
+let deletedFiles = 0;
+for (const file of avifFiles) {
+  unlinkSync(path.join(ROOT, file));
+  deletedFiles += 1;
+  console.log(`  ${chalk.yellow("🗑")} ${file}`);
+}
 
-for (const file of files) {
+/*! --- Чистка manifest.json (правило 6) ---
+get_asset() (inc/enqueue-assets.php) возвращает manifest[entry].file как
+есть — после удаления файлов ссылки на *.avif стали бы битыми. Записи с
+avif-файлом вырезаем целиком (ключ и src тоже указывают на avif), а из
+массивов assets других записей (например, у точки входа app.js) убираем
+avif-пути. Манифест лежит в assets/ темы (корень outDir сборки WP) —
+именно его читает get_asset(): get_template_directory() . '/assets/manifest.json'. */
+const manifestPath = path.join(ROOT, "assets", "manifest.json");
+let manifestCleaned = false;
+if (existsSync(manifestPath)) {
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  for (const [key, entry] of Object.entries(manifest)) {
+    if (/\.avif$/i.test(entry?.file ?? "")) {
+      delete manifest[key];
+      manifestCleaned = true;
+    } else if (Array.isArray(entry?.assets)) {
+      const filtered = entry.assets.filter((f) => !/\.avif$/i.test(f));
+      if (filtered.length !== entry.assets.length) {
+        entry.assets = filtered;
+        manifestCleaned = true;
+      }
+    }
+  }
+  if (manifestCleaned) {
+    // Формат как у самого Vite: pretty-print 2 пробела, без перевода строки.
+    writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf8");
+    console.log(
+      `  ${chalk.yellow("✂")} manifest.json: avif-записи удалены`,
+    );
+  }
+}
+
+/*! --- Контрольная проверка: не осталось ли упоминаний AVIF ---
+Сканируем те же php/html/css + manifest.json (после чистки правилом 6
+avif-упоминаний там быть не должно). Файлы *.avif сами по себе не
+содержат текста — они уже удалены правилом 5. */
+const leftovers = [];
+const checkFiles = [...files];
+if (existsSync(manifestPath)) {
+  checkFiles.push(manifestPath);
+}
+
+for (const file of checkFiles) {
   const src = readFileSync(file, "utf8");
   const lines = src.split("\n");
   for (let i = 0; i < lines.length; i += 1) {
@@ -159,7 +244,8 @@ if (leftovers.length > 0) {
 
 console.log(
   chalk.green(
-    `✅ AVIF-фрагменты вырезаны: ${changedFiles} файл(ов) изменено, ` +
-      `${totalStrips} вырезок. Упоминаний AVIF не осталось.\n`,
+    `✅ AVIF вырезан: ${changedFiles} файл(ов) изменено, ` +
+      `${totalStrips} вырезок, ${deletedFiles} *.avif удалено. ` +
+      `Упоминаний AVIF не осталось.\n`,
   ),
 );
