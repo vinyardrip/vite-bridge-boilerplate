@@ -1,0 +1,79 @@
+// ==========================================================================
+// COMPONENTS: Forms
+// ==========================================================================
+// Стили формы заявки (см. views/components/_form.njk).
+
+.form {
+  padding: 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.form__cta {
+  margin-bottom: 16px;
+}
+
+.form__cta-title {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+}
+
+.form__cta-descr {
+  margin: 0;
+  color: #666;
+}
+
+.form__wrap {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.form__phone {
+  flex: 1 1 220px;
+}
+
+.form__phone-title {
+  margin-bottom: 6px;
+}
+
+.form-big-text {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.form__phone-field {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font: inherit;
+
+  &:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+  }
+}
+
+.form__btn {
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+    background-color: #3b82f6;
+    color: #fff;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.form-small-text {
+  font-size: 0.875rem;
+}

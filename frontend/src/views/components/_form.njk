@@ -1,0 +1,26 @@
+{% import "../macros/_ui.njk" as ui %}
+
+<form action="#" class="form" data-form="data-form" novalidate="novalidate">
+  {# Добавляем "ловушку для ботов" #}
+  {{ ui.honeypot() }}
+  {# Добавляем скрытое поле для номера формы, JS заполнит его #}
+  {{ ui.hiddenInput(name='loc', value='') }}
+
+  <div class="form__cta">
+    <h3 class="form__cta-title">Бесплатная консультация</h3>
+    <p class="form__cta-descr">Звоните или оставьте свой номер</p>
+  </div>
+  <div class="form__wrap">
+    <div class="form__phone">
+      <div class="form__phone-title">
+        <span class="form-big-text">Номер телефона</span>
+      </div>
+      {{ ui.input(name='phone', type='tel', className='form__phone-field', required=true) }}
+    </div>
+    <div class="form__btn">
+      <button type="submit" class="btn nowrap">
+        <span class="form-small-text">Перезвоните</span>
+      </button>
+    </div>
+  </div>
+</form>

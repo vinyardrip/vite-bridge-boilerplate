@@ -1,0 +1,118 @@
+// ==========================================================================
+// COMPONENT: Accordion
+// ==========================================================================
+
+@use "../abstracts" as a;
+
+.accordion {
+  margin-bottom: a.rem(144);
+
+  @include a.breakpoint-down(540px) {
+    margin-bottom: a.rem(112);
+  }
+
+  &__wrap {
+    margin-bottom: a.rem(24);
+  }
+
+  &__content {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease-in, max-height 0.3s ease-in;
+    will-change: opacity, max-height;
+  }
+
+  &__btn {
+    position: relative;
+    display: block;
+    text-align: left;
+    width: 100%;
+    padding: a.rem(40) a.rem(80) a.rem(40) a.rem(40);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in, color 0.3s ease-in;
+
+    @include a.breakpoint-down(540px) {
+      padding: a.rem(24) a.rem(48) a.rem(24) a.rem(24);
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: calc(50% - a.rem(12));
+      right: a.rem(40);
+      @include a.size(a.rem(24));
+      border: solid var(--color-white);
+      border-width: 0 a.rem(2) a.rem(2) 0;
+      display: inline-block;
+      transform: rotate(45deg); // Стрелка вправо
+      transition: transform 0.3s ease-in, right 0.3s ease-in;
+
+      @include a.breakpoint-down(540px) {
+        right: a.rem(24);
+        @include a.size(a.rem(18));
+        top: calc(50% - a.rem(9));
+      }
+    }
+
+    &[aria-expanded='false'] {
+      color: var(--color-white);
+      background-color: var(--color-primary);
+
+      @include a.on-hover {
+        color: var(--color-primary);
+        background-color: var(--color-accent);
+      }
+    }
+
+    &[aria-expanded='true'] {
+      color: var(--color-primary);
+      background-color: var(--color-accent);
+
+      &::after {
+        transform: rotate(-135deg); // Стрелка вверх
+        top: calc(50% - a.rem(6)); // Корректируем позицию перевернутой стрелки
+        @include a.breakpoint-down(540px) {
+          top: calc(50% - a.rem(3));
+        }
+      }
+
+      & + .accordion__content {
+        opacity: 1;
+        max-height: 1500px; // Достаточно большое значение для любого контента
+      }
+    }
+  }
+
+  &__title {
+    font-family: var(--font-family-headings);
+    font-weight: 300;
+    font-size: a.rem(18);
+
+    @include a.breakpoint-down(540px) {
+      font-size: a.rem(16);
+    }
+  }
+
+  &__text {
+    font-size: a.rem(18);
+    padding: a.rem(40);
+    border: 1px solid black;
+    margin-top: a.rem(-6);
+
+    @include a.breakpoint-down(540px) {
+      font-size: a.rem(16);
+      padding: a.rem(24);
+    }
+  }
+
+  &__img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid black;
+    border-top: none;
+    margin-top: a.rem(-1);
+  }
+}

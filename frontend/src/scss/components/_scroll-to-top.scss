@@ -1,0 +1,83 @@
+// ==========================================================================
+// COMPONENT: Scroll To Top Button
+// ==========================================================================
+
+@use "../abstracts" as a;
+
+#scroll-to-top {
+  display: none; // Изначально скрыт, управляется через JS
+  position: fixed;
+  right: a.rem(40);
+  bottom: 10%;
+  z-index: a.z("fixed");
+
+  @include a.size(a.rem(64));
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-2dp);
+  border-radius: 50%;
+  border: none; // Добавляем сброс для <button>
+  padding: 0; // Добавляем сброс для <button>
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+
+  // Кнопка будет скрыта на смартфонах для экономии места,
+  // но останется на планшетах и десктопах.
+  @include a.breakpoint-down(md) {
+    // !important здесь оправдан, чтобы перебить JS-стиль display: block
+    display: none !important;
+  }
+
+  &::before {
+    content: '';
+    display: block;
+    position: relative;
+    top: a.rem(5);
+    left: a.rem(23);
+    @include a.size(a.rem(20));
+    border: a.rem(2) solid var(--color-primary);
+    border-bottom-color: transparent;
+    border-right-color: transparent;
+    background-color: transparent;
+    rotate: -45deg;
+    transition: border-color 0.3s ease-in-out;
+  }
+
+  // Используем наш безопасный миксин для ховера
+  @include a.on-hover {
+    &::before {
+      border-color: var(--color-accent);
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+    }
+  }
+}
+
+// Анимации
+.btn-entrance {
+  animation: btn-entrance 0.7s both;
+}
+
+@keyframes btn-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.btn-exit {
+  animation: btn-exit 0.3s both;
+}
+
+@keyframes btn-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}

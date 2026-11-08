@@ -1,0 +1,125 @@
+/*!
+ * =================================================================================================
+ * _test-fonts.scss
+ * =================================================================================================
+ *
+ * Стили исключительно для страницы диагностики шрифтов (_test-fonts.njk).
+ *
+ * =================================================================================================
+ */
+
+// Мы стилизуем через общий класс страницы, чтобы эти стили не конфликтовали
+// с другими элементами проекта.
+.page-font-test {
+  .font-tester {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    font-family: sans-serif;
+    color: #333;
+  }
+
+  .font-tester__header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    h1 {
+      font-size: 2.5rem;
+      margin: 0 0 0.5rem;
+    }
+  }
+
+  .font-tester__intro {
+    font-size: 1.1rem;
+    color: #555;
+    max-width: 80ch; // Ограничиваем длину строки для читаемости
+  }
+
+  .font-tester__guide {
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1.5rem;
+    }
+
+    ol {
+      margin: 0;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .font-tester__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .font-test-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .font-test-card__header {
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .font-test-card__title {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+
+  .font-test-card__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #777;
+    margin-top: 0.5rem;
+  }
+
+  .font-test-card__status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #fff;
+
+    // Стили для разных статусов
+    &[data-status="pending"] {
+      background-color: #9e9e9e;
+    }
+    &[data-status="success"] {
+      background-color: #4caf50;
+    }
+    &[data-status="error"] {
+      background-color: #f44336;
+    }
+  }
+
+  .font-test-card__body {
+    padding: 1.5rem;
+    background-color: #fff;
+    flex-grow: 1;
+  }
+
+  .font-test-card__preview {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    margin: 0;
+    word-break: break-word;
+  }
+}

@@ -1,0 +1,102 @@
+// ==========================================================================
+// COMPONENT: Lazy Load Video
+// ==========================================================================
+
+@use "../abstracts" as a;
+
+.video-wrap {
+  position: relative;
+  width: a.rem(736);
+  max-width: 100%; // Добавляем для безопасности на узких экранах
+
+  @include a.breakpoint-down(1200px) {
+    width: 100%;
+    padding: 0 a.rem(54);
+  }
+  @include a.breakpoint-down(960px) {
+    padding: 0;
+  }
+}
+
+.video {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; // Соотношение сторон 16:9
+  background-color: #000;
+}
+
+.video__link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video__media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: cover; // Улучшаем отображение превью
+}
+
+.video__btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: none; // Скрыт по умолчанию, появляется после инициализации JS
+  padding: 0;
+  @include a.size(a.rem(91));
+  border: none;
+  background-color: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+
+  @include a.breakpoint-down(860px) {
+    @include a.size(a.rem(61));
+  }
+  @include a.breakpoint-down(460px) {
+    @include a.size(a.rem(54));
+  }
+}
+
+.video__btn-circle-out {
+  fill: #798bb1;
+  fill-opacity: 0.47;
+}
+
+.video__btn-circle-inner {
+  fill: #3e5585;
+  fill-opacity: 0.8;
+  transition: fill 0.3s ease;
+}
+
+.video__btn-icon {
+  fill: #d9d9d9;
+}
+
+.video__btn:focus {
+  outline: none;
+}
+
+// Эффект ховера применяем через наш безопасный миксин
+@include a.on-hover {
+  .video:hover .video__btn-circle-inner,
+  .video__btn:focus .video__btn-circle-inner {
+    fill: #567edd;
+  }
+}
+
+/* JS добавляет этот класс, чтобы активировать стили */
+.video--enabled {
+  cursor: pointer;
+
+  .video__btn {
+    display: block;
+  }
+}

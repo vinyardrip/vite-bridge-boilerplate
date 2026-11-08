@@ -1,0 +1,16 @@
+// ==========================================================================
+// LAYOUT: Inner Content Wrapper
+// ==========================================================================
+@use "../abstracts" as *;
+
+.layout {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin-inline: auto; // Центрируем сам layout внутри .container, если он уже
+
+  padding-inline: var(--gutter-base); // Коротко и ясно
+
+  @include breakpoint-down(sm) {
+    padding-inline: var(--gutter-sm);
+  }
+}

@@ -1,0 +1,120 @@
+// ==========================================================================
+// COMPONENT: Modals & Overlay
+// ==========================================================================
+
+@use "../abstracts" as a;
+
+.overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: a.z("modal-backdrop");
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out;
+
+  &.overlay-active {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+.modal {
+  position: relative;
+  width: a.rem(545);
+  height: a.rem(455);
+
+  @include a.breakpoint-down(678px) {
+    width: a.rem(330);
+    height: a.rem(270);
+  }
+
+  &__close {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    position: absolute;
+    top: a.rem(40);
+    right: a.rem(54);
+    cursor: pointer;
+    z-index: a.z("modal");
+
+    .icon-cross {
+      @include a.size(a.rem(18));
+      fill: var(--color-text-base); // Цвет иконки
+      transition: fill 0.3s ease-in-out;
+    }
+
+    @include a.on-hover {
+      .icon-cross {
+        fill: var(--color-accent);
+      }
+    }
+
+    @include a.breakpoint-down(678px) {
+      top: a.rem(18);
+      right: a.rem(18);
+    }
+  }
+
+  &__policy,
+  &__thanx {
+    display: none; // По умолчанию все окна скрыты, JS будет показывать нужное
+    background: var(--color-white);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: a.rem(61) a.rem(61) a.rem(81) a.rem(108);
+    z-index: 2;
+
+    @include a.breakpoint-down(678px) {
+      padding: a.rem(64) a.rem(36) a.rem(81);
+      text-align: center;
+    }
+  }
+
+  &__title {
+    margin-bottom: a.rem(54);
+    font-family: var(--font-family-headings);
+    font-size: a.rem(41);
+    line-height: 1.487;
+
+    @include a.breakpoint-down(678px) {
+      font-size: a.rem(28);
+      margin-bottom: a.rem(18);
+    }
+  }
+
+  &__descr,
+  &__text {
+    font-family: var(--font-family-base);
+    font-size: a.rem(27);
+    line-height: 1.5;
+    color: var(--color-text-base);
+    text-wrap: balance;
+
+    @include a.breakpoint-down(678px) {
+      font-size: a.rem(18);
+    }
+  }
+
+  &__text {
+    overflow-y: auto;
+    font-size: a.rem(18);
+    padding-right: a.rem(24);
+    height: 67%;
+
+    p { margin-bottom: a.rem(18); }
+    ol {
+      list-style: decimal;
+      margin-left: a.rem(24);
+      margin-bottom: a.rem(18);
+    }
+  }
+}
