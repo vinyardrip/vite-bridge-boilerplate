@@ -20,6 +20,7 @@
     "verify": "pnpm build && pnpm test:build && pnpm playwright test",
     "test:ui": "pnpm playwright test --ui",
     "test:build": "node scripts/check-build.js",
+    "test:wp": "node scripts/test-wp-helpers.js",
     "test:update": "pnpm build && pnpm playwright test --update-snapshots",
     "/*! --- ДИАГНОСТИЧЕСКИЕ ИНСТРУМЕНТЫ --- */": "",
     "test:fonts": "vite --open /pages/test-fonts.html",
