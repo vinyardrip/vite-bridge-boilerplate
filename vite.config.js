@@ -23,6 +23,7 @@ import webfontDl from "vite-plugin-webfont-dl";
 
 import imageOptimize from "vite-plugin-image-optimize";
 import { imgToPicture } from "@atrocityz/vite-plugin-html-img-to-picture";
+import { smartAssets } from "vite-plugin-smart-assets";
 // import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
 
@@ -431,6 +432,18 @@ export default defineConfig(({ command, mode }) => {
     }),
 
     imgToPicturePlugin,
+
+    /*! --- SMART ASSETS (monorepo-пакет packages/vite-plugin-smart-assets) ---
+    Phase 1, скелет: сканирует frontend/raw/ и роутит файлы КАК ЕСТЬ в плоскую
+    структуру dist/assets/ (img/, icons/) + пишет assets-manifest.json в корень
+    outDir. Источник и вывод НЕ пересекаются со старым пайплайном ниже
+    (assets/images + public/img → dist/img), поэтому плагины работают
+    ПАРАЛЛЕЛЬНО: выключать image-optimize/imgToPicture пока нельзя — на их
+    артефактах завязаны разметка главной (boiler-demo) и picture-тесты
+    (check-build тоже проверяет <picture> в dist). Когда smart-классификатор
+    (Phase 2) заберет роутинг на себя, старые плагины будут отключены и
+    frontend/src/assets/images + frontend/public/img мигрируют в frontend/raw. */
+    !isWpBuild && smartAssets(),
 
     /*! --- ОБЕРТКА <IMG> В <PICTURE> ДЛЯ .NJK-СТРАНИЦ (см. выше) --- */
     njkImgToPicture(imgToPicturePlugin),

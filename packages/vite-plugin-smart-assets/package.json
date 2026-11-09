@@ -1,0 +1,24 @@
+{
+  "name": "vite-plugin-smart-assets",
+  "version": "0.1.0",
+  "description": "Smart asset routing for Vite: scans frontend/raw/ and routes images/icons into a flat dist structure with an assets manifest (Phase 1: basic routing).",
+  "main": "index.js",
+  "type": "module",
+  "files": [
+    "index.js",
+    "src"
+  ],
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "assets",
+    "image-pipeline"
+  ],
+  "license": "ISC",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  }
+}

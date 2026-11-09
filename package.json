@@ -68,6 +68,7 @@
     "vite-plugin-image-optimize": "^2.0.1",
     "vite-plugin-njk-frontmatter": "^1.0.2",
     "vite-plugin-pwa": "^1.1.0",
+    "vite-plugin-smart-assets": "workspace:*",
     "vite-plugin-svg-sprite": "^0.6.3",
     "vite-plugin-webfont-dl": "^3.11.1",
     "vituum": "^2.0.2"
