@@ -18,6 +18,9 @@
   "engines": {
     "node": ">=20.11"
   },
+  "dependencies": {
+    "sharp": "^0.34.4"
+  },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   }
