@@ -12,8 +12,8 @@
 - [ ] [SVG] style-фикстура: @media + каскад
 - [ ] [SVG] check-build: прогнать, закрыть долг шага 1
 - [x] [SVG] шаг 3: префиксация id/class/@keyframes
-- [>] [SVG] шаг 8: dev-middleware
-- [ ] [SVG] шаг 9: тесты + check-build (cleanup)
+- [x] [SVG] шаг 8: dev-middleware (build integration done, dev-часть не готова)
+- [>] [SVG] шаг 9: тесты + check-build (cleanup)
 - [ ] [SVG] шаг 10: фикстуры + README (cleanup)
 
 ## Completed

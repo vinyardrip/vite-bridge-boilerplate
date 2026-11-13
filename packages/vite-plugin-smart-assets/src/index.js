@@ -10,7 +10,10 @@
  * Маршруты:
  *   .jpg/.jpeg/.png → [scope/]img/  + варианты webp/avif (quality 80, альфа PNG
  *                     сохраняется) + retina-пара для широких исходников;
- *   .svg            → [scope/]icons/ как есть (вектор).
+ *   .svg            → SVG-конвейер (svg/pipeline.js, шаг 8): normalize →
+ *                     classify → inline ([scope/]ui/) / sprite
+ *                     ([scope/]icons/sprite.<hash>.svg) / img
+ *                     ([scope/]img/<stem>.<hash>.svg).
  *
  * ИМЕНА: `name.<hash>.<ext>` и `name.<hash>@2x.<ext>` — hash это первые 8 hex
  * символов sha256 ИСХОДНОГО файла (у всех вариантов одного источника хеш общий,
@@ -49,6 +52,8 @@
  * { source, output, type, hash, retina, width, height, size, variants:
  *   [ { path, format, descriptor, width, height } ] } (format — исходное
  * расширение + webp/avif; descriptor "1x"/"2x" — готовые srcset-дескрипторы).
+ * У SVG (шаг 8): { source, file, kind, mode, symbol?, hash } — фрагмент
+ * processSvgBatch смержен в общий entries через mergeSvgManifest.
  *
  * Принципы (унаследованы от проекта):
  *   • ошибка sharp на одном файле НЕ роняет сборку — предупреждение + файл
@@ -70,14 +75,19 @@ import { createRequire } from "node:module";
 
 import sharp from "sharp";
 
+import { mergeSvgManifest } from "./svg/build-manifest.js";
+import { processSvgBatch } from "./svg/pipeline.js";
+
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
 
 /** Маршруты: расширения → папка внутри scope, тип записи, нужен ли sharp-конвейер. */
 const ROUTES = {
   img: { extensions: [".jpg", ".jpeg", ".png"], folder: "img", type: "img", raster: true },
-  icons: { extensions: [".svg"], folder: "icons", type: "icons", raster: false },
 };
+
+/** Расширение, которое уходит в SVG-конвейер (pipeline.js), а не в ROUTES. */
+const SVG_EXTENSION = ".svg";
 
 /** Исходник шире этого (px) считается 2x-исходником (конвенция «в raw/ кладут 2x»). */
 const RETINA_MIN_WIDTH = 800;
@@ -106,8 +116,11 @@ const MODERN_FORMATS = [
 /** Форматы, попадающие в <img>-фолбэк pictureHtml (не в <source>). */
 const FALLBACK_FORMATS = new Set(["jpg", "jpeg", "png"]);
 
-/** Токен в CSS до подстановки: url(smart-asset:hero:avif) — схемо-подобный URL, Vite его не резолвит. */
-const CSS_TOKEN_RE = /url\((['"]?)smart-asset:([a-zA-Z0-9._-]+):([a-z0-9]+)\1\)/g;
+/** Токен в CSS до подстановки: url(smart-asset:hero:avif) — схемо-подобный URL, Vite его не резолвит.
+ *  Vite ребейзит неизвестный url() относительно каталога sass-исходника, поэтому
+ *  в собранном CSS перед схемой может быть путь-префикс (url(generated/smart-asset:…)) —
+ *  жадный префикс [./w/-] допускает его (и отсутствие), схема остается якорем. */
+const CSS_TOKEN_RE = /url\((['"]?)[.\w/-]*?smart-asset:([a-zA-Z0-9._-]+):([a-z0-9]+)\1\)/g;
 
 const toPosix = (p) => p.split(path.sep).join("/");
 
@@ -163,7 +176,10 @@ export function smartAssets(options = {}) {
     files: new Map(),
     /** имя без расширения → entry (API pictureHtml/entry). */
     byName: new Map(),
-  });
+    /** SVG-конвейер (шаг 8): [{ fileName, content }] + фрагмент манифеста. */
+    svgOutputs: [],
+    svgManifest: { entries: [] },
+  };
 
   /*!
    * Полный цикл: скан raw/ → хеш → retina-решение → sharp-варианты → состояние
@@ -201,7 +217,11 @@ export function smartAssets(options = {}) {
       })
       .sort();
 
-    for (const rel of found) {
+    // SVG уходит в свой конвейер (шаг 8), остальное — в растровые маршруты.
+    const svgFiles = found.filter((rel) => path.extname(rel).toLowerCase() === SVG_EXTENSION);
+    const rasterFiles = found.filter((rel) => path.extname(rel).toLowerCase() !== SVG_EXTENSION);
+
+    for (const rel of rasterFiles) {
       const ext = path.extname(rel).toLowerCase();
       const routeKey = Object.keys(ROUTES).find((key) =>
         ROUTES[key].extensions.includes(ext),
@@ -359,16 +379,26 @@ export function smartAssets(options = {}) {
       }
     }
 
+    // SVG-конвейер (шаг 8): normalize → classify → inline/sprite/img + манифест.
+    if (svgFiles.length > 0) {
+      const svgResult = await processSvgBatch(
+        svgFiles.map((rel) => path.join(rawDir, rel)),
+        { rawDir, scope },
+      );
+      state.svgOutputs = svgResult.outputs;
+      state.svgManifest = svgResult.manifest;
+    }
+
     manifest.entries.sort((a, b) => a.source.localeCompare(b.source));
     state.manifest = manifest;
     state.ready = true;
 
     const imgEntries = manifest.entries.filter((e) => e.type === "img").length;
-    const iconEntries = manifest.entries.filter((e) => e.type === "icons").length;
+    const svgCount = state.svgManifest.entries.length;
     console.log(
-      `[smart-assets] ${manifest.entries.length} файл(ов) из ${toPosix(rawDir)}: ` +
+      `[smart-assets] ${manifest.entries.length + svgCount} файл(ов) из ${toPosix(rawDir)}: ` +
         `${imgEntries} img (+${variantCount} вариантов, ${retinaCount} retina), ` +
-        `${iconEntries} icons`,
+        `${svgCount} svg (inline/sprite/img по конвейеру)`,
     );
   }
 
@@ -432,6 +462,8 @@ export function smartAssets(options = {}) {
     state.manifest = null;
     state.files.clear();
     state.byName.clear();
+    state.svgOutputs = [];
+    state.svgManifest = { entries: [] };
   }
 
   /*!
@@ -513,14 +545,17 @@ export function smartAssets(options = {}) {
     async generateBundle(_options, bundle) {
       await ensureReady();
 
-      // Файлы + манифест.
+      // Файлы + манифест: растр (files) + SVG-конвейер (svgOutputs, шаг 8).
       for (const [fileName, buffer] of state.files) {
         this.emitFile({ type: "asset", fileName, source: buffer });
+      }
+      for (const { fileName, content } of state.svgOutputs) {
+        this.emitFile({ type: "asset", fileName, source: content });
       }
       this.emitFile({
         type: "asset",
         fileName: manifestFile,
-        source: JSON.stringify(state.manifest, null, 2),
+        source: JSON.stringify(mergeSvgManifest(state.manifest, state.svgManifest), null, 2),
       });
 
       // Подмена CSS-токенов (после эмитов — обычный паттерн проекта,

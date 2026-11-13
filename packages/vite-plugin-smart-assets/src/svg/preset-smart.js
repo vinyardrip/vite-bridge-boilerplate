@@ -29,6 +29,9 @@
  *   removeTitle, removeDesc  — удаляют ВСЕ <title>/<desc>, включая вложенные
  *                                в <g>/<symbol> (контент, не метаданные);
  *                                прямые дети корня уже вынул extract-meta.
+ *   removeHiddenElems        — считает неиспользуемые <symbol> скрытыми и
+ *                                вырезает их; файл-контейнер (kind sprite
+ *                                классификатора) без символов теряет смысл.
  * =================================================================================================
  */
 
@@ -56,6 +59,7 @@ export const presetSmart = [
         convertColors: false,
         removeTitle: false,
         removeDesc: false,
+        removeHiddenElems: false,
       },
     },
   },
