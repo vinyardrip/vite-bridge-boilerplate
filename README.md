@@ -197,6 +197,14 @@ Gzip без raw недооценивает стоимость инлайна (in
 **Важно:** пути в `file` всегда относительные (без ведущего `/`), например: 
 `assets/icons/sprite.1a2b3c4d.svg`.
 
+## Хелперы проекции (projectSvg)
+
+Функция `projectSvg(entry, options, inlineContent)` превращает запись из манифеста в HTML.
+
+- `mode: 'inline'`: возвращает `<svg>` с `aria-hidden` и `focusable="false"`.
+- `mode: 'sprite'`: возвращает `<svg><use href="sprite.abc.svg#user"></use></svg>` (пути относительные, без `/`).
+- `mode: 'img'`: возвращает `<img>` с `loading="lazy"` и `alt` из `options`.
+
 ## Статус реализации
 
 Подробный чек-лист — в `PLAN.md`, раздел "11. План реализации".

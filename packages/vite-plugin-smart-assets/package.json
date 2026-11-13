@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "node --test test/svg/normalize.spec.js test/svg/classify.spec.js test/svg/build-sprite.spec.js test/svg/build-manifest.spec.js"
+    "test": "node --test test/svg/normalize.spec.js test/svg/classify.spec.js test/svg/build-sprite.spec.js test/svg/build-manifest.spec.js test/svg/project.spec.js"
   },
   "files": [
     "index.js",
