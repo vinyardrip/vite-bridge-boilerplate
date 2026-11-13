@@ -11,8 +11,8 @@
 - [ ] [SVG] B2: вложенные title/desc в extract-meta
 - [ ] [SVG] style-фикстура: @media + каскад
 - [ ] [SVG] check-build: прогнать, закрыть долг шага 1
-- [>] [SVG] шаг 3: префиксация id/class/@keyframes
-- [ ] [SVG] шаг 8: dev-middleware
+- [x] [SVG] шаг 3: префиксация id/class/@keyframes
+- [>] [SVG] шаг 8: dev-middleware
 - [ ] [SVG] шаг 9: тесты + check-build (cleanup)
 - [ ] [SVG] шаг 10: фикстуры + README (cleanup)
 
