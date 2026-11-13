@@ -569,14 +569,41 @@ export function smartAssets(options = {}) {
       }
     },
 
-    /*!
-     * API для Nunjucks-фильтров (vite.config.js): запись манифеста по имени
-     * файла в raw/ без расширения.
-     * @param {string} name
-     */
-    entry(name) {
-      return state.byName.get(name);
-    },
+  /*!
+   * API для Nunjucks-фильтров (vite.config.js): запись манифеста по имени
+   * файла в raw/ без расширения.
+   * @param {string} name
+   */
+  entry(name) {
+    return state.byName.get(name);
+  },
+
+  /*!
+   * API для Nunjucks-фильтров (vite.config.js): запись SVG-манифеста по имени
+   * файла в raw/ без расширения (подпапка — через слеш: "icons/user").
+   * Состояние посчитано в buildStart/configureServer — ДО рендера шаблонов
+   * (фаза transform), поэтому записи доступны в момент вызова фильтра.
+   * @param {string} name
+   * @returns {object|undefined} Запись { source, file, kind, mode, symbol?, hash }.
+   */
+  svgEntry(name) {
+    const source = `${toPosix(rawDir)}/${name}.svg`;
+    return state.svgManifest.entries.find((entry) => entry.source === source);
+  },
+
+  /*!
+   * API для Nunjucks-фильтров (vite.config.js): нормализованный inline-SVG
+   * (mode: "inline") по записи манифеста — содержимое из state.svgOutputs.
+   * Для sprite/img вернет null: им инлайн-контент не нужен.
+   * @param {object} entry Запись из svgEntry().
+   * @returns {string|null}
+   */
+  svgInlineContent(entry) {
+    if (!entry?.file) {
+      return null;
+    }
+    return state.svgOutputs.find(({ fileName }) => fileName === entry.file)?.content ?? null;
+  },
 
     /*!
      * Готовая <picture>-разметка по имени ассета: <source> AVIF/WebP с

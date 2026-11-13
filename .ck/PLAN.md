@@ -16,5 +16,6 @@
 - [x] [SVG] шаг 9: тесты + check-build (cleanup)
 - [x] [SVG] шаг 10: фикстуры + README (cleanup)
 - [x] [DOCS] Написать Cookbook (docs/ASSETS_GUIDE.md: FE Nunjucks + BE PHP, FAQ) + ссылка в README
+- [x] [FE] Nunjucks-макросы для ассетов (ui.icon/ui.picture: манифест → projectSvg → SafeString, cross.svg в raw/)
 
 ## Completed

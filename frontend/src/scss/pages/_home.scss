@@ -159,8 +159,8 @@
   color: var(--color-text-muted);
 }
 
-// Иконка из ui.svg(): цвет наследуется через currentColor (атрибуты в
-// разметке, см. svgIconFilter), размер задается CSS-классом.
+// Иконка из ui.icon(): цвет наследуется через currentColor (его вносит
+// конвейер smart-assets на нормализации), размер задается CSS-классом.
 .contacts__svg-demo-icon {
   width: 44px;
   height: 44px;

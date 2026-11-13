@@ -116,11 +116,13 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 
 - Файлы и манифест эмитятся и в dev-режиме из памяти: middleware раздает
   `assets/…`, watcher следит за `raw/` и делает full-reload при изменениях.
-- Разметка `<picture>` — явно через фильтр Nunjucks `smartPicture`
-  (готовая AVIF/WebP-разметка из состояния плагина); CSS-фоны — через миксин
-  `bgset()` + сгенерированную карту путей
-  (`frontend/src/scss/generated/_smart-assets-map.scss` — генерируется, не
-  коммитится); `bgset()` описан в разделе «Фоны и CSS» Cookbook.
+- Вывод в шаблонах — Nunjucks-макросы **`ui.picture()`** (готовый `<picture>`
+  из AVIF/WebP-вариантов) и **`ui.icon()`** (инлайн `<svg>` / `<use>` спрайта /
+  `<img>` иллюстрации — по записи манифеста, `| safe` не нужен): фильтры
+  `smartPicture`/`smartSvg` в `vite.config.js` проецируют состояние плагина и
+  `projectSvg` в SafeString. CSS-фоны — через миксин `bgset()` +
+  сгенерированную карту путей (`frontend/src/scss/generated/_smart-assets-map.scss`
+  — генерируется, не коммитится). Примеры — в Cookbook.
 - WP-сборка (`pnpm build:wp`) пишет файлы прямо в `<тема>/assets/` — плоско
   (совместимость с WP-плагинами и `strip-avif.js`), `scope=""`.
 - Манифест `assets-manifest.json` (в корне outDir) содержит запись на каждый
@@ -196,6 +198,12 @@ Gzip без raw недооценивает стоимость инлайна (in
 - `mode: 'inline'`: возвращает `<svg>` с `aria-hidden` и `focusable="false"`.
 - `mode: 'sprite'`: возвращает `<svg><use href="sprite.abc.svg#user"></use></svg>` (пути относительные, без `/`).
 - `mode: 'img'`: возвращает `<img>` с `loading="lazy"` и `alt` из `options`.
+
+В шаблонах ее вызывают за вас Nunjucks-фильтры `smartSvg`/`smartPicture`
+(`vite.config.js`, обертки в SafeString) — им пользуются макросы
+`ui.icon()` и `ui.picture()`; примеры — в Cookbook. Плагин также дает
+API `svgEntry(name)` / `svgInlineContent(entry)` для поиска записи и
+нормализованного инлайн-контента по имени файла в `raw/`.
 
 ## Префиксация (prefixSvg)
 

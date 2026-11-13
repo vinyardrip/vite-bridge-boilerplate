@@ -57,6 +57,9 @@ importers:
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
+      nunjucks:
+        specifier: ^3.2.4
+        version: 3.2.4(chokidar@3.6.0)
       ora:
         specifier: ^9.0.0
         version: 9.4.1

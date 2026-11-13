@@ -19,11 +19,12 @@
   fill: currentColor; // Цвет заливки наследуется от CSS-свойства color
 }
 
-// Инлайновые иконки (макрос ui.svg → фильтр svgIcon в vite.config.js).
+// Инлайновые иконки (макрос ui.icon → фильтр smartSvg в vite.config.js).
 // !ВАЖНО: fill/stroke НЕ задаются здесь на уровне CSS — наследование цвета
-// делается в самой разметке (currentColor атрибутами, см. svgIconFilter).
-// CSS-правило fill перекрыло бы fill="none" у stroke-иконок (CSS сильнее
-// presentation-атрибутов), и обводочная иконка превратилась бы в заливку.
+// делается в самой разметке (currentColor вносит конвейер smart-assets на
+// нормализации). CSS-правило fill перекрыло бы fill="none" у stroke-иконок
+// (CSS сильнее presentation-атрибутов), и обводочная иконка превратилась бы
+// в заливку — задавайте цвет через color.
 .svg-icon {
   display: inline-block; // Чтобы работали размеры и отступы
   width: 1em; // По умолчанию — размер шрифта родителя (CSS перекрывает width/height из файла)

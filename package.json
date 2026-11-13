@@ -51,6 +51,7 @@
     "fontaine": "^0.6.0",
     "glob": "^11.0.3",
     "gray-matter": "^4.0.3",
+    "nunjucks": "^3.2.4",
     "ora": "^9.0.0",
     "postcss-sort-media-queries": "^5.2.0",
     "posthtml": "^0.16.7",

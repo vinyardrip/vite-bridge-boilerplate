@@ -24,43 +24,59 @@
 #}
 
 {#
-  Макрос для вставки SVG-иконки из автоматически генерируемого спрайта.
+  Макрос SVG-ИКОНКИ из конвейера smart-assets: файл frontend/raw/<name>.svg
+  на сборке проходит нормализацию → классификацию → манифест, а этот макрос
+  находит его запись и проецирует в готовый HTML (фильтр smartSvg в
+  vite.config.js → projectSvg пакета vite-plugin-smart-assets).
 
-  @param {string} name - Имя (ID) иконки без префикса "icon-".
-  @param {string} [class] - (Опционально) Дополнительный CSS-класс для тега <svg>.
+  Что выдаст — решает конвейер, макросу все равно (один и тот же вызов):
+  • mode inline (монохромные иконки)  — нормализованный <svg> целиком,
+    цвет наследуется от CSS color (currentColor в разметке);
+  • mode sprite (много/тяжелых иконок) — <svg><use href="assets/icons/
+    sprite.<hash>.svg#<name>"></use></svg>, путь и symbol берутся из манифеста;
+  • mode img (иллюстрации/анимации)    — <img> с loading="lazy" и alt.
+
+  Результат — SafeString от фильтра: ни макросу, ни вызывающему шаблону
+  не нужен | safe.
+
+  Примеры:
+    {{ ui.icon('phone') }}
+    {{ ui.icon('phone', 'contacts__icon') }}
+    {{ ui.icon('banner', '', { alt: 'Баннер акции' }) }}   — SVG-иллюстрация (mode img)
+
+  Иконки нет в frontend/raw/ (или файл не распознан конвейером) →
+  понятная ошибка сборки с именем иконки.
+
+  @param {string} name - Имя файла в frontend/raw/ без расширения (подпапка — через слеш).
+  @param {string} [className] - Дополнительный CSS-класс для тега <svg>/<img>.
+  @param {object} [options] - Атрибуты проекции: alt (для mode img — обязателен по смыслу),
+    loading, aria-label (снимает aria-hidden), style, data-* и т.д.
 #}
-{% macro icon(name, class) %}
-  <svg class="icon icon-{{ name }}{% if class %} {{ class }}{% endif %}" aria-hidden="true" focusable="false">
-    {#
-    Путь относительный (base: './'): Vite поместит спрайт в dist/img/sprite.svg,
-    страница в корне dist — './img/sprite.svg' работает и через file://.
-  #}
-    <use xlink:href="./img/sprite.svg#icon-{{ name }}"></use>
-  </svg>
-{% endmacro %}
+{% macro icon(name, className='', options={}) -%}
+  {{- name | smartSvg(options, className) -}}
+{%- endmacro %}
 
 {#
-  Макрос INLINE-SVG-иконки: файл frontend/src/assets/icons/<name>.svg читается
-  на этапе сборки (фильтр svgIcon в vite.config.js) и вставляется в HTML целиком —
-  без внешнего спрайта и HTTP-запроса.
+  Макрос РАСТРОВОЙ КАРТИНКИ из конвейера smart-assets: исходник кладут в
+  frontend/raw/ (jpg/png, для ретины — 2x), а макрос через фильтр smartPicture
+  собирает готовый <picture>: <source> AVIF → WebP → <img>-фолбэк,
+  retina-пары в srcset (1x/2x), размеры от CLS, loading="lazy".
 
-  Отличия от ui.icon() (спрайт):
-  • каждый вызов инлайнит полный <svg> — для единичных и/или сложных иконок;
-  • цвет наследуется от CSS-свойства color: зашитые fill/stroke="#hex" фильтр
-    заменяет на currentColor (подробнее — svgIconFilter в vite.config.js);
-  • размер управляется CSS: класс .svg-icon (base/_icons.scss) задает 1em,
-    ваш класс может переопределить.
+  Результат — SafeString от фильтра: | safe не нужен.
 
-  Пример:
-    {{ ui.svg('phone') }}
-    {{ ui.svg('phone', 'contacts__icon') }}
+  Примеры:
+    {{ ui.picture('hero') }}
+    {{ ui.picture('hero', { alt: 'Кухня в готовом интерьере' }) }}
+    {{ ui.picture('photo', { alt: '', imgClass: 'card__img' }) }}
 
-  @param {string} name - Имя файла иконки без расширения (assets/icons/name.svg).
-  @param {string} [class] - Дополнительный CSS-класс для тега <svg>.
+  Ассета нет в frontend/raw/ — макрос не роняет сборку: в разметку попадает
+  HTML-комментарий с именем ассета, плагин предупредит в логе.
+
+  @param {string} name - Имя файла в frontend/raw/ без расширения.
+  @param {object} [options] - { alt, imgClass, loading, decoding }.
 #}
-{% macro svg(name, class) -%}
-  {%- set classes = 'svg-icon' ~ ((' ' ~ class) if class else '') -%}
-  {{- name | svgIcon(classes) | safe -}}
+{% macro picture(name, options={}) -%}
+  {{- name | smartPicture(options) -}}
 {%- endmacro %}
 
 {#

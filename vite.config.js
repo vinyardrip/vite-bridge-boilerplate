@@ -12,6 +12,7 @@
 import { defineConfig } from "vite";
 import fs from "node:fs";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { globSync } from "glob";
 import { visualizer } from "rollup-plugin-visualizer";
 
@@ -22,8 +23,23 @@ import { imagetools } from "vite-imagetools";
 import webfontDl from "vite-plugin-webfont-dl";
 
 import { smartAssets } from "vite-plugin-smart-assets";
+// projectSvg — проекция записи SVG-манифеста в HTML (<svg> / <use> / <img>),
+// ГЛУБОКИЙ импорт: точка входа пакета экспортирует только smartAssets.
+import { projectSvg } from "vite-plugin-smart-assets/src/svg/project.js";
 // import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
+
+/*! --- SAFE-ОБЕРТКА ДЛЯ ФИЛЬТРОВ NUNJUCKS ---
+Макросы ui.icon()/ui.picture() должны возвращать готовый HTML БЕЗ | safe.
+autoescape у njk-frontmatter включен — «сырую» строку фильтра он экранирует.
+Nunjucks не экранирует значения типа SafeString, поэтому фильтры возвращают
+SafeString ТОЙ ЖЕ копии nunjucks, которую грузит плагин шаблонов
+(peer-зависимость vite-plugin-njk-frontmatter, объявлена в корневых
+devDependencies — pnpm ставит один модуль в .pnpm, instanceof сходится). */
+const nunjucksRuntime = createRequire(
+  path.resolve(process.cwd(), "package.json"),
+)("nunjucks").runtime;
+const safe = (html) => new nunjucksRuntime.SafeString(String(html));
 
 /*! --- ГЛОБАЛЬНЫЕ ДАННЫЕ САЙТА --- */
 // vite-plugin-njk-frontmatter особый случай: файл site.json он сливает
@@ -37,74 +53,6 @@ const readSiteData = () => {
     console.warn("Не удалось прочитать frontend/src/data/site.json");
     return {};
   }
-};
-
-/*! --- ФИЛЬТР NUNJUCKS: ИНЛАЙН SVG-ИКОНОК (используется макросом ui.svg) ---
-Читает файл frontend/src/assets/icons/<name>.svg и возвращает готовую
-разметку корневого <svg> для прямой вставки в HTML. Вызывается из
-макроса ui.svg() (macros/_ui.njk) с модификатором | safe: содержимое —
-файл из репозитория, доверенный источник на этапе сборки.
-
-Обработка под наследование цвета через CSS color:
-  • вырезаются XML-пролог, DOCTYPE и комментарии;
-  • fill="#hex" / stroke="#hex" заменяются на currentColor ПО ВСЕМУ файлу
-    (fill="none" не трогаем — он легитимен для stroke-иконок, а собственный
-    fill элемента перекрывает унаследованный от корня);
-  • если у корневого <svg> не задан fill вовсе — добавляется
-    fill="currentColor" (иначе пути рисуются дефолтным черным);
-  • класс макроса сливается с классом иконки, если она его уже имела;
-  • декоративные иконки: aria-hidden="true" focusable="false".
-Отсутствие файла не роняет сборку: предупреждение + HTML-комментарий в разметке. */
-const svgIconFilter = (name, classes) => {
-  const iconPath = path.resolve(
-    __dirname,
-    "frontend/src/assets/icons",
-    `${name}.svg`,
-  );
-
-  let source;
-  try {
-    source = fs.readFileSync(iconPath, "utf-8");
-  } catch {
-    console.warn(`svgIcon: иконка "${name}" не найдена в frontend/src/assets/icons/`);
-    return `<!-- svgIcon: иконка "${name}" не найдена -->`;
-  }
-
-  // 1. Пролог/DOCTYPE/комментарии в inline-разметке не нужны.
-  source = source
-    .replace(/<\?xml[\s\S]*?\?>/g, "")
-    .replace(/<!DOCTYPE[^>]*>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .trim();
-
-  // 2. Зашитые цвета → currentColor (по всему файлу, не только в корне).
-  source = source
-    .replace(/fill="#[0-9a-fA-F]{3,8}"/g, 'fill="currentColor"')
-    .replace(/stroke="#[0-9a-fA-F]{3,8}"/g, 'stroke="currentColor"');
-
-  // 3. Корневой <svg>: class, aria-атрибуты и fill="currentColor" по умолчанию.
-  const rootMatch = source.match(/<svg\b([^>]*)>/i);
-  if (!rootMatch) {
-    console.warn(`svgIcon: в "${name}.svg" нет корневого <svg>`);
-    return "";
-  }
-
-  let attrs = rootMatch[1];
-  if (/\bclass\s*=/i.test(attrs)) {
-    attrs = attrs.replace(/\bclass\s*=\s*"([^"]*)"/i, (_, existing) => {
-      const merged = `${existing} ${classes}`.trim();
-      return `class="${merged}"`;
-    });
-  } else {
-    attrs += ` class="${classes}"`;
-  }
-  if (!/\bfill\s*=/i.test(attrs)) {
-    attrs += ' fill="currentColor"';
-  }
-  attrs += ' aria-hidden="true" focusable="false"';
-  source = source.replace(/<svg\b[^>]*>/i, `<svg${attrs}>`);
-
-  return source;
 };
 
 /*! --- ТОЧКИ ВХОДА ДЛЯ СБОРКИ --- */
@@ -245,6 +193,30 @@ export default defineConfig(({ command, mode }) => {
   на конфиг: фильтры Nunjucks и hooks делят одно состояние. */
   const smartAssetsPlugin = smartAssets({ scope: isWpBuild ? "" : "assets" });
 
+  /*! --- ФИЛЬТР NUNJUCKS: SVG-ИКОНКИ ИЗ МАНИФЕСТА (используется макросом ui.icon) ---
+  Находит запись SVG в манифесте smart-assets по имени файла в frontend/raw/
+  (без расширения) и проецирует ее в HTML через projectSvg пакета:
+    • mode inline  — нормализованный <svg> целиком (содержимое из состояния
+      плагина — оно посчитано в buildStart, ДО рендера шаблонов);
+    • mode sprite  — <svg><use href="sprite.<hash>.svg#symbol"></use></svg>;
+    • mode img     — <img> для SVG-иллюстраций/анимаций.
+  Записи нет → fail-fast: сборка падает с именем иконки (без «молчаливых»
+  дырок в разметке). Возвращаем SafeString — макросу | safe не нужен. */
+  const smartSvg = (name, options, className) => {
+    const entry = smartAssetsPlugin.svgEntry(name);
+    if (!entry) {
+      throw new Error(
+        `Icon not found: ${name} — нет frontend/raw/${name}.svg ` +
+          `(или файл не распознан конвейером SVG; детали выше в логе плагина)`,
+      );
+    }
+    const iconOptions = { ...(options ?? {}) };
+    if (className && iconOptions.class === undefined) {
+      iconOptions.class = className;
+    }
+    return safe(projectSvg(entry, iconOptions, smartAssetsPlugin.svgInlineContent(entry)));
+  };
+
   const plugins = [
     // Fontaine должен идти первым: подменяет @font-face на fallback-метрики.
     FontaineTransform.vite({
@@ -267,9 +239,10 @@ export default defineConfig(({ command, mode }) => {
         },
       },
       filters: {
-        svgIcon: svgIconFilter,
+        // SVG-иконки/иллюстрации из манифеста smart-assets (макрос ui.icon в _ui.njk).
+        smartSvg,
         // <picture> из состояния smart-assets (макрос ui.picture в _ui.njk).
-        smartPicture: (name, opts) => smartAssetsPlugin.pictureHtml(name, opts ?? {}),
+        smartPicture: (name, opts) => safe(smartAssetsPlugin.pictureHtml(name, opts ?? {})),
       },
     }),
 
@@ -283,9 +256,9 @@ export default defineConfig(({ command, mode }) => {
     }),
 
     /*! --- SVG-СПРАЙТ ---
-    Плагин vite-plugin-svg-sprite намеренно отключен: инлайн-иконки решает
-    ui.svg() (фильтр svgIcon), а исходники иконок для маршрутизации живут
-    в frontend/raw/ (smart-assets → assets/icons/). */
+    Плагин vite-plugin-svg-sprite намеренно отключен: спрайты собирает
+    smart-assets (mode: sprite → assets/icons/sprite.<hash>.svg), исходники
+    иконок живут в frontend/raw/, вывод в шаблонах — макрос ui.icon(). */
 
     imagetools(),
 
