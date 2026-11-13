@@ -1,3 +1,3 @@
-# boiler-vite
+# boiler-vite-agent
 
 Context Keeper project directory. See [README.md](../../README.md) for full documentation.

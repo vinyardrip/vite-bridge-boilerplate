@@ -29,7 +29,8 @@
     "favicons:generate": "pwa-assets-generator --config vite.config.js",
     "images:convert": "node scripts/convert-images.js",
     "images:compress": "node scripts/compress-images.js",
-    "svg:optimize": "node scripts/optimize-svg.js"
+    "svg:optimize": "node scripts/optimize-svg.js",
+    "test": "pnpm --filter vite-plugin-smart-assets test"
   },
   "type": "module",
   "keywords": [],

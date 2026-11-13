@@ -129,6 +129,9 @@ importers:
       sharp:
         specifier: ^0.34.4
         version: 0.34.5
+      svgo:
+        specifier: ^3.3.5
+        version: 3.3.5
       vite:
         specifier: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
         version: 7.3.7(@types/node@26.6.6)(lightningcss@1.33.0)(sass-embedded@1.108.1)(sass@1.108.1)(terser@5.51.2)

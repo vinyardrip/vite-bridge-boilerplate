@@ -6,6 +6,9 @@
 @use "sass:math";
 @use "sass:meta";
 @use "variables" as *; // Подтягиваем карту $breakpoints
+// Сгенерированная карта smart-assets (пути + smart-asset-url()): пишется
+// плагином vite-plugin-smart-assets на buildStart/configureServer.
+@use "../generated/smart-assets-map" as smart;
 
 // --------------------------------------------------------------------------
 // Медиа-запросы (Media Queries)
@@ -166,28 +169,24 @@
 // Фон с AVIF/WebP-вариантами и фолбэками (bgset)
 // --------------------------------------------------------------------------
 
-// Порт "battle-tested" миксина bgset из старого бойлерплейта (был с
-// абсолютными путями /img/, здесь — под наш image-пайплайн).
+// Порт "battle-tested" миксина bgset из старого бойлерплейта, переехавший на
+// smart-assets пайплайн: исходники живут в frontend/raw/, варианты (webp/avif,
+// quality 80, retina-пары) и хешированные имена генерирует
+// vite-plugin-smart-assets на buildStart — ДО компиляции Sass.
 //
 // КАСКАД: браузер применяет последнее ВАЛИДНОЕ объявление background-image.
 // Браузер без поддержки AVIF отбрасывает это объявление (невалидный формат)
-// и берет WebP; без WebP — берет фолбэк $type. Порядок: сначала худший.
+// и берет WebP; без WebP — берет фолбэк исходного формата. Порядок: сначала
+// худший. Формат фолбэка определяется по карте сгенерированных ассетов
+// (jpg > png — какой найден в raw/), руками его больше не передают.
 //
-// ВАРИАНТЫ кладутся руками рядом с исходником — как в оригинальном
-// workflow пользователя: assets/images/<name>.jpg + <name>.webp + <name>.avif.
-// Генерация — sharp (как в imgToPicture, quality: 80, нативное разрешение):
-//   node --input-type=module -e "import sharp from 'sharp'; \
-//     const s = 'frontend/src/assets/images/<name>.jpg'; \
-//     await sharp(s).webp({quality:80}).toFile(s.replace(/\.jpg$/, '.webp')); \
-//     await sharp(s).avif({quality:80}).toFile(s.replace(/\.jpg$/, '.avif'));"
-// (в будущем это автоматизирует smart-assets пайплайн; директивы imagetools
-// типа ?format= в CSS url() не работают — Vite вырезает query до плагинов).
-// Vite резолвит url() из SCSS, хеширует все три файла и кладет в dist/img/.
-//
-// !ПУТИ: относительные от SCSS-файла, где вызван @include (все партиалы
-// живут в подпапках frontend/src/scss/ — одна глубина, поэтому
-// ../../assets/images/ работает отовсюду). Абсолютные пути запрещены
-// check-build.js (file://-совместимость, base: './').
+// !МЕХАНИКА ПУТЕЙ: url() пишет функция smart-asset-url() из сгенерированного
+// файла generated/_smart-assets-map.scss. В build она возвращает ТОКЕН
+// url(smart-asset:name:format) — Vite не пытается резолвить схемо-подобные
+// URL в CSS (сборочных файлов еще не существует на этапе transform), а
+// generateBundle плагина подменяет токены на реальные относительные пути
+// (css/app.*.css → ../assets/img/name.<hash>.<ext>; WP-сборка → ../img/...).
+// В dev функция возвращает /assets/... — их отдает middleware плагина.
 //
 // !FIREFOX: @-moz-document url-prefix() — легаси-хак, применяющийся ТОЛЬКО в
 // Firefox (остальные браузеры отбрасывают незнакомый @-rule целиком).
@@ -195,24 +194,34 @@
 // (скачивал и фолбэк, и новый формат), поэтому внутри — image-set() с
 // явными type()-хинтами: браузер выбирает формат до скачивания.
 //
-// @param {string} $image - имя исходника без расширения (assets/images/<name>.<type>).
-// @param {string} $type  - расширение фолбэка: 'jpg' (умолчание) | 'jpeg' | 'png'.
-@mixin bgset($image, $type: "jpg") {
-  // MIME фолбэка для type()-хинта в image-set (в оригинале был зашит
-  // image/jpeg — при $type: "png" браузер отверг бы валидный url).
+// @param {string} $image - имя исходника в frontend/raw/ без расширения.
+@mixin bgset($image) {
+  $formats: map.get(smart.$smart-assets-map, $image);
+
+  @if not $formats {
+    @warn "bgset: ассет '#{$image}' не найден в карте smart-assets " +
+      "(frontend/raw/#{$image}.jpg|png) — фон не будет работать";
+  }
+
+  // Формат фолбэка: что лежит в raw/ (jpg или png).
+  // (if()-функция не используется — deprecation в sass 1.100.)
+  $fallback-format: "jpg";
+  @if not map.has-key($formats, "jpg") {
+    $fallback-format: "png";
+  }
   $fallback-mime: "image/jpeg";
-  @if $type == "png" {
+  @if $fallback-format == "png" {
     $fallback-mime: "image/png";
   }
 
-  background-image: url("../../assets/images/#{$image}.#{$type}");
-  background-image: url("../../assets/images/#{$image}.webp");
-  background-image: url("../../assets/images/#{$image}.avif");
+  background-image: smart.smart-asset-url($image, $fallback-format);
+  background-image: smart.smart-asset-url($image, "webp");
+  background-image: smart.smart-asset-url($image, "avif");
   @-moz-document url-prefix() {
     background-image: image-set(
-      url("../../assets/images/#{$image}.avif") type("image/avif"),
-      url("../../assets/images/#{$image}.webp") type("image/webp"),
-      url("../../assets/images/#{$image}.#{$type}") type("#{$fallback-mime}")
+      smart.smart-asset-url($image, "avif") type("image/avif"),
+      smart.smart-asset-url($image, "webp") type("image/webp"),
+      smart.smart-asset-url($image, $fallback-format) type("#{$fallback-mime}")
     );
   }
 }
