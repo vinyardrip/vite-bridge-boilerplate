@@ -24,9 +24,9 @@
  *   hash   — 8-символьный контентный хеш (конвенция проекта).
  *
  * Правила file по mode:
- *   inline → "assets/ui/<имя>.svg" — вычисляется из source (имя без расширения,
- *            без подпапок), url игнорируется; файл всё равно эмитится в dist,
- *            чтобы PHP мог его прочитать;
+ *   inline → "<scope>/ui/<имя>.svg" — вычисляется из source С УЧЕТОМ options.scope
+ *            (имя без расширения, без подпапок), url игнорируется; файл всё равно
+ *            эмитится, чтобы PHP мог его прочитать;
  *   sprite/img → file из url (путь спрайта / оптимизированного SVG);
  *   error → file: null — unknown-файл не обрабатывается и не эмитится.
  *
@@ -46,7 +46,6 @@
  */
 
 const ERROR_PREFIX = "[svg:build-manifest]";
-const UI_DIR = "assets/ui";
 
 /** Словарь mode из assignModes (classify.js) — пятое значение = баг конвейера. */
 const MODES = new Set(["inline", "sprite", "img", "error"]);
@@ -61,8 +60,11 @@ const stemOf = (source) => {
 /** file всегда относительный: ведущие слеши срезаются (контракт check-build). */
 const toRelative = (url) => String(url).replace(/^\/+/, "");
 
+/** Каталог инлайнов от корня outDir с учетом scope: "assets" → assets/ui, "" (WP) → ui. */
+const uiDirOf = (scope) => `${scope ? `${scope}/` : ""}ui`;
+
 /** Один обработанный SVG → запись манифеста. Поля в порядке ТЗ. */
-const toEntry = (asset) => {
+const toEntry = (asset, uiDir) => {
   const source = String(asset.source ?? "");
   if (source === "") {
     throw new Error(`${ERROR_PREFIX} запись без source (исходный путь — ключ манифеста)`);
@@ -74,7 +76,7 @@ const toEntry = (asset) => {
 
   const file =
     mode === "inline"
-      ? `${UI_DIR}/${stemOf(source)}.svg`
+      ? `${uiDir}/${stemOf(source)}.svg`
       : mode === "error" || asset.url === undefined || asset.url === null
         ? null
         : toRelative(asset.url);
@@ -92,13 +94,21 @@ const toEntry = (asset) => {
 /**
  * Формирует SVG-фрагмент манифеста. Чистая, синхронная.
  * @param {Array<{ source: string, kind: string, mode: string, url?: string, hash?: string, symbol?: string }>} svgAssets
+ * @param {object} [options]
+ * @param {string} [options.scope="assets"] Каталог внутри outDir ("" — WP-сборка, плоско):
+ *   путь inline-файла в записи вычисляется из source С УЧЕТОМ scope, чтобы совпадать
+ *   с реально эмиттенным файлом (uiDirOf) — иначе в WP-сборке file указывал бы
+ *   на несуществующий "assets/ui/…".
  * @returns {{ entries: Array<{ source: string, file: string|null, kind: string, mode: string, symbol: string|undefined, hash: string|undefined }> }}
  */
-export function buildSvgManifest(svgAssets) {
+export function buildSvgManifest(svgAssets, { scope = "assets" } = {}) {
   if (!Array.isArray(svgAssets)) {
     throw new Error(`${ERROR_PREFIX} ожидался массив svgAssets, пришло ${typeof svgAssets}`);
   }
-  const entries = svgAssets.map(toEntry).sort((a, b) => a.source.localeCompare(b.source));
+  const uiDir = uiDirOf(scope);
+  const entries = svgAssets
+    .map((asset) => toEntry(asset, uiDir))
+    .sort((a, b) => a.source.localeCompare(b.source));
   return { entries };
 }
 

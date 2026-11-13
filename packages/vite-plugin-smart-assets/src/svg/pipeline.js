@@ -214,7 +214,8 @@ export async function processSvgBatch(filePaths, { rawDir = "", scope = "assets"
     }
   }
 
-  /*! 5) фрагмент манифеста (записи сортируются по source внутри). */
-  const manifest = buildSvgManifest(svgAssets);
+  /*! 5) фрагмент манифеста (записи сортируются по source внутри; scope нужен
+      для корректного пути inline-файла — см. buildSvgManifest). */
+  const manifest = buildSvgManifest(svgAssets, { scope });
   return { outputs, manifest };
 }

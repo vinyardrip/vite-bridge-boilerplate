@@ -6,7 +6,7 @@
  *
  *   Блок A — базовая запись (sprite): полный набор полей source/file/kind/mode/
  *            symbol/hash, детерминированная сортировка по source;
- *   Блок B — инлайн: file = assets/ui/<имя>.svg из source, symbol отброшен;
+ *   Блок B — инлайн: file = <scope>/ui/<имя>.svg из source (scope-aware, symbol отброшен);
  *   Блок C — относительные пути: ведущий "/" срезается, error → file: null;
  *   Блок D — слияние: чужие entries (растр, JS/CSS) и поля манифеста не
  *            перезаписываются, повторный merge без дублей;
@@ -97,7 +97,15 @@ describe("Блок B — инлайн", () => {
     ]);
     assert.equal(entry.file, "assets/ui/arrow.svg");
   });
-});
+
+  test("scope \"\" (WP-сборка): file = ui/<имя>.svg — совпадает с эмиттенным файлом", () => {
+    const { entries: [entry] } = buildSvgManifest(
+      [{ source: "raw/icons/user.svg", kind: "icon", mode: "inline", hash: "a1b2c3d4" }],
+      { scope: "" },
+    );
+    assert.equal(entry.file, "ui/user.svg");
+  });
+})
 
 describe("Блок C — относительные пути", () => {
   const { entries } = buildSvgManifest([

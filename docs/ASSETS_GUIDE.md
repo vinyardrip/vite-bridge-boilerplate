@@ -79,48 +79,23 @@ retina-пары в `srcset` (1x/2x), размеры против CLS, `loading="
 
 ### Как использовать в Backend (WordPress PHP)
 
-Честное положение дел: штатного PHP-хелпера для картинок из `raw/` пока нет.
-`get_asset('frontend/src/js/app.js')` работает только с точками входа CSS/JS
-(Vite-манифест `manifest.json` не содержит картинок из `raw/`), поэтому
-`get_asset('raw/photo.jpg')` **не сработает**.
-
-Пока хелпер не появился, читайте `assets-manifest.json` самостоятельно —
-после `pnpm build:wp` он лежит в теме рядом с `manifest.json`:
+Штатные хелперы темы — `theme_picture()`, `theme_icon()` и `theme_asset_url()`
+(`inc/assets-helpers.php`, подключен в `functions.php`). Они читают тот же
+манифест `assets/assets-manifest.json` — файл считывается один раз за запрос
+(static-кэш):
 
 ```php
-/**
- * ВРЕМЕННЫЙ помощник (штатного в теме пока нет): путь к файлу из frontend/raw/
- * относительно папки assets темы. Читает assets-manifest.json, который
- * пишет vite-plugin-smart-assets.
- */
-function my_theme_raw_asset_path( $filename ) {
-	static $entries = null;
-	if ( $entries === null ) {
-		$path    = get_template_directory() . '/assets/assets-manifest.json';
-		$entries = file_exists( $path )
-			? ( json_decode( file_get_contents( $path ), true )['entries'] ?? array() )
-			: array();
-	}
-	foreach ( $entries as $entry ) {
-		if ( ( $entry['source'] ?? '' ) === 'frontend/raw/' . $filename ) {
-			// У растра путь в поле output, у SVG — в поле file (обе относительные).
-			return $entry['output'] ?? $entry['file'] ?? '';
-		}
-	}
-	return '';
-}
+<?php echo theme_picture( 'hero', array( 'alt' => 'Кухня в готовом интерьере' ) ); ?>
+<?php echo theme_picture( 'photo', array( 'alt' => '', 'imgClass' => 'card__img' ) ); ?>
 
-/** URL той же картинки (для <img>, og:image и т.п.). */
-function my_theme_raw_asset_url( $filename ) {
-	$file = my_theme_raw_asset_path( $filename );
-	return $file ? get_template_directory_uri() . '/assets/' . $file : '';
-}
-
-// <img src="<?php echo esc_url( my_theme_raw_asset_url( 'photo.jpg' ) ); ?>" alt="">
+<?php echo theme_asset_url( 'img/hero.fbf7356d.jpg' ); // URL для og:image и т.п. ?>
 ```
 
-Имена файлов хешированные — **никогда не вписывайте путь руками**: при первом же
-изменении картинки хеш сменится, и путь «умрет». Всегда берите путь из манифеста.
+- Результат — полный `<picture>`: AVIF → WebP → `<img>`-фолбэк, retina-пары
+  в `srcset`, размеры против CLS, `loading="lazy"`.
+- Ассета нет (или манифеста нет — не выполнен `pnpm build:wp`) →
+  `RuntimeException` с именем ассета: страница падает с понятным сообщением,
+  а не показывает «молчаливую» дыру.
 
 Картинкам, загруженным через админку (uploads), это не нужно — их обрабатывает
 `inc/helpers.php` (`my_theme_replace_img_with_picture()`, подробности в README).
@@ -159,41 +134,22 @@ function my_theme_raw_asset_url( $filename ) {
 
 ### Как использовать во Backend (PHP)
 
-**Инлайн-иконка** — это обычный файл в теме: после `pnpm build:wp` она лежит в
-`assets/ui/<имя>.svg`. Прочитайте и вставьте как есть:
+**`theme_icon()`** — PHP-зеркало `ui.icon()`: режим берется из манифеста,
+вызывающему все равно:
 
 ```php
-// frontend/raw/phone.svg классифицирован как icon → файл assets/ui/phone.svg
-$icon_path = my_theme_raw_asset_path( 'phone.svg' ); // помощник из раздела 2
-echo file_get_contents( get_template_directory() . '/assets/' . $icon_path ); // phpcs:ignore
+<?php echo theme_icon( 'phone' ); ?>                                    // инлайн <svg>
+<?php echo theme_icon( 'phone', 'contacts__icon' ); ?>                  // с CSS-классом
+<?php echo theme_icon( 'user', '', array( 'aria-label' => 'Профиль' ) ); ?>
+<?php echo theme_icon( 'demo-sprite', 'nav__icon' ); ?>                 // спрайт → <use>
 ```
 
-**Спрайт:** в манифесте у каждой спрайтовой иконки есть поля `file`
-(путь к общему спрайту) и `symbol` (id символа — это имя файла без расширения).
-Вывод через `<use>`:
-
-```php
-<?php
-// frontend/raw/user.svg попал в спрайт:
-$entries = json_decode(
-	file_get_contents( get_template_directory() . '/assets/assets-manifest.json' ),
-	true
-)['entries'] ?? array();
-foreach ( $entries as $entry ) {
-	if ( ( $entry['source'] ?? '' ) === 'frontend/raw/user.svg' ) {
-		$sprite_url = get_template_directory_uri() . '/assets/' . ( $entry['file'] ?? '' );
-		$symbol     = $entry['symbol'] ?? '';
-		break;
-	}
-}
-?>
-<svg class="icon" aria-hidden="true" focusable="false">
-	<use href="<?php echo esc_url( $sprite_url ); ?>#<?php echo esc_attr( $symbol ); ?>"></use>
-</svg>
-```
-
-Хеш в имени спрайта (`sprite.289c7160.svg`) меняется при изменении **любой** из
-спрайтовых иконок — поэтому путь к спрайту тоже всегда берите из манифеста.
+- **Инлайн** — содержимое `assets/ui/<имя>.svg` вставляется целиком: класс
+  сливается с корнем, декоративные иконки получают `aria-hidden="true"`
+  `focusable="false"` (aria-label снимает скрытие), цвет наследуется от CSS `color`.
+- **Спрайт** — `<svg class="…"><use href="https://…/assets/icons/sprite.<hash>.svg#<symbol>"></use></svg>`
+  (URL и symbol — из манифеста).
+- Иконки нет → `RuntimeException` («Icon not found: name»).
 
 ---
 
@@ -218,11 +174,11 @@ foreach ( $entries as $entry ) {
 {{ ui.icon('banner', '', { alt: 'Баннер акции' }) }}
 ```
 
-Backend (PHP) — тот же помощник из раздела 2: путь хешированный, из манифеста:
+Backend (PHP) — тот же `theme_icon()`: он увидит в манифесте mode `img` и
+отрендерит `<img>` (путь хешированный, из манифеста):
 
 ```php
-<img src="<?php echo esc_url( my_theme_raw_asset_url( 'banner.svg' ) ); ?>"
-     alt="Баннер акции" loading="lazy">
+<?php echo theme_icon( 'banner', '', array( 'alt' => 'Баннер акции' ) ); ?>
 ```
 
 ---
@@ -293,8 +249,9 @@ Backend (PHP) — тот же помощник из раздела 2: путь �
 на каждой сборке (и на каждом старте `pnpm dev`). Хеш в имени файла меняется,
 только когда изменился сам файл, — значит, неизмененные картинки не сбрасывают
 браузерный кеш. Единственное правило: **не хардкодить пути с хешами** в шаблонах,
-SCSS и PHP — всегда брать их из манифеста (или через `bgset`/макросы
-`ui.picture`/`ui.icon`, которые делают это за вас).
+SCSS и PHP — всегда брать их из манифеста (или через `bgset`, макросы
+`ui.picture`/`ui.icon` и PHP-хелперы `theme_picture`/`theme_icon`,
+которые делают это за вас).
 
 ### «Сборка упала с ошибкой `[svg:…]` или `Icon not found`»
 
@@ -302,6 +259,9 @@ SVG-конвейер строгий: битый XML, SVG без `viewBox` и б�
 неопознанный контент роняют сборку с понятной ошибкой, в которой указан файл.
 То же с отсутствующими иконками: `ui.icon('name')` без файла
 `frontend/raw/name.svg` уронит сборку, а не вставит пустой плейсхолдер.
+На бэкенде то же правило: `theme_icon()`/`theme_picture()` без ассета в
+манифесте (или без самого `assets-manifest.json` — забыт `pnpm build:wp`)
+бросают `RuntimeException` с именем ассета.
 Исправьте/пересохраните исходник — «мусорные» файлы в `raw/` не оставляют.
 
 ---
