@@ -4,6 +4,9 @@
 Фронтенд собирается Vite'ом из `frontend/src`, готовые ассеты подключаются в
 тему WordPress через `manifest.json` и PHP-хелпер `get_asset()`.
 
+👉 **[Инструкция по работе с ассетами (Cookbook)](./docs/ASSETS_GUIDE.md)** —
+куда класть картинки и иконки и как их использовать в Nunjucks и PHP.
+
 ## Стек
 
 - **Vite** — сборщик фронтенда (dev-сервер, production-сборка, manifest).
@@ -81,66 +84,49 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 .
 ├── backend/                  # WordPress: ядро (gitignored), DDEV-конфиг (.ddev/), тема wp-content/themes/my-theme
 │   └── wp-content/themes/my-theme/
+├── docs/                     # Пользовательская документация (Cookbook ассетов и др.)
 ├── frontend/
 │   ├── public/               # Статика, копируемая в сборку как есть
+│   ├── raw/                  # Исходники ассетов smart-assets (img/icons/ui — см. Cookbook)
 │   └── src/
-│       ├── assets/           # fonts, icons, images, svg
+│       ├── assets/           # fonts, icons, images, svg (легаси-источники, мигрируются в raw/)
 │       ├── data/             # Глобальные данные шаблонов (site.json)
 │       ├── js/               # app.js (точка входа), lib/, modules/
-│       ├── scss/             # ITCSS: abstracts, base, layout, components, pages, utils, vendor
+│       ├── scss/             # ITCSS: abstracts, base, layout, components, pages, utils, vendor, generated
 │       └── views/            # Nunjucks: layouts, pages, partials, components, macros
+├── packages/                 # Локальные пакеты pnpm-workspace (vite-plugin-smart-assets)
 ├── scripts/                  # Utility-скрипты (изображения, SVG, critical CSS)
 ├── vite.config.js            # Конфигурация сборки
 ├── playwright.config.js      # Конфигурация e2e-тестов
 └── PLAN.md                   # Архитектура и чек-лист фаз (источник правды)
 ```
 
-## Image-пайплайн: AVIF/WebP и `<picture>`
+## Ассеты (smart-assets): кратко
 
-В шаблонах пишут обычный `<img>` — сборка сама оборачивает его в
-`<picture>` и генерирует AVIF/WebP-варианты. Живой пример — секция
-«Оптимизация изображений» на главной: в `index.njk` написан чистый
-`<img>`, в `dist/index.html` он уже внутри `<picture>`.
+Единственный image-пайплайн проекта — локальный пакет
+`packages/vite-plugin-smart-assets`. На старте сборки/dev-сервера он сканирует
+`frontend/raw/` (простым языком — что куда класть и как использовать, см.
+**[Cookbook](./docs/ASSETS_GUIDE.md)**):
 
-**Картинки контента** (для `<img>` в Nunjucks):
-
-1. Положите исходник в `frontend/src/assets/images/` — в размере 2x
-   (ретина): 1x-вариант сборка получает ресайзом пополам.
-2. Подключите в шаблоне: `<img src="assets/images/foo.jpg" alt="...">`.
-3. `pnpm build` сделает остальное: в `dist/img/` появятся `foo.avif`,
-   `foo.webp`, `foo.jpg` и их `@2x`-пары, а `<img>` превратится в
-   `<picture>` с `<source type="image/avif">`, `<source type="image/webp">`
-   и фолбэком-`<img>` (1x + 2x в srcset, `sizes`, `loading="lazy"`).
-
-**Картинки по прямому URL** (CSS `background-image`, og:image, разметка
-PHP-шаблонов) кладите в `frontend/public/img/`: они копируются в сборку
-как есть, а `vite-plugin-image-optimize` генерирует рядом `.webp`/`.avif`-
-сиблинги — ссылайтесь через CSS `image-set()` или вручную собранный
-`<picture>`. Сгенерированные сиблинги — артефакт сборки, в git не
-попадают (`.gitignore`). В WP-режиме HTML не собирается, поэтому для
-PHP-разметки `<picture>` собирается руками (пример — превью YouTube в
-`front-page.php`).
-
-Как это устроено (порядок в `vite.config.js` важен — сначала генерация
-форматов, потом HTML-трансформация):
-
-| Шаг | Что делает |
+| Ассет | Маршрут в сборке |
 | --- | --- |
-| `vite-plugin-image-optimize` | До сборки — сиблинги AVIF/WebP для `public/img`; после — дожимает jpg/png/svg в `dist/img`. AVIF/WebP из дожима исключены: их уже сгенерировал img-to-picture, повторное перекодирование портило бы качество. |
-| `@atrocityz/vite-plugin-html-img-to-picture` | Генерирует варианты (1x/2x × AVIF/WebP/JPG) и оборачивает `<img>` в `<picture>`. Умеет обрабатывать только реальные HTML-файлы, а страницы этого проекта собираются из `.njk` — поэтому… |
-| обертка `njkImgToPicture` (локальный плагин) | …делегирует ему каждый собранный HTML-asset в `generateBundle` и после трансформации чинит `height` по реальному аспекту исходника (плагин пишет `height=width`). Подробности — комментарий в `vite.config.js`. |
+| `.jpg/.jpeg/.png` | `assets/img/name.<hash>.<ext>` + варианты webp/avif (quality 80) + retina-пары `@2x` (исходники шире 800px считаются 2x) |
+| `.svg` иконки | inline → `assets/ui/<имя>.svg` (порог: ≤ 15 штук, ≤ 30 КБ raw, ≤ 15 КБ gzip) или общий спрайт `assets/icons/sprite.<hash>.svg` |
+| `.svg` иллюстрации | `assets/img/<имя>.<hash>.svg` (вывод через `<img>`) |
 
-Нюансы:
-
-- `outputDir: "img"` у img-to-picture — пути в `<picture>` относительные
-  (`img/...`), это требование `base: './'` (file://-открытие dist);
-  абсолютные пути к ассетам запрещает build-smoke (`pnpm test:build`).
-- Качество конвертации — `quality: 80` (img-to-picture); сжатие
-  исходников до сборки — `compress-images.js` (TinyPNG): нет валидных
-  ключей — warning, сборка не падает. Сжатые копии (`images-tiny/`) —
-  артефакт, в `<picture>`-пайплайн они не подмешиваются.
-- Не обрабатываются: внешние `http(s)`-ссылки, data-URI, абсолютные пути
-  (`/...`) и SVG.
+- Файлы и манифест эмитятся и в dev-режиме из памяти: middleware раздает
+  `assets/…`, watcher следит за `raw/` и делает full-reload при изменениях.
+- Разметка `<picture>` — явно через фильтр Nunjucks `smartPicture`
+  (готовая AVIF/WebP-разметка из состояния плагина); CSS-фоны — через миксин
+  `bgset()` + сгенерированную карту путей
+  (`frontend/src/scss/generated/_smart-assets-map.scss` — генерируется, не
+  коммитится); `bgset()` описан в разделе «Фоны и CSS» Cookbook.
+- WP-сборка (`pnpm build:wp`) пишет файлы прямо в `<тема>/assets/` — плоско
+  (совместимость с WP-плагинами и `strip-avif.js`), `scope=""`.
+- Манифест `assets-manifest.json` (в корне outDir) содержит запись на каждый
+  ассет: `source`, `output`/`file`, хеш, размеры, варианты (у SVG — `kind`,
+  `mode`, `symbol` для спрайтов). Устаревший пайплайн
+  (image-optimize + img-to-picture + обертка `njkImgToPicture`) снят с производства.
 
 ## Что svgo делает и чего не делает
 
@@ -222,6 +208,9 @@ Gzip без raw недооценивает стоимость инлайна (in
 Vite-плагин автоматически сканирует SVG-файлы в исходниках, прогоняет их через пайплайн
 (нормализация → классификация → префиксация → сборка) и раскладывает по папкам `dist/assets/ui/` 
 и `dist/assets/icons/`. Информация о них попадает в общий `assets-manifest.json`.
+
+Как пользоваться результатом из Nunjucks-шаблонов и PHP (инлайн-иконки, `<use>`,
+`<img>`) — см. разделы 3–4 **[Cookbook](./docs/ASSETS_GUIDE.md)**.
 
 ## Статус реализации
 

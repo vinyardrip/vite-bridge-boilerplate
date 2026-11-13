@@ -15,5 +15,6 @@
 - [x] [SVG] шаг 8: dev-middleware (build + раздача svg из памяти, watcher ре-ран; проекция в шаблонах — будущая интеграция)
 - [x] [SVG] шаг 9: тесты + check-build (cleanup)
 - [x] [SVG] шаг 10: фикстуры + README (cleanup)
+- [x] [DOCS] Написать Cookbook (docs/ASSETS_GUIDE.md: FE Nunjucks + BE PHP, FAQ) + ссылка в README
 
 ## Completed
