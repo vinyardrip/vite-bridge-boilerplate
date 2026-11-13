@@ -149,22 +149,78 @@ describe("Блок D — идемпотентность и детерминиз�
   }
 });
 
-describe("meta — прямые title/desc корня (контракт extract-meta)", () => {
-  test("meta.svg: вынуты в meta, вложенный <title> сохранен в теле", () => {
+describe("meta — title/desc (контракт extract-meta: любой глубины, meta = первый)", () => {
+  test("meta.svg: корневые title/desc в meta, в теле не осталось ни одного", () => {
     const { svg, meta } = normalize(fixture("meta.svg"));
 
     assert.equal(meta.title, "Профиль пользователя");
     assert.equal(meta.desc, "Стилизованный силуэт человека");
 
-    // Прямые дети корня вырезаны, вложенные — контент, остаются.
+    // B2: вырезаются ВСЕ title/desc (вложенный в <g> тоже) — иначе на втором
+    // прогоне «второй» стал бы первым и ушел бы в meta (идемпотентность).
     assert.ok(!svg.includes("Профиль пользователя"), "корневой title вынут");
     assert.ok(!svg.includes("Стилизованный силуэт"), "корневой desc вынут");
-    assert.ok(svg.includes("Вложенный слой"), "вложенный <title> в <g> сохранен");
-    assert.ok(/<g[^>]*>\s*<title>/.test(svg), "title остался именно внутри <g>");
+    assert.ok(!svg.includes("Вложенный слой"), "вложенный <title> вырезан тоже");
+    assert.ok(!/<title[\s>]/.test(svg), "в теле не осталось <title>");
+    assert.ok(!/<desc[\s>]/.test(svg), "в теле не осталось <desc>");
   });
 
   test("one-color.svg: meta без ключей (не undefined-значения)", () => {
     const { meta } = normalize(fixture("one-color.svg"));
     assert.ok(!("title" in meta) && !("desc" in meta));
+  });
+});
+
+describe("meta B2 — вложенные title/desc на любой глубине", () => {
+  test("Figma-кейс: <title> внутри <g> попадает в meta", () => {
+    const nestedOnly =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><g><title>Из группы</title><path d="M0 0h8v8H0z"/></g></svg>';
+    const { svg, meta } = normalize(nestedOnly);
+
+    assert.equal(meta.title, "Из группы");
+    assert.ok(!svg.includes("Из группы"), "вложенный title вырезан");
+    assert.ok(svg.includes("<g>"), "обертка <g> не пострадала");
+    assert.ok(svg.includes('<path d="M0 0h8v8H0z"/>'), "содержимое <g> сохранено");
+  });
+
+  test("desc на второй вложенности тоже находится", () => {
+    const deep =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><g><g><desc>глубоко</desc></g><path d="M0 0h8v8H0z"/></g></svg>';
+    const { svg, meta } = normalize(deep);
+
+    assert.equal(meta.desc, "глубоко");
+    assert.ok(!svg.includes("глубоко"), "вложенный desc вырезан");
+    assert.ok(svg.includes('<path d="M0 0h8v8H0z"/>'), "содержимое сохранено");
+  });
+
+  test("второй title вырезается, meta держит первый, нормализация идемпотентна", () => {
+    const two =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><g><title>first</title></g><g><title>second</title></g></svg>';
+    const once = normalize(two).svg;
+
+    assert.ok(!once.includes("first"), "первый title ушел в meta");
+    assert.ok(!once.includes("second"), "второй title вырезан тоже");
+    assert.ok(!/<title[\s>]/.test(once), "title в теле нет");
+    assert.equal(normalize(once).svg, once, "идемпотентность");
+  });
+});
+
+describe("style-фикстура — @media каскад (долг шага 1)", () => {
+  test("style-media.svg: @media выживает, инлайненные правила уходят в style-атрибуты", () => {
+    const { svg } = normalize(fixture("style-media.svg"));
+
+    assert.ok(svg.includes("@media"), "медиа-блок сохранен");
+    assert.match(
+      svg,
+      /@media[^{]*\{[^{]*\.icon-accent\{opacity:/,
+      "каскад внутри @media цел (селектор + декларация)",
+    );
+    assert.ok(svg.includes('style="fill:#f00"'), "совпавшее правило ушло в style-атрибут (hex не переименован)");
+    assert.ok(!svg.includes(".icon-main{"), "инлайненное правило вырезано из <style>");
+  });
+
+  test("style-media.svg: normalize идемпотентен на каскаде", () => {
+    const once = normalize(fixture("style-media.svg")).svg;
+    assert.equal(normalize(once).svg, once, "второй прогон не меняет вывод");
   });
 });

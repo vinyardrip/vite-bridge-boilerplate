@@ -10,7 +10,9 @@
  *            превышение каждого условия по отдельности, кастомные thresholds,
  *            фиксированные mode не-иконок);
  *   Блок C — реальные иконки fixtures/real: normalize → classifyOne — все
- *            icon, классификация детерминирована, реальные веса дают inline.
+ *            icon, классификация детерминирована, реальные веса дают inline;
+ *   Блок D — style-фикстура style-media.svg (долг шага 1): <style> с @media
+ *            не ломает классификацию ни в raw, ни после normalize.
  * =================================================================================================
  */
 
@@ -206,5 +208,23 @@ describe("Блок C — реальные иконки fixtures/real через 
       result.every((r) => r.mode === "inline"),
       JSON.stringify(result.map((r) => `${r.path}: ${r.reason}`)),
     );
+  });
+});
+
+describe("Блок D — style-фикстура style-media.svg (@media)", () => {
+  const styleMediaDir = fileURLToPath(new URL("./fixtures/", import.meta.url));
+  const source = readFileSync(path.join(styleMediaDir, "style-media.svg"), "utf8");
+
+  test("raw: цветов в атрибутах нет, но маленький viewBox → icon", () => {
+    const { kind, reason } = classifyOne(source);
+    assert.equal(kind, "icon");
+    assert.match(reason, /viewBox/);
+  });
+
+  test("после normalize: @media выживает, классификация остаётся icon", () => {
+    const { svg } = normalize(source);
+    assert.ok(svg.includes("@media"), "медиа-блок не выброшен нормализацией");
+    const { kind } = classifyOne(svg);
+    assert.equal(kind, "icon");
   });
 });

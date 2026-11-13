@@ -387,6 +387,11 @@ export function smartAssets(options = {}) {
       );
       state.svgOutputs = svgResult.outputs;
       state.svgManifest = svgResult.manifest;
+      // В общий files: generateBundle эмитит, dev-middleware раздает
+      // (полный ре-ран при изменении raw/ уже делает onChange → invalidate).
+      for (const { fileName, content } of svgResult.outputs) {
+        state.files.set(fileName, Buffer.from(content, "utf8"));
+      }
     }
 
     manifest.entries.sort((a, b) => a.source.localeCompare(b.source));
@@ -545,12 +550,9 @@ export function smartAssets(options = {}) {
     async generateBundle(_options, bundle) {
       await ensureReady();
 
-      // Файлы + манифест: растр (files) + SVG-конвейер (svgOutputs, шаг 8).
+      // Файлы (растр + SVG-конвейер) + манифест.
       for (const [fileName, buffer] of state.files) {
         this.emitFile({ type: "asset", fileName, source: buffer });
-      }
-      for (const { fileName, content } of state.svgOutputs) {
-        this.emitFile({ type: "asset", fileName, source: content });
       }
       this.emitFile({
         type: "asset",

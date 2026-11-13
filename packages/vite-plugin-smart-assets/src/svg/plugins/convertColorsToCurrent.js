@@ -19,6 +19,8 @@
  * =================================================================================================
  */
 
+import { parseStyleDecls } from "../utils/parse-style.js";
+
 /** Значение — рабочий цвет? ("" / none / currentColor / url(...) — нет). */
 const asColor = (value) => {
   const v = String(value).trim();
@@ -27,19 +29,6 @@ const asColor = (value) => {
   }
   return v.toLowerCase();
 };
-
-/** Декларации инлайн-стиля: [{ prop, value }] (порядок сохранён). */
-const parseStyleDecls = (styleValue) =>
-  String(styleValue)
-    .split(";")
-    .map((decl) => {
-      const idx = decl.indexOf(":");
-      if (idx === -1) {
-        return null;
-      }
-      return { prop: decl.slice(0, idx).trim().toLowerCase(), value: decl.slice(idx + 1).trim() };
-    })
-    .filter((decl) => decl !== null && decl.prop !== "");
 
 const convertColorsToCurrent = {
   name: "convertColorsToCurrent",

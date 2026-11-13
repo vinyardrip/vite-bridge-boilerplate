@@ -70,12 +70,12 @@ const normalizeCss = (css) => {
   let pos = 0;
 
   while (pos < src.length) {
-    // Пропуск пробелов между правилами.
-    const firstNonSpace = src.slice(pos).findIndex((ch) => !/\s/.test(ch));
-    if (firstNonSpace === -1) {
+    // Пропуск пробелов между правилами (первый непробельный символ).
+    const nextNonSpace = /\S/.exec(src.slice(pos));
+    if (nextNonSpace === null) {
       break;
     }
-    pos += firstNonSpace;
+    pos += nextNonSpace.index;
 
     const open = src.indexOf("{", pos);
     const nextSemicolon = src.indexOf(";", pos);

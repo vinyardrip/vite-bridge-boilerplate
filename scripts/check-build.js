@@ -125,25 +125,26 @@ for (const htmlFile of htmlFiles) {
   );
 }
 
-/*! --- 3.5 Image-пайплайн: <picture> в собранном HTML --- */
-// Чистый <img> из .njk должен быть обернут в <picture> с AVIF/WebP
-// (обертка njkImgToPicture в vite.config.js), а все файлы из srcset —
-// существовать в dist/img (их пишет writeBundle img-to-picture).
+/*! --- 3.5 Image-пайплайн: демо-разметка + варианты smart-assets --- */
+// Phase 3+: разметку <picture> собирает макрос ui.picture() (фильтр
+// smartPicture) при ЯВНОМ вызове в шаблоне; демо-секция главной — чистый
+// <img> (маршрут imagetools). Растровые варианты webp/avif пишет
+// smart-assets из frontend/raw/, их учет — в assets-manifest.json
+// (entries c type "img"; SVG-записи конвейера — без type, с file/kind/mode).
+// Проверяем: демо-разметка на месте, у каждого растра есть webp+avif,
+// все файлы вариантов физически лежат в dist, SVG-записи относительные.
 const indexHtmlPath = path.join(DIST_DIR, "index.html");
 if (fs.existsSync(indexHtmlPath)) {
   const indexHtml = fs.readFileSync(indexHtmlPath, "utf-8");
 
   check(
-    "index.html: есть <picture> (обертка <img> из .njk)",
-    /<picture[\s>]/.test(indexHtml),
-  );
-  check(
-    "index.html: <picture> содержит AVIF-источник",
-    /<source[^>]+type="image\/avif"/.test(indexHtml),
+    "index.html: демо-изображение из assets/images присутствует",
+    /<img[^>]+src="[^"]*assets\/images\//.test(indexHtml),
   );
 
-  // Каждый локальный файл из srcset <source>/<img> обязан лежать в dist:
-  // битый srcset = картинка не загрузится вообще.
+  // Каждый локальный файл из srcset обязан лежать в dist:
+  // битый srcset = картинка не загрузится вообще (ui.picture() печатает
+  // srcset для retina/вариантов, когда шаблоны начнут его использовать).
   const srcsetFiles = new Set();
   for (const [, srcsetList] of indexHtml.matchAll(/srcset="([^"]+)"/g)) {
     for (const entry of srcsetList.split(",")) {
@@ -158,6 +159,57 @@ if (fs.existsSync(indexHtmlPath)) {
       `Вариант картинки существует: ${file}`,
       fs.existsSync(path.join(DIST_DIR, file)),
     );
+  }
+}
+
+const assetsManifestPath = path.join(DIST_DIR, "assets-manifest.json");
+if (fs.existsSync(assetsManifestPath)) {
+  let assetsManifest = null;
+  try {
+    assetsManifest = JSON.parse(fs.readFileSync(assetsManifestPath, "utf-8"));
+    check("assets-manifest.json — валидный JSON", true);
+  } catch (e) {
+    check("assets-manifest.json — валидный JSON", false, e.message);
+  }
+
+  if (assetsManifest) {
+    const entries = assetsManifest.entries ?? [];
+    const raster = entries.filter((entry) => entry.type === "img");
+    check(
+      "assets-manifest.json: у каждой растровой записи есть webp- и avif-варианты",
+      raster.length > 0 &&
+        raster.every((entry) => {
+          const formats = (entry.variants ?? []).map((variant) => variant.format);
+          return formats.includes("webp") && formats.includes("avif");
+        }),
+    );
+    for (const entry of raster) {
+      for (const variant of entry.variants ?? []) {
+        check(
+          `Вариант smart-assets существует: ${variant.path} (${entry.source})`,
+          fs.existsSync(path.join(DIST_DIR, variant.path)),
+        );
+      }
+    }
+
+    const svgEntries = entries.filter((entry) => !entry.type);
+    check(
+      "assets-manifest.json: SVG-записи конвейера с относительными file",
+      svgEntries.length === 0 ||
+        svgEntries.every(
+          (entry) =>
+            typeof entry.file === "string" &&
+            entry.file !== "" &&
+            !entry.file.startsWith("/") &&
+            typeof entry.mode === "string",
+        ),
+    );
+    for (const entry of svgEntries) {
+      check(
+        `SVG-артефакт существует: ${entry.file} (${entry.source})`,
+        fs.existsSync(path.join(DIST_DIR, entry.file)),
+      );
+    }
   }
 }
 
@@ -217,14 +269,12 @@ check(
 // `pnpm build`: compress-images.js стоит первым в цепочке и обязан
 // завершиться с кодом 0.
 
-// Image-пайплайн: генерация AVIF/WebP и обертка <img> в <picture>
-// должны быть подключены в конфиге (сам вывод проверяют тесты выше
-// и frontend/tests/picture.spec.js).
+// Image-пайплайн: smart-assets (роутинг raw/ → sharp-варианты + SVG-конвейер
+// normalize → classify → inline/sprite/img) должен быть подключен в конфиге
+// (сам вывод проверяют тесты выше и frontend/tests/picture.spec.js).
 check(
-  "vite.config.js: image-пайплайн подключен (image-optimize + img-to-picture + обертка .njk)",
-  viteConfigSource.includes("imageOptimize(") &&
-    viteConfigSource.includes("imgToPicturePlugin") &&
-    viteConfigSource.includes("njkImgToPicture("),
+  "vite.config.js: image-пайплайн подключен (smart-assets: плагин создан и в plugins)",
+  viteConfigSource.includes("smartAssets(") && viteConfigSource.includes("smartAssetsPlugin,"),
 );
 
 /*! --- 8. WordPress-сборка (pnpm build:wp, исходники) --- */

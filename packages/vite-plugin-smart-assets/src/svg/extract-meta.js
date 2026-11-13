@@ -3,18 +3,25 @@
  * extract-meta — вынимает метаданные файла до svgo
  * =================================================================================================
  *
- * Прямые дочерние <title>/<desc> корневого <svg> — метаданные файла: svgo
- * (preset-default, removeTitle/removeDesc) удаляет их безвозвратно, а они
- * нужны вызывающей стороне (aria-label инлайн-проекции). Вложенные
- * <title>/<desc> внутри <g>/<symbol>/<mask>... — часть содержимого, их НЕ
- * трогаем (в пресете removeTitle/removeDesc отключены по этой же причине).
+ * ВСЕ <title>/<desc> В ДОКУМЕНТЕ (на любой глубине — Figma кладет <title>
+ * внутрь <g>/<symbol>) вырезаются; в meta попадает ПЕРВЫЙ в порядке
+ * документа каждого имени. Почему все, а не только первый: нормализация
+ * обязана быть идемпотентной (normalize(normalize(x)) === normalize(x)) —
+ * если вырезать только первый, на втором прогоне «второй» станет первым и
+ * уйдет в meta, изменив вывод. svgo (preset-default, removeTitle/removeDesc)
+ * удалил бы их безвозвратно в любом случае, а первый нужен вызывающей
+ * стороне (aria-label инлайн-проекции). Внутри комментариев и CDATA
+ * элементы не ищутся (там <title> — не элемент).
  *
  * Контракт:
  *   extractMeta(svgSource: string) → { svg: string, meta: { title?, desc? } }
- *   • найдено → элемент вырезан из строки, текст (trim) в meta;
+ *   • найдено → все элементы целиком вырезаны (вместе с вложенными в них
+ *     узлами), текст первого (без тегов, trim) в meta;
  *   • не найдено → ключа в meta просто нет (не undefined-значение);
- *   • никакого I/O и полного XML-парсинга: токен-сканер глубины с пропусками
- *     комментариев и CDATA (в них <title> — не элемент).
+ *   • <title/>/<desc/> без содержимого — вырезаются, meta не получают;
+ *   • никакого I/O и полного XML-парсинга: токен-сканер глубины. Незакрытый
+ *     <title> захватом не считается — svgo выдаст ошибку парсинга со своим
+ *     сообщением.
  * =================================================================================================
  */
 
@@ -43,8 +50,10 @@ export function extractMeta(svgSource) {
   /** Вырезки: [{ start, end }] — удаляем от больших индексов к меньшим. */
   const removals = [];
   const found = { title: false, desc: false };
-  let pos = rootOpenEnd + 1;
+  /** Открытые захваты: { name, start, depth, contentStart } — ждут </title>. */
+  const captures = { title: null, desc: null };
   let depth = 0; // 0 — прямые дети корня
+  let pos = rootOpenEnd + 1;
 
   while (pos < src.length) {
     const lt = src.indexOf("<", pos);
@@ -72,7 +81,21 @@ export function extractMeta(svgSource) {
       if (gt === -1) {
         break;
       }
+      const nameMatch = /^<\/([a-zA-Z][\w:.-]*)/.exec(src.slice(lt, gt + 1));
       depth -= 1;
+      const capture = nameMatch ? captures[nameMatch[1]] : null;
+      if (capture && depth === capture.depth) {
+        // Парный закрывающий тег захвата: элемент завершен — вырезаем целиком;
+        // meta получает только ПЕРВЫЙ capture каждого имени (isMeta).
+        if (capture.isMeta) {
+          meta[capture.name] = src
+            .slice(capture.contentStart, lt)
+            .replace(/<[^>]*>/g, "")
+            .trim();
+        }
+        removals.push({ start: capture.start, end: gt + 1 });
+        captures[capture.name] = null;
+      }
       pos = gt + 1;
       continue;
     }
@@ -90,31 +113,21 @@ export function extractMeta(svgSource) {
     }
     const selfClosing = src[gt - 1] === "/";
 
-    // Прямой ребёнок корня <title>/<desc> (первый каждый) — захватить целиком.
-    if (depth === 0 && (name === "title" || name === "desc") && !found[name]) {
+    if ((name === "title" || name === "desc") && captures[name] === null) {
       if (selfClosing) {
-        // <title/> без содержимого — не метаданные, но и не контент: вырезаем,
-        // чтобы не осталось пустых элементов после отключённого removeTitle.
+        // <title/> без содержимого — не метаданные, но и не контент: вырезаем.
         removals.push({ start: lt, end: gt + 1 });
-        found[name] = true;
         pos = gt + 1;
         continue;
       }
-      const close = src.indexOf(`</${name}`, gt + 1);
-      if (close === -1) {
-        pos = gt + 1;
-        continue; // незакрытый — svgo выдаст ошибку парсинга со своим сообщением
-      }
-      const closeEnd = src.indexOf(">", close);
-      const afterClose = closeEnd === -1 ? src.length : closeEnd + 1;
-      const inner = src.slice(gt + 1, close);
-      // Разметки внутри title/desc не ждём — текст как есть.
-      meta[name] = inner.replace(/<[^>]*>/g, "").trim();
-      removals.push({ start: lt, end: afterClose });
+      // <title>/<desc> на ЛЮБОЙ глубине — захват до парного закрытия.
+      // Глубину и текст внутри ведёт сам сканер: вложенные теги декрементируют/
+      // инкрементируют depth как обычно, парный close завершает захват.
+      // meta — только у первого (isMeta фиксируется при старте захвата).
+      captures[name] = { name, start: lt, depth, contentStart: gt + 1, isMeta: !found[name] };
       found[name] = true;
-      // Сканируем ЗА вырезанным элементом: его закрывающий тег не должен
-      // декрементировать глубину.
-      pos = afterClose;
+      depth += 1;
+      pos = gt + 1;
       continue;
     }
 

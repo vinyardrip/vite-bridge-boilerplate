@@ -42,6 +42,8 @@
 
 import { parseSvg } from "svgo/lib/parser.js";
 
+import { parseStyleDecls } from "./utils/parse-style.js";
+
 const ERROR_REASON_PREFIX = "parse error";
 const ICON_MAX_BYTES = 4 * 1024;
 const ICON_MAX_VIEWBOX = 64;
@@ -68,19 +70,6 @@ const asColor = (value) => {
   }
   return v.toLowerCase();
 };
-
-/** Декларации инлайн-стиля: [{ prop, value }] (семантика convertColorsToCurrent). */
-const parseStyleDecls = (styleValue) =>
-  String(styleValue)
-    .split(";")
-    .map((decl) => {
-      const idx = decl.indexOf(":");
-      if (idx === -1) {
-        return null;
-      }
-      return { prop: decl.slice(0, idx).trim().toLowerCase(), value: decl.slice(idx + 1).trim() };
-    })
-    .filter((decl) => decl !== null && decl.prop !== "");
 
 /** Корневой <svg> AST (может отсутствовать в мусорном входе). */
 const svgRoot = (ast) =>
