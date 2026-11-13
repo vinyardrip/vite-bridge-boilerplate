@@ -5,8 +5,8 @@
 - [x] [SVG] шаг 1: normalize() + preset-smart
 - [>] [SVG] шаг 2: canonicalHash
 - [x] [SVG] шаг 4: классификация kind/mode
-- [>] [SVG] шаг 5: сборка спрайта
-- [ ] [SVG] шаг 6: манифест (entries + kind/mode/symbol/spriteUrl)
+- [x] [SVG] шаг 5: сборка спрайта
+- [>] [SVG] шаг 6: манифест (entries + kind/mode/symbol/spriteUrl)
 - [ ] [SVG] шаг 7: хелперы проекции (inline / use / picture)
 - [ ] [SVG] B2: вложенные title/desc в extract-meta
 - [ ] [SVG] style-фикстура: @media + каскад
