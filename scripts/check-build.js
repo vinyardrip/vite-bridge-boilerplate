@@ -126,20 +126,24 @@ for (const htmlFile of htmlFiles) {
 }
 
 /*! --- 3.5 Image-пайплайн: демо-разметка + варианты smart-assets --- */
-// Phase 3+: разметку <picture> собирает макрос ui.picture() (фильтр
-// smartPicture) при ЯВНОМ вызове в шаблоне; демо-секция главной — чистый
-// <img> (маршрут imagetools). Растровые варианты webp/avif пишет
-// smart-assets из frontend/raw/, их учет — в assets-manifest.json
-// (entries c type "img"; SVG-записи конвейера — без type, с file/kind/mode).
-// Проверяем: демо-разметка на месте, у каждого растра есть webp+avif,
-// все файлы вариантов физически лежат в dist, SVG-записи относительные.
+// Разметку <picture> собирает макрос ui.picture() (фильтр smartPicture);
+// демо-секция главной вызывает его ЯВНО для frontend/raw/boiler-demo.jpg.
+// Растровые варианты webp/avif пишет smart-assets, их учет — в
+// assets-manifest.json (entries c type "img"; SVG-записи конвейера —
+// без type, с file/kind/mode). Проверяем: демо-<picture> на месте
+// (AVIF-источник + <img> с классом showcase__img), у каждого растра есть
+// webp+avif, все файлы вариантов физически лежат в dist, SVG-записи
+// относительные.
 const indexHtmlPath = path.join(DIST_DIR, "index.html");
 if (fs.existsSync(indexHtmlPath)) {
   const indexHtml = fs.readFileSync(indexHtmlPath, "utf-8");
 
   check(
-    "index.html: демо-изображение из assets/images присутствует",
-    /<img[^>]+src="[^"]*assets\/images\//.test(indexHtml),
+    "index.html: демо-<picture> из ui.picture присутствует",
+    /<picture><source type="image\/avif"[^>]*boiler-demo[^>]*>.*<img[^>]+class="showcase__img"/.test(
+      indexHtml,
+    ),
+    "ожидался вызов ui.picture('boiler-demo') в секции #images",
   );
 
   // Каждый локальный файл из srcset обязан лежать в dist:

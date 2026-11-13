@@ -73,9 +73,9 @@ retina-пары в `srcset` (1x/2x), размеры против CLS, `loading="
 
 `| safe` не нужен — макрос уже возвращает готовую разметку.
 
-> Исторические картинки старого демо (`frontend/src/assets/images/boiler-demo.jpg`)
-> продолжают работать по прежней схеме через `<img src="assets/images/…">`, но
-> **новые картинки кладем в `frontend/raw/`** — старый пайплайн снят с производства.
+> Демо-картинка главной (`boiler-demo.jpg`) живет тоже в `frontend/raw/` —
+> она выводится макросом `ui.picture()`. `frontend/src/assets/images/` —
+> легаси-папка, новые картинки туда не кладут.
 
 ### Как использовать в Backend (WordPress PHP)
 

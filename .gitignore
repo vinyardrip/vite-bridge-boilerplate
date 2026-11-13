@@ -14,6 +14,8 @@
 packages/*/node_modules
 # Папка с результатом production-сборки. Будет создана Vite в корне проекта.
 /dist
+# Статическая сборка без AVIF для слабого хостинга (pnpm strip-avif:dist).
+/dist-wp
 # Локальные кеш-файлы для утилит оптимизации.
 .tinypng-cache
 .svgo-cache

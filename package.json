@@ -11,6 +11,7 @@
     "build:wp": "node scripts/compress-images.js && node scripts/optimize-svg.js && vite build --mode wordpress",
     "build:stats": "ANALYZE=true pnpm build",
     "build:wp-strip-avif": "node scripts/strip-avif.js",
+    "strip-avif:dist": "node scripts/strip-avif-dist.js",
     "preview": "vite preview",
     "format:code": "biome format --write ./frontend/src",
     "format:templates": "prettier --write \"./frontend/src/views/**/*.njk\"",

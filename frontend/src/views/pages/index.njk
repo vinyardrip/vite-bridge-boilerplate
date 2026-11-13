@@ -73,23 +73,23 @@ social_image: "https://example.com/images/social-preview.jpg"
     </section>
 
     {# ================================================================
-       ДЕМО ИЗОБРАЖЕНИЙ: чистый <img> → <picture> (AVIF/WebP) при сборке
-       Исходник — frontend/src/assets/images/boiler-demo.jpg (2x).
-       В собранном HTML этот <img> оборачивается в <picture> с <source>,
-       варианты лежат в dist/img/ (см. README, раздел про image-пайплайн).
+       ДЕМО ИЗОБРАЖЕНИЙ: макрос ui.picture() — исходник в frontend/raw/
+       (boiler-demo.jpg, 2x). Макрос сразу собирает <picture>: <source>
+       AVIF → WebP (retina-пары 1x/2x в srcset) + <img>-фолбэк с классом,
+       размерами против CLS и loading="lazy" (см. docs/ASSETS_GUIDE.md).
     ================================================================ #}
     <section class="section" id="images">
       <div class="layout">
         <div class="section__head">
           <h2 class="section__title">Оптимизация изображений</h2>
           <p class="section__descr">
-            В шаблоне этой страницы написан обычный &lt;img&gt; — при сборке
-            он оборачивается в &lt;picture&gt; с AVIF- и WebP-источниками.
-            Разметку до/после можно сравнить в dist/index.html.
+            В шаблоне этой страницы вызван макрос ui.picture() — он собирает
+            &lt;picture&gt; с AVIF- и WebP-источниками прямо на сборке.
+            Разметку можно сравнить в dist/index.html.
           </p>
         </div>
         <figure class="showcase">
-          <img class="showcase__img" src="assets/images/boiler-demo.jpg" alt="Абстрактный пейзаж в палитре проекта — демонстрация автоматической конвертации изображений">
+          {{ ui.picture('boiler-demo', { alt: 'Абстрактный пейзаж в палитре проекта — демонстрация автоматической конвертации изображений', imgClass: 'showcase__img' }) }}
         </figure>
 
         {# ================================================================
