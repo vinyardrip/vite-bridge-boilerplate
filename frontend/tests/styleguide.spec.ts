@@ -84,7 +84,7 @@ test.describe('Styleguide (живая документация UI-кита)', ()
   });
 
   test('в консоли нет ошибок выполнения', async ({ page }) => {
-    const pageErrors = [];
+    const pageErrors: Error[] = [];
     page.on('pageerror', (error) => pageErrors.push(error));
 
     await page.goto('/styleguide.html');

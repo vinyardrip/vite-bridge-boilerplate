@@ -27,7 +27,7 @@
   Макрос SVG-ИКОНКИ из конвейера smart-assets: файл frontend/raw/<name>.svg
   на сборке проходит нормализацию → классификацию → манифест, а этот макрос
   находит его запись и проецирует в готовый HTML (фильтр smartSvg в
-  vite.config.js → projectSvg пакета vite-plugin-smart-assets).
+  vite.config.ts → projectSvg пакета vite-plugin-smart-assets).
 
   Что выдаст — решает конвейер, макросу все равно (один и тот же вызов):
   • mode inline (монохромные иконки)  — нормализованный <svg> целиком,

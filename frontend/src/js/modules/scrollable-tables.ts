@@ -40,7 +40,7 @@ export const initScrollableTables = () => {
   // 1. Оборачиваем каждую таблицу
   tables.forEach((table) => {
     // Проверяем, не была ли таблица уже обернута
-    if ((table.parentNode as HTMLElement).classList.contains('big-table')) {
+    if ((table.parentNode! as HTMLElement).classList.contains('big-table')) {
       return;
     }
 
@@ -48,7 +48,8 @@ export const initScrollableTables = () => {
     wrapper.className = 'big-table';
 
     // Вставляем обертку перед таблицей, а затем перемещаем таблицу внутрь
-    table.parentNode.insertBefore(wrapper, table);
+    // (таблица всегда в DOM при инициализации — assert, без проверки в рантайме).
+    table.parentNode!.insertBefore(wrapper, table);
     wrapper.appendChild(table);
 
     // 2. Добавляем обработчик скролла для таблицы внутри обертки

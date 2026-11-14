@@ -29,8 +29,9 @@ test.describe('Image-пайплайн: <picture> на главной', () => {
     // AVIF — первый source (браузер берет первый поддерживаемый формат),
     // WebP — второй. Пути относительные (base: './'), в srcset — retina-пара
     // 1x/2x с контентными хешами (порядок вариантов — как в манифесте).
-    const avifSrcset = await picture.locator('source[type="image/avif"]').getAttribute('srcset');
-    const webpSrcset = await picture.locator('source[type="image/webp"]').getAttribute('srcset');
+    // getAttribute вернет null только если source пропал — expect ниже упадет с понятным сообщением.
+    const avifSrcset = (await picture.locator('source[type="image/avif"]').getAttribute('srcset')) ?? '';
+    const webpSrcset = (await picture.locator('source[type="image/webp"]').getAttribute('srcset')) ?? '';
 
     for (const entry of avifSrcset.split(', ')) {
       expect(entry, `avif-вариант: ${entry}`).toMatch(VARIANT_RE);
@@ -42,7 +43,7 @@ test.describe('Image-пайплайн: <picture> на главной', () => {
     expect(avifSrcset).toContain('.avif 1x');
     expect(webpSrcset).toContain('@2x.webp 2x');
     expect(webpSrcset).toContain('.webp 1x');
-    for (const srcset of [avifSrcset, webpSrcset]) {
+    for (const srcset of [avifSrcset, webpSrcset] as string[]) {
       expect(srcset.startsWith('/'), 'пути к вариантам должны быть относительными').toBe(false);
     }
   });
@@ -71,16 +72,18 @@ test.describe('Image-пайплайн: <picture> на главной', () => {
       .locator('.showcase source[type="image/webp"]')
       .getAttribute('srcset');
 
-    const avifUrl = avifSrcset.split(', ').find((entry) => entry.includes('.avif 1x'));
-    const webpUrl = webp2x.split(', ').find((entry) => entry.includes('@2x.webp 2x'));
+    const avifSrcsetAll = (avifSrcset ?? '').split(', ');
+    const webp2xAll = (webp2x ?? '').split(', ');
+    const avifUrl = avifSrcsetAll.find((entry) => entry.includes('.avif 1x'));
+    const webpUrl = webp2xAll.find((entry) => entry.includes('@2x.webp 2x'));
     expect(avifUrl, 'avif 1x найден в srcset').toBeTruthy();
     expect(webpUrl, 'webp 2x найден в srcset').toBeTruthy();
 
-    const avif = await request.get(avifUrl.split(' ')[0]);
+    const avif = await request.get(avifUrl!.split(' ')[0]);
     expect(avif.status()).toBe(200);
     expect(avif.headers()['content-type']).toContain('image/avif');
 
-    const webp = await request.get(webpUrl.split(' ')[0]);
+    const webp = await request.get(webpUrl!.split(' ')[0]);
     expect(webp.status()).toBe(200);
     expect(webp.headers()['content-type']).toContain('image/webp');
   });
@@ -93,7 +96,7 @@ test.describe('Image-пайплайн: <picture> на главной', () => {
     await page.locator('.showcase').scrollIntoViewIfNeeded();
     const img = page.locator('.showcase picture img');
     await expect(async () => {
-      const currentSrc = await img.evaluate((el) => el.currentSrc);
+      const currentSrc = await img.evaluate((el) => (el as HTMLImageElement).currentSrc);
       expect(currentSrc).toContain('.avif');
     }).toPass();
   });

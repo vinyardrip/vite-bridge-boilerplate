@@ -97,8 +97,8 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 │       └── views/            # Nunjucks: layouts, pages, partials, components, macros
 ├── packages/                 # Локальные пакеты pnpm-workspace (vite-plugin-smart-assets)
 ├── scripts/                  # Utility-скрипты (изображения, SVG, critical CSS)
-├── vite.config.js            # Конфигурация сборки
-├── playwright.config.js      # Конфигурация e2e-тестов
+├── vite.config.ts            # Конфигурация сборки
+├── playwright.config.ts      # Конфигурация e2e-тестов
 └── PLAN.md                   # Архитектура и чек-лист фаз (источник правды)
 ```
 
@@ -120,7 +120,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 - Вывод в шаблонах — Nunjucks-макросы **`ui.picture()`** (готовый `<picture>`
   из AVIF/WebP-вариантов) и **`ui.icon()`** (инлайн `<svg>` / `<use>` спрайта /
   `<img>` иллюстрации — по записи манифеста, `| safe` не нужен): фильтры
-  `smartPicture`/`smartSvg` в `vite.config.js` проецируют состояние плагина и
+  `smartPicture`/`smartSvg` в `vite.config.ts` проецируют состояние плагина и
   `projectSvg` в SafeString. CSS-фоны — через миксин `bgset()` +
   сгенерированную карту путей (`frontend/src/scss/generated/_smart-assets-map.scss`
   — генерируется, не коммитится). Примеры — в Cookbook.
@@ -201,7 +201,7 @@ Gzip без raw недооценивает стоимость инлайна (in
 - `mode: 'img'`: возвращает `<img>` с `loading="lazy"` и `alt` из `options`.
 
 В шаблонах ее вызывают за вас Nunjucks-фильтры `smartSvg`/`smartPicture`
-(`vite.config.js`, обертки в SafeString) — им пользуются макросы
+(`vite.config.ts`, обертки в SafeString) — им пользуются макросы
 `ui.icon()` и `ui.picture()`; примеры — в Cookbook. Плагин также дает
 API `svgEntry(name)` / `svgInlineContent(entry)` для поиска записи и
 нормализованного инлайн-контента по имени файла в `raw/`.
@@ -244,10 +244,10 @@ Vite-плагин автоматически сканирует SVG-файлы �
 smart-assets (Phase 3+): в `index.html` есть демо-`<picture>` от `ui.picture('boiler-demo')`,
 в `assets-manifest.json` у каждого растра есть webp/avif-варианты и все файлы
 вариантов лежат в dist, SVG-записи конвейера имеют относительные `file`,
-а сам `smartAssets()` подключен в `vite.config.js`.
+а сам `smartAssets()` подключен в `vite.config.ts`.
 
 **E2E** (`pnpm playwright test`) — тесты в `frontend/tests/` против собранной версии
-(preview-сервер, порты из `playwright.config.js`):
+(preview-сервер, порты из `playwright.config.ts`):
 
 - `page-smoke.spec.js` — страницы открываются, разметка на месте, нет ошибок в консоли;
 - `interactive.spec.js` — модули modals (открытие/закрытие, Esc, оверлей, кнопка закрытия),
@@ -260,7 +260,7 @@ smart-assets (Phase 3+): в `index.html` есть демо-`<picture>` от `ui.
 Прогон: **64 теста (chromium + firefox) — все зелёные**; build-smoke: **42/42**.
 WebKit временно отключён в конфиге — в песочнице нет системных зависимостей
 (нужен `pnpm playwright install-deps webkit` с sudo); как вернуть — см. комментарий
-в `playwright.config.js`.
+в `playwright.config.ts`.
 
 ## Бэкенд: модульная тема WordPress
 

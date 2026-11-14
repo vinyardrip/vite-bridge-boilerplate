@@ -30,7 +30,7 @@ test.describe('bgset: CSS-фон с AVIF/WebP-фолбэками', () => {
     // пустой блок. Хешированные варианты пишет Vite (bgset → dist/img/).
     const assetUrl = computed.match(/url\("?([^")]+)"?\)/)?.[1];
     expect(assetUrl, 'из background-image извлечен url').toBeTruthy();
-    const response = await page.request.get(assetUrl);
+    const response = await page.request.get(assetUrl!);
     expect(response.status(), `файл фона должен существовать: ${assetUrl}`).toBe(200);
   });
 

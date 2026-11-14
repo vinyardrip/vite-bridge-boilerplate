@@ -143,7 +143,7 @@ for (const file of files) {
 должен таскать AVIF-байты, которые никто не запросит (а на шаред-хостинге
 AVIF мог бы и не отдаться). Удаляем рекурсивно все *.avif от корня темы —
 все варианты в плоской img/ лежат РЯДОМ с webp/jpg (см. assetFileNames
-в vite.config.js), подпапок форматов нет и появиться не должно. */
+в vite.config.ts), подпапок форматов нет и появиться не должно. */
 const avifFiles = globSync("**/*.avif", { cwd: ROOT }).sort();
 let deletedFiles = 0;
 for (const file of avifFiles) {

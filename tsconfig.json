@@ -19,8 +19,8 @@
     // Импорты внутри TS-кода проекта — с явным расширением .ts
     // (noEmit — бандлит Vite/esbuild, компиляции нет).
     "allowImportingTsExtensions": true,
-    // Пока выключен — включается на шаге 4 после переименования конфигов.
-    "strict": false,
+    // Миграция завершена: строгие проверки во всем проекте.
+    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -30,18 +30,29 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./frontend/src/*"]
+      "@/*": ["./frontend/src/*"],
+      // workspace-пакет: типы берутся прямо из .ts-исходников (main пакета —
+      // index.ts, у d.ts для него нет).
+      "vite-plugin-smart-assets": ["./packages/vite-plugin-smart-assets/index.ts"],
+      "vite-plugin-smart-assets/*": ["./packages/vite-plugin-smart-assets/src/*"]
     }
   },
   "include": [
     "frontend/src",
     "frontend/tests",
     "scripts",
-    "*.ts"
+    "*.ts",
+    // Ambient-шимы svgo (глубокие импорты): исходники пакета попадают в
+    // корневую программу через импорты vite.config.ts — декларации должны
+    // быть частью программы.
+    "packages/vite-plugin-smart-assets/src/types"
   ],
   "exclude": [
     "node_modules",
-    "packages",
+    // packages/ исключаем, КРОМЕ шимов svgo: exclude сильнее include, поэтому
+    // указываем точечно (тесты пакета проверяются своим tsconfig).
+    "packages/*/node_modules",
+    "packages/*/test",
     "dist",
     "dist-wp",
     "backend",

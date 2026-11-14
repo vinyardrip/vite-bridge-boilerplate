@@ -4,7 +4,7 @@
  * =================================================================================================
  *
  * Inline-SVG: макрос ui.icon() (macros/_ui.njk) через фильтр smartSvg +
- * projectSvg (vite.config.js / vite-plugin-smart-assets) инлайнит
+ * projectSvg (vite.config.ts / vite-plugin-smart-assets) инлайнит
  * нормализованную иконку из frontend/raw в HTML прямо на этапе сборки —
  * без внешнего спрайта и HTTP-запроса.
  *

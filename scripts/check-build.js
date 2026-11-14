@@ -251,13 +251,13 @@ for (const publicFile of expectedPublicFiles) {
 // PWA-плагин выключен, но его справочный код обязан жить в конфиге
 // закомментированным: пользователь включает PWA раскомментированием,
 // не раскапывая Git-историю.
-const viteConfigSource = fs.readFileSync("vite.config.js", "utf-8");
+const viteConfigSource = fs.readFileSync("vite.config.ts", "utf-8");
 check(
-  "vite.config.js: закомментированный импорт vite-plugin-pwa на месте",
+  "vite.config.ts: закомментированный импорт vite-plugin-pwa на месте",
   viteConfigSource.includes('// import { VitePWA } from "vite-plugin-pwa";'),
 );
 check(
-  "vite.config.js: закомментированные блоки VitePWA на месте (3 шт.)",
+  "vite.config.ts: закомментированные блоки VitePWA на месте (3 шт.)",
   (viteConfigSource.match(/\/\/\s*VitePWA\(\{/g) || []).length === 3,
 );
 
@@ -278,7 +278,7 @@ check(
 // normalize → classify → inline/sprite/img) должен быть подключен в конфиге
 // (сам вывод проверяют тесты выше и frontend/tests/picture.spec.js).
 check(
-  "vite.config.js: image-пайплайн подключен (smart-assets: плагин создан и в plugins)",
+  "vite.config.ts: image-пайплайн подключен (smart-assets: плагин создан и в plugins)",
   viteConfigSource.includes("smartAssets(") && viteConfigSource.includes("smartAssetsPlugin,"),
 );
 
@@ -293,14 +293,14 @@ check(
     pkgSource.includes("vite build --mode wordpress"),
 );
 check(
-  "vite.config.js: WP-режим складывает ассеты в assets/ темы",
+  "vite.config.ts: WP-режим складывает ассеты в assets/ темы",
   viteConfigSource.includes('mode === "wordpress"') &&
     viteConfigSource.includes(
       '"backend/wp-content/themes/my-theme/assets"',
     ),
 );
 check(
-  "vite.config.js: в WP-режиме manifest.json остается в корне вывода",
+  "vite.config.ts: в WP-режиме manifest.json остается в корне вывода",
   viteConfigSource.includes('manifest: "manifest.json"'),
 );
 const enqueuePhpSource = fs.readFileSync(

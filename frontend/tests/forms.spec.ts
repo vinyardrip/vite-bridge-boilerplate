@@ -60,6 +60,6 @@ test.describe('Модуль forms', () => {
     // поэтому проверяем его геометрию, а не видимость
     const box = await botField.boundingBox();
     expect(box).not.toBeNull();
-    expect(box.x).toBeLessThan(0);
+    expect(box!.x).toBeLessThan(0);
   });
 });

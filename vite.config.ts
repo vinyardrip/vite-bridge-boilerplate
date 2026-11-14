@@ -1,6 +1,6 @@
 /*!
  * =================================================================================================
- * vite.config.js
+ * vite.config.ts
  * =================================================================================================
  *
  * Главный конфигурационный файл для сборщика Vite.
@@ -9,7 +9,7 @@
  * =================================================================================================
  */
 
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -27,6 +27,7 @@ import { smartAssets } from "vite-plugin-smart-assets";
 // ГЛУБОКИЙ импорт: точка входа пакета экспортирует только smartAssets.
 // Пакет мигрирован на TypeScript (шаг 2) — импортируем .ts-исходник.
 import { projectSvg } from "vite-plugin-smart-assets/src/svg/project.ts";
+import type { AssetOptions } from "vite-plugin-smart-assets/src/types.ts";
 // import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
 
@@ -40,7 +41,7 @@ devDependencies — pnpm ставит один модуль в .pnpm, instanceof
 const nunjucksRuntime = createRequire(
   path.resolve(process.cwd(), "package.json"),
 )("nunjucks").runtime;
-const safe = (html) => new nunjucksRuntime.SafeString(String(html));
+const safe = (html: unknown) => new nunjucksRuntime.SafeString(String(html));
 
 /*! --- ГЛОБАЛЬНЫЕ ДАННЫЕ САЙТА --- */
 // vite-plugin-njk-frontmatter особый случай: файл site.json он сливает
@@ -87,23 +88,24 @@ const collectRollupInputs = () => {
  * Пути вычисляются ОТНОСИТЕЛЬНО каждой страницы — совместимо с base: './'
  * и открытием dist/index.html через file://.
  */
-const injectTagsIntoNjkHtml = () => ({
+const injectTagsIntoNjkHtml = (): Plugin => ({
   name: "inject-tags-into-njk-html",
   enforce: "post",
   apply: "build",
   generateBundle(_, bundle) {
     const htmlFiles = Object.values(bundle).filter(
-      (file) => file.type === "asset" && file.fileName.endsWith(".html"),
+      (file): file is Extract<(typeof bundle)[string], { type: "asset" }> =>
+        file.type === "asset" && file.fileName.endsWith(".html"),
     );
     if (htmlFiles.length === 0) {
       return;
     }
 
     const appChunk = Object.values(bundle).find(
-      (file) =>
+      (file): file is Extract<(typeof bundle)[string], { type: "chunk" }> =>
         file.type === "chunk" &&
         file.isEntry &&
-        file.facadeModuleId?.replace(/\\/g, "/").endsWith("js/app.ts"),
+        (file.facadeModuleId?.replace(/\\/g, "/").endsWith("js/app.ts") ?? false),
     );
 
     if (!appChunk) {
@@ -119,7 +121,7 @@ const injectTagsIntoNjkHtml = () => ({
       const htmlDir = path.posix.dirname(html.fileName);
       // Путь ассета относительно страницы: из dist/index.html → "js/...",
       // из вложенной страницы (pages/about.html) → "../js/...".
-      const rel = (assetPath) =>
+      const rel = (assetPath: string) =>
         path.posix.relative(htmlDir, assetPath) || path.posix.basename(assetPath);
 
       let source = String(html.source);
@@ -149,7 +151,7 @@ const injectTagsIntoNjkHtml = () => ({
  * vite-plugin-njk-frontmatter удаляет пустые чанки HTML-страниц из бандла,
  * но их sourcemap'ы остаются. Убираем карты без парного .js.
  */
-const removeOrphanSourcemaps = () => ({
+const removeOrphanSourcemaps = (): Plugin => ({
   name: "remove-orphan-sourcemaps",
   enforce: "post",
   generateBundle(_, bundle) {
@@ -203,7 +205,7 @@ export default defineConfig(({ command, mode }) => {
     • mode img     — <img> для SVG-иллюстраций/анимаций.
   Записи нет → fail-fast: сборка падает с именем иконки (без «молчаливых»
   дырок в разметке). Возвращаем SafeString — макросу | safe не нужен. */
-  const smartSvg = (name, options, className) => {
+  const smartSvg = (name: string, options?: AssetOptions | null, className?: string) => {
     const entry = smartAssetsPlugin.svgEntry(name);
     if (!entry) {
       throw new Error(
@@ -221,12 +223,14 @@ export default defineConfig(({ command, mode }) => {
   const plugins = [
     // Fontaine должен идти первым: подменяет @font-face на fallback-метрики.
     FontaineTransform.vite({
+      // Типы fontaine описывают fallbacks как string[] (stale) — рантайм принимает
+      // Record<семейство, фолбэки>; cast к параметру фабрики.
       fallbacks: {
         "JetBrains Mono": ["Courier New", "monospace"],
         Spectral: ["Georgia", "serif"],
         "Spectral SC": ["Georgia", "serif"],
       },
-    }),
+    } as unknown as Parameters<typeof FontaineTransform.vite>[0]),
 
     /*! --- НАСТРОЙКА NUNJUCKS & FRONTMATTER --- */
     nunjucksFrontMatterPlugin({
@@ -243,7 +247,8 @@ export default defineConfig(({ command, mode }) => {
         // SVG-иконки/иллюстрации из манифеста smart-assets (макрос ui.icon в _ui.njk).
         smartSvg,
         // <picture> из состояния smart-assets (макрос ui.picture в _ui.njk).
-        smartPicture: (name, opts) => safe(smartAssetsPlugin.pictureHtml(name, opts ?? {})),
+        smartPicture: (name: string, opts?: Record<string, string>) =>
+          safe(smartAssetsPlugin.pictureHtml(name, opts ?? {})),
       },
     }),
 
@@ -302,12 +307,14 @@ export default defineConfig(({ command, mode }) => {
         // !ВАЖНО: Эта опция - ключ к созданию fallback'а.
         injectTo: "google",
       },
-    }),
+      // Типы webfont-dl не описывают google/custom (рантайм читает их) —
+      // cast к параметру фабрики.
+    } as unknown as Parameters<typeof webfontDl>[0]),
 
     /*! --- PWA (отключен по умолчанию) ---
     Чтобы включить PWA: 1) раскомментируйте импорт vite-plugin-pwa вверху
     файла; 2) раскомментируйте ОДИН из вариантов VitePWA ниже; 3) иконки
-    генерируются командой `pnpm favicons:generate` (vite.config.js —
+    генерируются командой `pnpm favicons:generate` (vite.config.ts —
     см. pwaAssets). */
 
     /*! --- НАСТРОЙКА PWA И ГЕНЕРАЦИИ FAVICONS --- */
@@ -438,9 +445,13 @@ export default defineConfig(({ command, mode }) => {
             // ?ИСПРАВЛЕНО: Заменено устаревшее свойство `assetInfo.name` на `assetInfo.fileName`
             // для соответствия последним версиям Rollup (используется в Vite).
             // Добавлен fallback `|| assetInfo.name` для максимальной обратной совместимости.
-            const extType = (assetInfo.fileName || assetInfo.name)
+            // Rollup-типы больше не содержат legacy fileName/name, но рантайм их
+            // кладет (иначе extType был бы undefined и CSS шел бы в корень) —
+            // cast к фактической форме объекта, поведение без изменений.
+            const legacy = assetInfo as unknown as { fileName?: string; name?: string };
+            const extType = (legacy.fileName || legacy.name)!
               .split(".")
-              .pop();
+              .pop()!;
 
             if (/css/i.test(extType)) return "css/app.[hash].css";
             // !ВСЕ картинки (jpg/png/svg/webp/avif/...) — в ПЛОСКУЮ img/:

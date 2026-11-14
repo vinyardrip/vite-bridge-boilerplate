@@ -19,7 +19,7 @@
   fill: currentColor; // Цвет заливки наследуется от CSS-свойства color
 }
 
-// Инлайновые иконки (макрос ui.icon → фильтр smartSvg в vite.config.js).
+// Инлайновые иконки (макрос ui.icon → фильтр smartSvg в vite.config.ts).
 // !ВАЖНО: fill/stroke НЕ задаются здесь на уровне CSS — наследование цвета
 // делается в самой разметке (currentColor вносит конвейер smart-assets на
 // нормализации). CSS-правило fill перекрыло бы fill="none" у stroke-иконок
