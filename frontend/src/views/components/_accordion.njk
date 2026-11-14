@@ -16,7 +16,9 @@
       <h3 class="accordion__title">Где посмотреть все компоненты UI-кита?</h3>
     </button>
     <div class="accordion__content">
-      <p class="accordion__text">На странице <a href="./styleguide.html">styleguide</a> собрана живая документация: дизайн-токены, типографика, кнопки, поля и карточки. Каждый пример — тот же макрос и тот же SCSS, что попадают в продакшен.</p>
+      {#- styleguide — dev-only страница (DEV_ONLY_PAGES в vite.config.ts):
+          в проде ссылку убираем (остается просто слово), чтобы не было 404 -#}
+      <p class="accordion__text">На странице {% if not site.production %}<a href="./styleguide.html">styleguide</a>{% else %}styleguide{% endif %} собрана живая документация: дизайн-токены, типографика, кнопки, поля и карточки. Каждый пример — тот же макрос и тот же SCSS, что попадают в продакшен.</p>
     </div>
   </div>
 </div>

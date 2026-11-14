@@ -56,8 +56,13 @@ console.log(
   chalk.bold(`\n=== Strip AVIF (dist): ${SRC}/ → ${TARGET}/ ===\n`),
 );
 
-/*! --- 1. Свежая копия dist → dist-wp --- */
+/*! --- 1. Свежая копия dist → dist-wp ---
+   TARGET удаляется ЦЕЛИКОМ перед копированием: без этого в dist-wp
+   остаются файлы, которых больше нет в свежем dist/ (например, страница,
+   исключенная из production-сборки в предыдущем коммите). rmSync держит
+   dist-wp точным зеркалом dist, а не «наложением» всех прошлых сборок. */
 rmSync(TARGET, { recursive: true, force: true });
+console.log(chalk.yellow(`  🧹 ${TARGET}/ очищена — копия создается с нуля`));
 cpSync(SRC, TARGET, { recursive: true });
 
 /*! --- 2. Вырезка AVIF-фрагментов из HTML/CSS копии --- */

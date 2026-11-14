@@ -56,7 +56,11 @@ social_image: "https://example.com/images/social-preview.jpg"
                title='Методология ITCSS',
                text='Слои стилей от общих к частным: токены, база, компоненты, страницы. Порядок импортов защищает от войн специфичности.'
              ) %}
+            {#- styleguide — dev-only страница (DEV_ONLY_PAGES в vite.config.ts):
+                в проде кнопка была бы 404, поэтому прячем через site.production -#}
+            {%- if not site.production %}
             {{ ui.button('Смотреть токены', href='/styleguide.html', variant='outline', size='sm') }}
+            {%- endif %}
           {% endcall %}
           {% call ui.card(
                title='Оптимизация ассетов',

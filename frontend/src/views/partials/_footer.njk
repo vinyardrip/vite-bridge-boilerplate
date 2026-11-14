@@ -11,7 +11,11 @@
         <a class="footer__link" href="#video">Видео</a>
         <a class="footer__link" href="#faq">Вопросы</a>
         <a class="footer__link" href="#contacts">Контакты</a>
+        {#- styleguide — dev-only страница (DEV_ONLY_PAGES в vite.config.ts):
+            в проде ссылка была бы 404, поэтому прячем через site.production -#}
+        {%- if not site.production %}
         <a class="footer__link" href="./styleguide.html">Styleguide</a>
+        {%- endif %}
       </nav>
 
       <button type="button" class="footer__policy" data-modal-trigger="policy">

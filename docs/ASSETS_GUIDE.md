@@ -291,9 +291,11 @@ SVG-конвейер строгий: битый XML, SVG без `viewBox` и б�
   доступность Google Fonts из вашей сети.
 
 Страница живет в `frontend/src/views/pages/test-fonts.njk`, логика проверки —
-JS-модуль `font-tester`. Страница **dev-only**: она не попадает в production-сборку
-(см. `DEV_ONLY_PAGES` в `vite.config.ts`), потому что в собранном виде её JS
-отключен и проверка не имеет смысла.
+JS-модуль `font-tester`. Страницы **test-fonts** и **styleguide** — **dev-only**:
+они не попадают в production-сборку (см. `DEV_ONLY_PAGES` в `vite.config.ts`),
+а ссылки на них из шаблонов скрыты проверкой `site.production` — на реальном
+сайте вместо 404 их просто нет. e2e-проверки styleguide (`styleguide.spec.ts`)
+прогоняются против dev-сервера (проект `styleguide-dev` в playwright.config.ts).
 
 ---
 

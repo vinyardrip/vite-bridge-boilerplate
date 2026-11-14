@@ -5,16 +5,32 @@ import { defineConfig, devices } from "@playwright/test";
 const previewPort = Number(process.env.PREVIEW_PORT) || 4173;
 const previewUrl = `http://127.0.0.1:${previewPort}`;
 
+/*! --- DEV-СЕРВЕР ДЛЯ DEV-ONLY СТРАНИЦ ---
+styleguide (и другие страницы из DEV_ONLY_PAGES в vite.config.ts) не
+собирается в dist/, но остается живой документацией UI-кита — проверяем
+его против `pnpm dev`. Порт 5175 выбран отдельно от дефолтного dev (5173),
+чтобы не пересекаться с запущенным у разработчика сервером:
+STYLEGUIDE_PORT=5176 pnpm playwright test */
+const styleguideDevPort = Number(process.env.STYLEGUIDE_PORT) || 5175;
+const styleguideDevUrl = `http://127.0.0.1:${styleguideDevPort}`;
+
 export default defineConfig({
   testDir: "./frontend/tests",
   fullyParallel: true,
   reporter: "html",
 
-  webServer: {
-    command: `pnpm preview --port ${previewPort} --strictPort`,
-    url: previewUrl,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: `pnpm preview --port ${previewPort} --strictPort`,
+      url: previewUrl,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `pnpm dev --port ${styleguideDevPort} --strictPort`,
+      url: styleguideDevUrl,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 
   use: {
     baseURL: previewUrl,
@@ -22,11 +38,23 @@ export default defineConfig({
   },
 
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    // WebKit временно отключен: в песочнице нет системных зависимостей
-    // (нужен `pnpm playwright install-deps webkit` с правами sudo).
-    // Вернуть: раскомментировать строку ниже после установки зависимостей.
-    // { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    // Собранные страницы: обе дев-спеки исключены — их страницы в dist нет.
+    {
+      name: "chromium",
+      testIgnore: /styleguide\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"], baseURL: previewUrl },
+    },
+    {
+      name: "firefox",
+      testIgnore: /styleguide\.spec\.ts$/,
+      use: { ...devices["Desktop Firefox"], baseURL: previewUrl },
+    },
+    // Styleguide — dev-only: тестируется против dev-сервера (там же доступны
+    // HMR-модули и njk-middleware, как их видит разработчик).
+    {
+      name: "styleguide-dev",
+      testMatch: /styleguide\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"], baseURL: styleguideDevUrl },
+    },
   ],
 });

@@ -8,9 +8,10 @@
  * и что в production-артефакты не просочился dev-код.
  *
  * Проверки:
- *  1. HTML-страницы собраны (index.html, styleguide.html).
- *     test-fonts.html в dist НЕ входит: страница dev-only (см. DEV_ONLY_PAGES
- *     в vite.config.ts), проверка 1b следит, чтобы она не просочилась.
+ *  1. HTML-страницы собраны (index.html).
+ *     test-fonts/styleguide в dist НЕ входят: страницы dev-only (см.
+ *     DEV_ONLY_PAGES в vite.config.ts), проверка 1b следит, чтобы они
+ *     не просочились.
  *  2. manifest.json валиден и ссылки из него существуют на диске.
  *  3. В HTML нет dev-артефактов: dev-сервера Vite, @vite/client,
  *     NJK-комментариев (vite-njk-trace работает только в dev).
@@ -30,7 +31,7 @@ import chalk from "chalk";
 const DIST_DIR = "dist";
 const MANIFEST_PATH = path.join(DIST_DIR, "manifest.json");
 
-const expectedHtmlPages = ["index.html", "styleguide.html"];
+const expectedHtmlPages = ["index.html"];
 const expectedPublicFiles = ["favicon.svg", "robots.txt"];
 
 /*! --- Сбор результатов --- */
@@ -65,7 +66,7 @@ for (const page of expectedHtmlPages) {
 }
 
 /*! --- 1b. Dev-only страницы не должны попадать в прод --- */
-for (const devPage of ["dev-dashboard.html", "test-fonts.html"]) {
+for (const devPage of ["dev-dashboard.html", "test-fonts.html", "styleguide.html"]) {
   check(
     `Dev-only страница ${devPage} отсутствует в dist`,
     !fs.existsSync(path.join(DIST_DIR, devPage)),

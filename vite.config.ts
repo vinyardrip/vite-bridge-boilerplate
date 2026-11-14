@@ -64,11 +64,13 @@ const readSiteData = () => {
 const collectRollupInputs = () => {
   // !DEV-ONLY СТРАНИЦЫ: не попадают в production-сборку. Страница остается
   // доступной в `pnpm dev` через middleware vite-plugin-njk-frontmatter,
-  // но .html-файл не эмитится в dist. test-fonts — инструмент диагностики
-  // шрифтов: в собранном виде он не работает (JS отключен проверкой
-  // site.production) и на проде не нужен. styleguide в dist собирается
-  // намеренно — это витрина компонентов.
-  const DEV_ONLY_PAGES = new Set(["dev-dashboard", "test-fonts"]);
+  // но .html-файл не эмитится в dist:
+  //   • dev-dashboard — внутренняя панель разработчика;
+  //   • test-fonts — диагностика шрифтов (в собранном виде JS отключен
+  //     и проверка не имеет смысла);
+  //   • styleguide — витрина компонентов, на реальном сайте не нужна
+  //     (ссылки на нее в шаблонах скрыты проверкой site.production).
+  const DEV_ONLY_PAGES = new Set(["dev-dashboard", "test-fonts", "styleguide"]);
   const pages = globSync("frontend/src/views/pages/*.njk").filter(
     (file) => !DEV_ONLY_PAGES.has(path.basename(file, path.extname(file))),
   );
