@@ -56,7 +56,17 @@ test.describe('dist как самостоятельный артефакт (file
   test('favicon подключен относительным путем', async ({ page }) => {
     await page.goto(distIndex);
 
-    const faviconHref = await page.locator('link[rel="icon"]').getAttribute('href');
-    expect(faviconHref).toBe('./favicon.svg');
+    // Генератор favicons кладет иконки в assets/favicons/ (frontend/public,
+    // см. раздел 9 docs/ASSETS_GUIDE.md): <link rel="icon"> — два тега
+    // (ICO-фолбэк + SVG для современных браузеров). Оба пути обязаны быть
+    // относительными — иначе file://-открытие потеряет иконку.
+    const faviconHrefs = await page
+      .locator('link[rel="icon"]')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+
+    expect(faviconHrefs.length).toBe(2);
+    for (const href of faviconHrefs) {
+      expect(href, `href="${href}"`).toMatch(/^\.\/assets\/favicons\//);
+    }
   });
 });
