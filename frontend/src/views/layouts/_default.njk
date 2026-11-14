@@ -34,9 +34,14 @@ _default.njk (v4.0 - На основе вашего кода)
     <meta name="description" content="{{ description or site.description or 'Описание по умолчанию' }}">
     <meta name="keywords" content="{{ keywords or site.keywords or '' }}">
 
-    {# Путь относительный: работает и в dev (страница в корне), и в собранном
-       dist при base: './' (открытие через file://). #}
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    {# Фавиконки генерируются из frontend/public/favicon.svg командой
+       `pnpm favicons:generate` (автоматически перед каждой сборкой).
+       Готовые файлы лежат в frontend/public/assets/favicons/ — корень
+       public/ не засоряем. Пути относительные: работает и в dev, и в
+       собранном dist при base: './' (открытие через file://). #}
+    <link rel="icon" href="./assets/favicons/favicon.ico" sizes="any">
+    <link rel="icon" href="./assets/favicons/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./assets/favicons/apple-touch-icon-180x180.png">
 
     {# ПОДКЛЮЧАЕМ МЕТА-ТЕГИ ДЛЯ СОЦСЕТЕЙ #}
     {% block social_meta %}

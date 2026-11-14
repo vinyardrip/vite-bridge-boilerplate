@@ -31,7 +31,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="description" content="<?php echo esc_attr( get_bloginfo( 'description' ) ); ?>">
 
-	<link rel="icon" href="<?php echo esc_url( get_template_directory_uri() . '/assets/favicon.svg' ); ?>" type="image/svg+xml">
+	<?php
+	// Фавиконки генерируются из frontend/public/favicon.svg (pnpm favicons:generate,
+	// выполняется автоматически перед каждой сборкой). В теме лежат по пути
+	// assets/assets/favicons/ — это зеркало dist/assets/favicons/ (public/ → dist/
+	// → sync:theme), двойной "assets/" — след структуры dist, не опечатка.
+	?>
+	<link rel="icon" href="<?php echo esc_url( get_template_directory_uri() . '/assets/assets/favicons/favicon.ico' ); ?>" sizes="any">
+	<link rel="icon" href="<?php echo esc_url( get_template_directory_uri() . '/assets/assets/favicons/favicon.svg' ); ?>" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="<?php echo esc_url( get_template_directory_uri() . '/assets/assets/favicons/apple-touch-icon-180x180.png' ); ?>">
 
 	<?php wp_head(); ?>
 </head>

@@ -21,8 +21,16 @@ declare module "rollup-plugin-visualizer" {
 }
 
 declare module "critical" {
+  /** Опции inline-critical (передаются в подобъекте inline опции generate()). */
+  export interface CriticalInlineOptions {
+    /** Явная точка вставки <style> (обход баги flatten в inline-critical@12.1.0). */
+    selector?: string;
+    [key: string]: unknown;
+  }
+
   export interface CriticalOptions {
-    inline?: boolean;
+    /** boolean | объект опций inline-critical (валидатор critical: Joi.object().unknown(true)). */
+    inline?: boolean | CriticalInlineOptions;
     base?: string;
     src?: string;
     dimensions?: Array<{ height: number; width: number }>;

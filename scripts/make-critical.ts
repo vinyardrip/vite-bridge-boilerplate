@@ -13,8 +13,12 @@ async function run() {
   console.log("🚀 Starting Critical CSS generation...");
 
   try {
-    // 1. Находим все HTML-файлы в папке сборки (dist)
-    const htmlFiles = await glob("**/*.html", { cwd: distPath });
+    // 1. Находим все HTML-файлы в папке сборки (dist).
+    // stats.html — отчет rollup-plugin-visualizer (pnpm build:stats), это
+    // не страница сайта: критикал для него не считается.
+    const htmlFiles = (await glob("**/*.html", { cwd: distPath })).filter(
+      (file) => path.basename(file) !== "stats.html",
+    );
 
     if (htmlFiles.length === 0) {
       console.warn(
@@ -29,8 +33,23 @@ async function run() {
       console.log(`Processing: ${file}`);
 
       const { html } = await generate({
-        // Встраиваем CSS прямо в HTML
-        inline: true,
+        // Встраиваем CSS прямо в HTML. ЯВНАЯ точка вставки <style>
+        // (selector) — ОБЯЗАТЕЛЬНО: без нее в inline-critical@12.1.0 падает
+        // с «HierarchyRequestError: Invalid insertion of STYLE node in
+        // #document node» — его flatten() не разворачивает вложенные списки
+        // селекторов, и undefined-элемент (o.selector) превращается в ПУСТОЙ
+        // селектор в начале списка (",…"), который nwsapi (движок селекторов
+        // jsdom) парсит криво и возвращает корневой <html>; critical пытается
+        // вставить <style> перед <html>. Явный селектор ссылки стилей убирает
+        // пустой элемент списка — <style> встает прямо перед ней (классическое
+        // место критического CSS). Ссылка есть на всех страницах dist.
+        // ВАЖНО: selector передается в подобъекте inline (на верхнем уровне
+        // generate() конфиг валидируется и "selector is not allowed").
+        // inline-объект (в отличие от inline: true) НЕ включает стратегию
+        // media — остаемся на дефолте: линк становится rel="preload", а
+        // рабочий <link rel="stylesheet"> добавляется в <body> — CSS грузится
+        // даже с отключенным JavaScript.
+        inline: { selector: 'link[rel="stylesheet"]' },
         // Базовый путь - наша папка со сборкой
         base: distPath,
         // Исходный HTML-файл

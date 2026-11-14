@@ -58,13 +58,15 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | Команда | Описание |
 | --- | --- |
 | `pnpm dev` | Dev-сервер Vite с горячей перезагрузкой. |
-| `pnpm build` | Production-сборка: оптимизация изображений/SVG → `vite build` → `dist/`. |
+| `pnpm build` | Production-сборка: генерация фавиконок → оптимизация изображений/SVG → `vite build` → `dist/` (с AVIF и фавиконками; Critical CSS сюда не входит — он замедляет сборку, см. `build:prod`). |
+| `pnpm build:wp` | То же в режиме WordPress: ассеты собираются сразу в `backend/wp-content/themes/my-theme/assets/` (HTML не собирается, разметку рендерит PHP). |
+| `pnpm build:prod` | Финальная сборка для статического деплоя: `pnpm build` + инлайн **Critical CSS** в HTML (`scripts/make-critical.ts`). |
 | `pnpm preview` | Локальный сервер для проверки собранной версии (`dist/`). |
 | `pnpm verify` | `pnpm build` + прогон Playwright-тестов. |
 | `pnpm test:ui` | Playwright-тесты в UI-режиме. |
 | `pnpm test:update` | Пересборка + обновление снапшотов Playwright. |
 | `pnpm check` | Линт (Biome) + форматирование (Biome + Prettier). |
-| `pnpm test:build` | Build-smoke: проверка артефактов сборки в `dist/` (см. `scripts/check-build.js`). |
+| `pnpm test:build` | Build-smoke: проверка артефактов сборки в `dist/` (см. `scripts/check-build.ts`). |
 | `pnpm sync:theme` | Синхронизация `dist/` в тему WordPress (блокируется при грязном `git status`). |
 | `pnpm build:wp-strip-avif` | Вырезает AVIF-фрагменты из PHP/HTML/CSS темы (перед деплоем на шаред-хостинг, см. «Деплой»). |
 | `pnpm strip-avif:dist` | Копия `dist/` → `dist-wp/` без AVIF (статический деплой, оригинал не трогается). |
@@ -74,7 +76,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | Команда | Описание |
 | --- | --- |
 | `pnpm test:fonts` | Страница тестирования шрифтов (`/pages/test-fonts.html`) в dev-режиме. |
-| `pnpm favicons:generate` | Генерация favicon/PWA-ассетов из `frontend/public/favicon.svg`. |
+| `pnpm favicons:generate` | Генерация favicon/PWA-ассетов из `frontend/public/favicon.svg` → `frontend/public/assets/favicons/` (автоматически выполняется перед каждой сборкой; подробнее — [Cookbook](./docs/ASSETS_GUIDE.md)). |
 | `pnpm images:convert` | Конвертация изображений в WebP/AVIF (sharp). |
 | `pnpm images:compress` | Сжатие изображений (входит в `pnpm build`). |
 | `pnpm svg:optimize` | Оптимизация SVG (svgo, входит в `pnpm build`). |
@@ -444,11 +446,31 @@ wp-content/uploads/2026/11/photo.jpg.webp   ← сиблинг WebP
 
 ### Статический деплой `dist/` без AVIF (`dist-wp/`)
 
-Той же цели служит вариант без WordPress: `pnpm strip-avif:dist`
-(`scripts/strip-avif-dist.js`) копирует `dist/` → `dist-wp/` (оригинал не трогается),
-вырезает AVIF общими правилами (`scripts/strip-avif-rules.js` — общие с theme-стритом),
-удаляет `*.avif`-файлы и чистит оба манифеста; в конце — та же контрольная проверка
-файловых ссылок. Каждый запуск пересобирает `dist-wp/` с нуля из текущего `dist/`.
+**Для локальной разработки и DDEV используйте `dist/`. Для заливки на слабый
+хостинг используйте `dist-wp/`.**
+
+Для деплоя соберите финальную версию со встроенным Critical CSS и вырежьте AVIF:
+
+1. `pnpm build:prod` — `pnpm build` + инлайн Critical CSS в HTML (`dist/`
+   остается локальным, для preview/тестов).
+2. `pnpm strip-avif:dist` — скрипт (`scripts/strip-avif-dist.ts`) копирует
+   `dist/` → `dist-wp/` (оригинал не трогается), вырезает AVIF общими правилами
+   (`scripts/strip-avif-rules.ts` — общие с theme-стритом), удаляет `*.avif`-файлы
+   и чистит оба манифеста; в конце — та же контрольная проверка файловых ссылок.
+   Каждый запуск пересобирает `dist-wp/` с нуля из текущего `dist/`, поэтому
+   шаг 2 выполняют сразу после каждой пересборки.
+
+Про Critical CSS (`scripts/make-critical.ts`, выполняется `build:prod`):
+
+- для каждого HTML-файла в `dist/` вычисляется критический CSS (вьюпорты
+  1300×900 и 414×896) и инлайнится в `<head>`; исходный `<link rel="stylesheet">`
+  становится `rel="preload"`, а рабочий линк добавляется в `<body>` — стили
+  грузятся даже с отключенным JavaScript;
+- обычный `pnpm build` выполняется без Critical CSS (Puppeteer добавляет ~15 с) —
+  он предназначен для локальных проверок; финальный деплой делайте через
+  `pnpm build:prod`;
+- в `build:wp` Critical CSS отсутствует намеренно: WP-сборка не строит HTML
+  (разметку рендерит PHP), инлайнить некуда.
 
 ## Инструменты разработки (dev-only)
 
