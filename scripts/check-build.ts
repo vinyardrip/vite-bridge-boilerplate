@@ -32,10 +32,11 @@ const expectedHtmlPages = ["index.html", "test-fonts.html", "styleguide.html"];
 const expectedPublicFiles = ["favicon.svg", "robots.txt"];
 
 /*! --- Сбор результатов --- */
-const errors = [];
-const checks = [];
+type CheckResult = { description: string; ok: boolean; details: string };
+const errors: string[] = [];
+const checks: CheckResult[] = [];
 
-const check = (description, ok, details = "") => {
+const check = (description: string, ok: boolean, details = ""): void => {
   checks.push({ description, ok, details });
   if (!ok) {
     errors.push(`${description}${details ? ` — ${details}` : ""}`);
@@ -62,13 +63,14 @@ for (const page of expectedHtmlPages) {
 }
 
 /*! --- 2. manifest.json --- */
-let manifest = null;
+type ViteManifest = Record<string, { file?: string; isEntry?: boolean } | undefined>;
+let manifest: ViteManifest | null = null;
 if (fs.existsSync(MANIFEST_PATH)) {
   try {
     manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf-8"));
     check("manifest.json — валидный JSON", true);
   } catch (e) {
-    check("manifest.json — валидный JSON", false, e.message);
+    check("manifest.json — валидный JSON", false, e instanceof Error ? e.message : String(e));
   }
 } else {
   check("manifest.json существует", false, MANIFEST_PATH);
@@ -150,7 +152,7 @@ if (fs.existsSync(indexHtmlPath)) {
   // Каждый локальный файл из srcset обязан лежать в dist:
   // битый srcset = картинка не загрузится вообще (ui.picture() печатает
   // srcset для retina/вариантов, когда шаблоны начнут его использовать).
-  const srcsetFiles = new Set();
+  const srcsetFiles = new Set<string>();
   for (const [, srcsetList] of indexHtml.matchAll(/srcset="([^"]+)"/g)) {
     for (const entry of srcsetList.split(",")) {
       const file = entry.trim().split(/\s+/)[0];
@@ -167,14 +169,22 @@ if (fs.existsSync(indexHtmlPath)) {
   }
 }
 
+type AssetsManifestEntry = {
+  type?: string;
+  source?: string;
+  file?: string | null;
+  mode?: string;
+  variants?: Array<{ format?: string; path?: string }>;
+};
+
 const assetsManifestPath = path.join(DIST_DIR, "assets-manifest.json");
 if (fs.existsSync(assetsManifestPath)) {
-  let assetsManifest = null;
+  let assetsManifest: { entries?: AssetsManifestEntry[] } | null = null;
   try {
     assetsManifest = JSON.parse(fs.readFileSync(assetsManifestPath, "utf-8"));
     check("assets-manifest.json — валидный JSON", true);
   } catch (e) {
-    check("assets-manifest.json — валидный JSON", false, e.message);
+    check("assets-manifest.json — валидный JSON", false, e instanceof Error ? e.message : String(e));
   }
 
   if (assetsManifest) {
@@ -192,7 +202,7 @@ if (fs.existsSync(assetsManifestPath)) {
       for (const variant of entry.variants ?? []) {
         check(
           `Вариант smart-assets существует: ${variant.path} (${entry.source})`,
-          fs.existsSync(path.join(DIST_DIR, variant.path)),
+          fs.existsSync(path.join(DIST_DIR, variant.path ?? "")),
         );
       }
     }
@@ -212,7 +222,7 @@ if (fs.existsSync(assetsManifestPath)) {
     for (const entry of svgEntries) {
       check(
         `SVG-артефакт существует: ${entry.file} (${entry.source})`,
-        fs.existsSync(path.join(DIST_DIR, entry.file)),
+        fs.existsSync(path.join(DIST_DIR, entry.file ?? "")),
       );
     }
   }
@@ -263,9 +273,9 @@ check(
 
 // .env для TinyPNG должен искаться в frontend/ (архитектура проекта),
 // а путь не должен зависеть от process.cwd().
-const compressScriptSource = fs.readFileSync("scripts/compress-images.js", "utf-8");
+const compressScriptSource = fs.readFileSync("scripts/compress-images.ts", "utf-8");
 check(
-  "compress-images.js: .env ищется в frontend/, путь привязан к скрипту",
+  "compress-images.ts: .env ищется в frontend/, путь привязан к скрипту",
   compressScriptSource.includes('import.meta.dirname') &&
     compressScriptSource.includes('"frontend", ".env"') &&
     !compressScriptSource.includes('process.cwd()'),

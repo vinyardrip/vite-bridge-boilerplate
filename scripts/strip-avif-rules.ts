@@ -23,8 +23,14 @@
  * =================================================================================================
  */
 
+export interface StripRule {
+  name: string;
+  regex: RegExp;
+  shouldStrip?: (match: string, inner: string | undefined) => boolean;
+}
+
 /*! --- Правила вырезания AVIF-фрагментов --- */
-export const STRIP_RULES = [
+export const STRIP_RULES: StripRule[] = [
   {
     // 1. Вырезать <source> целиком, если в его srcset есть .avif
     name: "<source> с AVIF в srcset",
@@ -63,4 +69,6 @@ export const STRIP_RULES = [
 
 /*! Чистка висячих запятых после вырезок — применяется только к файлам,
     где была хотя бы одна вырезка. */
-export const COMMA_CLEANUP = [{ regex: /,\s*}/g, replacement: "}" }];
+export const COMMA_CLEANUP: Array<{ regex: RegExp; replacement: string }> = [
+  { regex: /,\s*}/g, replacement: "}" },
+];

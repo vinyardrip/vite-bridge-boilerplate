@@ -37,7 +37,7 @@ const readFile = promisify(fs.readFile);
  * Загружает кеш сжатых файлов из JSON-файла.
  * @returns {Promise<Object>} Объект с кешем.
  */
-async function loadCache() {
+async function loadCache(): Promise<Record<string, number>> {
   try {
     const cacheData = await readFile(CACHE_FILE, "utf-8");
     return JSON.parse(cacheData);
@@ -51,7 +51,7 @@ async function loadCache() {
  * Сохраняет обновленный кеш в JSON-файл.
  * @param {Object} cache Объект с кешем.
  */
-async function saveCache(cache) {
+async function saveCache(cache: Record<string, number>): Promise<void> {
   await writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
 }
 

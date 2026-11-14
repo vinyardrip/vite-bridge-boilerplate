@@ -13,7 +13,7 @@
  * =================================================================================================
  */
 
-import { optimize } from "svgo";
+import { optimize, type Config } from "svgo";
 import { glob } from "glob";
 import path from "path";
 import fs from "fs/promises";
@@ -30,7 +30,7 @@ const CACHE_FILE = "frontend/.svgo-cache"; // !Файл для кеширова�
  * Мы используем стандартный пресет, который очень хорош для удаления мусора,
  * но явно отключаем плагины, которые могут повредить цветным иллюстрациям.
  */
-const svgoConfig = {
+const svgoConfig: Config = {
   plugins: [
     {
       name: "preset-default",
@@ -53,7 +53,7 @@ const svgoConfig = {
  * Загружает кеш обработанных файлов.
  * @returns {Promise<Object>} Объект с кешем.
  */
-async function loadCache() {
+async function loadCache(): Promise<Record<string, number>> {
   try {
     const cacheData = await fs.readFile(CACHE_FILE, "utf-8");
     return JSON.parse(cacheData);
@@ -66,7 +66,7 @@ async function loadCache() {
  * Сохраняет обновленный кеш.
  * @param {Object} cache Объект с кешем.
  */
-async function saveCache(cache) {
+async function saveCache(cache: Record<string, number>): Promise<void> {
   await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2));
 }
 

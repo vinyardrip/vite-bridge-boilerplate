@@ -52,11 +52,11 @@
  *
  * Использование:
  *   pnpm build:wp-strip-avif
- *   node scripts/strip-avif.js [корень_темы]
+ *   tsx scripts/strip-avif.ts [корень_темы]
  *
  * Статический вариант (копия dist → dist-wp/ без AVIF, оригинал не трогается):
  * scripts/strip-avif-dist.js (pnpm strip-avif:dist). Общие правила вырезки
- * вынесены в strip-avif-rules.js — правятся в одном месте.
+ * вынесены в strip-avif-rules.ts — правятся в одном месте.
  *
  * =================================================================================================
  */
@@ -66,7 +66,7 @@ import path from "node:path";
 import { globSync } from "glob";
 import chalk from "chalk";
 
-import { COMMA_CLEANUP, STRIP_RULES } from "./strip-avif-rules.js";
+import { COMMA_CLEANUP, STRIP_RULES } from "./strip-avif-rules.ts";
 
 // Корень темы: аргумент командной строки или значение по умолчанию.
 const ROOT = process.argv[2] || "backend/wp-content/themes/my-theme";
@@ -104,13 +104,13 @@ let totalStrips = 0;
 
 for (const file of files) {
   let src = readFileSync(file, "utf8");
-  const appliedRules = [];
+  const appliedRules: string[] = [];
 
   for (const rule of STRIP_RULES) {
     rule.regex.lastIndex = 0;
     let ruleHits = 0;
 
-    src = src.replace(rule.regex, (match, inner) => {
+    src = src.replace(rule.regex, (match: string, inner: string) => {
       if (rule.shouldStrip && !rule.shouldStrip(match, inner)) {
         return match;
       }
@@ -162,7 +162,10 @@ avif-пути. Манифест лежит в assets/ темы (корень out
 const manifestPath = path.join(ROOT, "assets", "manifest.json");
 let manifestCleaned = false;
 if (existsSync(manifestPath)) {
-  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as Record<
+    string,
+    { file?: string; src?: string; assets?: string[] } | undefined
+  >;
   for (const [key, entry] of Object.entries(manifest)) {
     if (/\.avif$/i.test(entry?.file ?? "")) {
       delete manifest[key];
@@ -192,7 +195,9 @@ variants каждой растровой записи. */
 const smartManifestPath = path.join(ROOT, "assets", "assets-manifest.json");
 let smartManifestCleaned = false;
 if (existsSync(smartManifestPath)) {
-  const manifest = JSON.parse(readFileSync(smartManifestPath, "utf8"));
+  const manifest = JSON.parse(readFileSync(smartManifestPath, "utf8")) as {
+    entries?: Array<{ variants?: Array<{ format?: string }> }>;
+  };
   for (const entry of manifest.entries ?? []) {
     if (Array.isArray(entry?.variants)) {
       const filtered = entry.variants.filter((v) => (v.format ?? "") !== "avif");
@@ -226,8 +231,8 @@ uploads) — file_exists-guarded контракт, а не статическа�
 это безопасно без вырезки кода. */
 const SCAN_EXEMPT = [/inc[/\\]helpers\.php$/];
 
-const leftovers = [];
-const checkFiles = [...files];
+const leftovers: string[] = [];
+const checkFiles: string[] = [...files];
 for (const manifestPathToCheck of [manifestPath, smartManifestPath]) {
   if (existsSync(manifestPathToCheck)) {
     checkFiles.push(manifestPathToCheck);
@@ -254,7 +259,7 @@ if (leftovers.length > 0) {
     console.error(chalk.red(`  • ${leftover}`));
   }
   console.error(
-    chalk.red("\n   Добавьте правило вырезания в scripts/strip-avif.js\n"),
+    chalk.red("\n   Добавьте правило вырезания в scripts/strip-avif.ts\n"),
   );
   process.exit(1);
 }

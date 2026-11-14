@@ -11,7 +11,7 @@
  * Что делается в dist-wp/:
  *   1. копия dist/ целиком (каждый запуск — с нуля: rm + cp, идемпотентно);
  *   2. вырезка AVIF-фрагментов из HTML/CSS общими правилами
- *      strip-avif-rules.js (<source> с .avif в srcset, image-set(…avif…),
+ *      strip-avif-rules.ts (<source> с .avif в srcset, image-set(…avif…),
  *      плоский url(… .avif …) из каскада bgset);
  *   3. удаление файлов *.avif (сироты после вырезки ссылок);
  *   4. чистка манифестов: manifest.json (Vite — записи с file=*.avif
@@ -26,7 +26,7 @@
  *
  * Использование:
  *   pnpm strip-avif:dist
- *   node scripts/strip-avif-dist.js [src] [target]   # по умолчанию dist dist-wp
+ *   tsx scripts/strip-avif-dist.ts [src] [target]   # по умолчанию dist dist-wp
  *
  * =================================================================================================
  */
@@ -36,7 +36,7 @@ import path from "node:path";
 import { globSync } from "glob";
 import chalk from "chalk";
 
-import { COMMA_CLEANUP, STRIP_RULES } from "./strip-avif-rules.js";
+import { COMMA_CLEANUP, STRIP_RULES } from "./strip-avif-rules.ts";
 
 const SRC = process.argv[2] || "dist";
 const TARGET = process.argv[3] || "dist-wp";
@@ -73,13 +73,13 @@ let totalStrips = 0;
 
 for (const file of files) {
   let src = readFileSync(file, "utf8");
-  const appliedRules = [];
+  const appliedRules: string[] = [];
 
   for (const rule of STRIP_RULES) {
     rule.regex.lastIndex = 0;
     let ruleHits = 0;
 
-    src = src.replace(rule.regex, (match, inner) => {
+    src = src.replace(rule.regex, (match: string, inner: string) => {
       if (rule.shouldStrip && !rule.shouldStrip(match, inner)) {
         return match;
       }
@@ -125,7 +125,10 @@ let manifestsCleaned = 0;
 
 const viteManifestPath = path.join(TARGET, "manifest.json");
 if (existsSync(viteManifestPath)) {
-  const manifest = JSON.parse(readFileSync(viteManifestPath, "utf8"));
+  const manifest = JSON.parse(readFileSync(viteManifestPath, "utf8")) as Record<
+    string,
+    { file?: string; src?: string; assets?: string[] } | undefined
+  >;
   let touched = false;
   for (const [key, entry] of Object.entries(manifest)) {
     if (/\.avif$/i.test(entry?.file ?? "")) {
@@ -148,7 +151,9 @@ if (existsSync(viteManifestPath)) {
 
 const smartManifestPath = path.join(TARGET, "assets-manifest.json");
 if (existsSync(smartManifestPath)) {
-  const manifest = JSON.parse(readFileSync(smartManifestPath, "utf8"));
+  const manifest = JSON.parse(readFileSync(smartManifestPath, "utf8")) as {
+    entries?: Array<{ variants?: Array<{ format?: string }> }>;
+  };
   let touched = false;
   for (const entry of manifest.entries ?? []) {
     if (Array.isArray(entry?.variants)) {
@@ -167,8 +172,8 @@ if (existsSync(smartManifestPath)) {
 }
 
 /*! --- 5. Контрольная проверка: не осталось ли упоминаний AVIF --- */
-const leftovers = [];
-const checkFiles = [...files];
+const leftovers: string[] = [];
+const checkFiles: string[] = [...files];
 for (const manifestPath of [viteManifestPath, smartManifestPath]) {
   if (existsSync(manifestPath)) {
     checkFiles.push(manifestPath);
@@ -195,7 +200,7 @@ if (leftovers.length > 0) {
     console.error(chalk.red(`  • ${leftover}`));
   }
   console.error(
-    chalk.red("\n   Добавьте правило вырезания в scripts/strip-avif-rules.js\n"),
+    chalk.red("\n   Добавьте правило вырезания в scripts/strip-avif-rules.ts\n"),
   );
   process.exit(1);
 }
