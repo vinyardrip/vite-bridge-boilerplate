@@ -19,3 +19,22 @@ declare module "rollup-plugin-visualizer" {
 
   export function visualizer(options?: VisualizerOptions): Plugin;
 }
+
+declare module "critical" {
+  export interface CriticalOptions {
+    inline?: boolean;
+    base?: string;
+    src?: string;
+    dimensions?: Array<{ height: number; width: number }>;
+    ignore?: { atrule?: string[]; [key: string]: unknown };
+    [key: string]: unknown;
+  }
+
+  export interface CriticalResult {
+    html: string;
+    css?: string;
+    [key: string]: unknown;
+  }
+
+  export function generate(options: CriticalOptions): Promise<CriticalResult>;
+}
