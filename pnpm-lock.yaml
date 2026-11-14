@@ -147,6 +147,19 @@ importers:
       vite:
         specifier: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
         version: 7.3.7(@types/node@26.6.6)(lightningcss@1.33.0)(sass-embedded@1.108.1)(sass@1.108.1)(terser@5.51.2)(tsx@4.23.15)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      '@types/nunjucks':
+        specifier: ^3.2.6
+        version: 3.2.6
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 
@@ -1836,6 +1849,9 @@ packages:
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
+
+  '@types/nunjucks@3.2.6':
+    resolution: {integrity: sha512-pHiGtf83na1nCzliuAdq8GowYiXvH5l931xZ0YEHaLMNFgynpEqx+IPStlu7UaDkehfvl01e4x/9Tpwhy7Ue3w==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -6283,6 +6299,8 @@ snapshots:
     optional: true
 
   '@types/normalize-package-data@2.4.4': {}
+
+  '@types/nunjucks@3.2.6': {}
 
   '@types/resolve@1.20.2': {}
 

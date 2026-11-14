@@ -25,7 +25,8 @@ import webfontDl from "vite-plugin-webfont-dl";
 import { smartAssets } from "vite-plugin-smart-assets";
 // projectSvg — проекция записи SVG-манифеста в HTML (<svg> / <use> / <img>),
 // ГЛУБОКИЙ импорт: точка входа пакета экспортирует только smartAssets.
-import { projectSvg } from "vite-plugin-smart-assets/src/svg/project.js";
+// Пакет мигрирован на TypeScript (шаг 2) — импортируем .ts-исходник.
+import { projectSvg } from "vite-plugin-smart-assets/src/svg/project.ts";
 // import { VitePWA } from "vite-plugin-pwa";
 import { FontaineTransform } from "fontaine";
 

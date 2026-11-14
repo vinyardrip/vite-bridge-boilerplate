@@ -2,13 +2,14 @@
   "name": "vite-plugin-smart-assets",
   "version": "0.2.9",
   "description": "Smart asset pipeline for Vite: scans raw sources, routes images/icons, generates hashed webp/avif variants with retina pairs and an assets manifest.",
-  "main": "index.js",
+  "main": "index.ts",
   "type": "module",
   "scripts": {
-    "test": "node --test test/svg/normalize.spec.js test/svg/classify.spec.js test/svg/prefix.spec.js test/svg/build-sprite.spec.js test/svg/build-manifest.spec.js test/svg/project.spec.js test/svg/pipeline.spec.js test/svg/njk-macros.spec.js"
+    "test": "tsx --test \"test/svg/*.spec.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "files": [
-    "index.js",
+    "index.ts",
     "src"
   ],
   "keywords": [
@@ -27,5 +28,11 @@
   },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/nunjucks": "^3.2.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
   }
 }

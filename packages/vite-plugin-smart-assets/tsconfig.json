@@ -1,0 +1,17 @@
+{
+  /*!
+   * TS-проект пакета vite-plugin-smart-assets. Наследует корневой tsconfig
+   * (ESNext/Bundler/noEmit), но проверяется со strict — пакет мигрирован
+   * первым (шаг 2 миграции на TypeScript). Проверка: pnpm --filter
+   * vite-plugin-smart-assets typecheck (или общий pnpm typecheck).
+   */
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    // Спецификаторы импортов внутри пакета — с расширением .ts (нет
+    // компиляции — noEmit из корня; только typecheck, бандлит Vite).
+    "allowImportingTsExtensions": true
+  },
+  "include": ["index.ts", "src", "test"],
+  "exclude": ["node_modules"]
+}
