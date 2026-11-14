@@ -37,26 +37,27 @@
 
 import { parseSvg } from "svgo/lib/parser.js";
 import { stringifySvg } from "svgo/lib/stringifier.js";
+import type { XastCdata, XastElement, XastParent, XastRoot, XastText } from "svgo/lib/types.js";
 
-import { parseStyleDecls } from "./utils/parse-style.js";
+import { parseStyleDecls } from "./utils/parse-style.ts";
 
 const ERROR_PREFIX = "[svg:prefix]";
 
 /** Префикс идет в id и CSS-префикс — должен быть валидным идентификатором. */
 const NAME_RE = /^[A-Za-z_][\w-]*$/;
 
-const prefixIdent = (ident, prefix) => `${prefix}-${ident}`;
+const prefixIdent = (ident: string, prefix: string): string => `${prefix}-${ident}`;
 
 const ID_SELECTOR_RE = /#([\w-]+)/g;
 const CLASS_SELECTOR_RE = /\.(-?[A-Za-z_][\w-]*)/g;
 const URL_REF_RE = /url\(\s*(['"]?)#([\w-]+)\1\s*\)/g;
 
-const replaceUrlRefs = (text, prefix) =>
-  text.replace(URL_REF_RE, (m, quote, name) => `url(${quote}#${prefixIdent(name, prefix)}${quote})`);
+const replaceUrlRefs = (text: string, prefix: string): string =>
+  text.replace(URL_REF_RE, (m: string, quote: string, name: string) => `url(${quote}#${prefixIdent(name, prefix)}${quote})`);
 
 /** Имена @keyframes в CSS-тексте (до переименования). */
-const collectKeyframes = (css) => {
-  const names = new Set();
+const collectKeyframes = (css: string): Set<string> => {
+  const names = new Set<string>();
   for (const match of String(css).matchAll(/@keyframes\s+([\w-]+)/g)) {
     names.add(match[1]);
   }
@@ -68,7 +69,11 @@ const collectKeyframes = (css) => {
  * первый токен каждой comma-части переименовывается, только если он входит
  * в собранный набор @keyframes (точность вместо слепой замены).
  */
-const renameAnimationRefs = (declarations, prefix, keyframes) =>
+const renameAnimationRefs = (
+  declarations: Array<{ prop: string; value: string }>,
+  prefix: string,
+  keyframes: Set<string>,
+): Array<{ prop: string; value: string }> =>
   declarations.map((decl) => {
     if (keyframes.size === 0 || !/^(?:-webkit-)?animation(?:-name)?$/.test(decl.prop)) {
       return decl;
@@ -87,19 +92,27 @@ const renameAnimationRefs = (declarations, prefix, keyframes) =>
   });
 
 /** Значение style-атрибута (инлайн-стиль): animation-ссылки + пересборка. */
-const prefixStyleDeclarations = (styleValue, prefix, keyframes) =>
+const prefixStyleDeclarations = (
+  styleValue: string,
+  prefix: string,
+  keyframes: Set<string>,
+): string =>
   renameAnimationRefs(parseStyleDecls(styleValue), prefix, keyframes)
     .map((decl) => `${decl.prop}:${decl.value}`)
     .join(";");
 
 /** Селекторная часть правила: классы и id получают префикс. */
-const prefixSelectors = (prelude, prefix) =>
+const prefixSelectors = (prelude: string, prefix: string): string =>
   prelude
     .replace(CLASS_SELECTOR_RE, (m, name) => `.${prefixIdent(name, prefix)}`)
     .replace(ID_SELECTOR_RE, (m, name) => `#${prefixIdent(name, prefix)}`);
 
 /** Leaf-тело (декларации, hex-цвета и числа не трогаются): animation-ссылки. */
-const prefixDeclarations = (body, prefix, keyframes) =>
+const prefixDeclarations = (
+  body: string,
+  prefix: string,
+  keyframes: Set<string>,
+): string =>
   renameAnimationRefs(parseStyleDecls(body), prefix, keyframes)
     .map((decl) => `${decl.prop}:${decl.value}`)
     .join(";");
@@ -112,15 +125,15 @@ const prefixDeclarations = (body, prefix, keyframes) =>
  * рекурсия prefixBlocks идёт по уже обработанному тексту и их не повторяет
  * (иначе получилось бы user-user-spin).
  */
-const prefixCss = (css, prefix, keyframes) => {
+const prefixCss = (css: string, prefix: string, keyframes: Set<string>): string => {
   const once = replaceUrlRefs(
-    String(css).replace(/@keyframes\s+([\w-]+)/g, (m, name) => `@keyframes ${prefixIdent(name, prefix)}`),
+    String(css).replace(/@keyframes\s+([\w-]+)/g, (m: string, name: string) => `@keyframes ${prefixIdent(name, prefix)}`),
     prefix,
   );
   return prefixBlocks(once, prefix, keyframes);
 };
 
-const prefixBlocks = (css, prefix, keyframes) => {
+const prefixBlocks = (css: string, prefix: string, keyframes: Set<string>): string => {
   const replaced = css;
   const out = [];
   let pos = 0;
@@ -155,7 +168,11 @@ const prefixBlocks = (css, prefix, keyframes) => {
 };
 
 /** Префиксация атрибутов одного элемента (мутирует node.attributes). */
-const prefixAttributes = (node, prefix, keyframes) => {
+const prefixAttributes = (
+  node: XastElement,
+  prefix: string,
+  keyframes: Set<string>,
+): void => {
   for (const [attrName, attrValue] of Object.entries(node.attributes)) {
     let value = String(attrValue);
     value = replaceUrlRefs(value, prefix);
@@ -172,7 +189,7 @@ const prefixAttributes = (node, prefix, keyframes) => {
   }
 };
 
-const walk = (node, prefix, keyframes) => {
+const walk = (node: XastParent, prefix: string, keyframes: Set<string>): void => {
   for (const child of node.children) {
     if (child.type === "element") {
       prefixAttributes(child, prefix, keyframes);
@@ -190,19 +207,25 @@ const walk = (node, prefix, keyframes) => {
 };
 
 /** Корневой <svg> AST (может отсутствовать в мусорном входе). */
-const svgRoot = (ast) =>
-  ast.children.find((child) => child.type === "element" && child.name === "svg");
+const svgRoot = (ast: XastRoot): XastElement | undefined =>
+  ast.children.find(
+    (child): child is XastElement => child.type === "element" && child.name === "svg",
+  );
 
 /** Обход AST с префиксацией. Мутирует ast; ключframes собираются до обхода. */
-const prefixAst = (ast, prefix) => {
+const prefixAst = (ast: XastRoot, prefix: string): XastRoot => {
   const root = svgRoot(ast);
   if (root === undefined) {
     throw new Error(`${ERROR_PREFIX} no <svg> root element`);
   }
   const keyframes = collectKeyframes(
     root.children
-      .filter((child) => child.type === "element" && child.name === "style")
-      .flatMap((style) => style.children.filter((c) => c.type === "text" || c.type === "cdata"))
+      .filter((child): child is XastElement => child.type === "element" && child.name === "style")
+      .flatMap((style) =>
+        style.children.filter(
+          (c): c is XastText | XastCdata => c.type === "text" || c.type === "cdata",
+        ),
+      )
       .map((node) => String(node.value))
       .join("\n"),
   );
@@ -216,7 +239,7 @@ const prefixAst = (ast, prefix) => {
  * @param {string} prefix Валидный идентификатор (имя иконки).
  * @returns {string}
  */
-export function prefixSvg(svgContent, prefix) {
+export function prefixSvg(svgContent: string, prefix: string): string {
   const name = String(prefix);
   if (!NAME_RE.test(name)) {
     throw new Error(`${ERROR_PREFIX} invalid prefix "${name}"`);

@@ -13,10 +13,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { prefixSvg } from "../../src/svg/prefix.js";
+import { prefixSvg } from "../../src/svg/prefix.ts";
 
-const svg = (attrs, body) => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`;
-const xSvg = (attrs, body) =>
+const svg = (attrs: string, body: string): string => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`;
+const xSvg = (attrs: string, body: string): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ${attrs}>${body}</svg>`;
 
 describe("Блок A — id и ссылки", () => {

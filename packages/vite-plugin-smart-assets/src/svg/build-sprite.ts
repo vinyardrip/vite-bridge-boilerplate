@@ -26,8 +26,9 @@
 
 import { parseSvg } from "svgo/lib/parser.js";
 import { stringifySvg } from "svgo/lib/stringifier.js";
+import type { XastElement } from "svgo/lib/types.js";
 
-import { prefixSvg } from "./prefix.js";
+import { prefixSvg } from "./prefix.ts";
 
 const ERROR_PREFIX = "[svg:build-sprite]";
 
@@ -38,7 +39,7 @@ const SPRITE_ROOT_TAG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">';
 
 /** Одна иконка → XML <symbol id="[name]" viewBox="...">...</symbol>. */
-const buildSymbol = ({ name, content }) => {
+const buildSymbol = ({ name, content }: { name: string; content: string }): string => {
   // Свой парсинг ДО prefixSvg: сообщения об ошибках остаются в домене
   // build-sprite (Блок F спека ассертит [svg:build-sprite] + icon "name").
   let ast;
@@ -49,7 +50,9 @@ const buildSymbol = ({ name, content }) => {
     throw new Error(`${ERROR_PREFIX} icon "${name}": ${message}`);
   }
 
-  const svg = ast.children.find((child) => child.type === "element" && child.name === "svg");
+  const svg = ast.children.find(
+    (child): child is XastElement => child.type === "element" && child.name === "svg",
+  );
   if (svg === undefined) {
     throw new Error(`${ERROR_PREFIX} icon "${name}": no <svg> root element`);
   }
@@ -73,9 +76,10 @@ const buildSymbol = ({ name, content }) => {
   }
 
   // Корень → символ: атрибуты <svg> отбрасываются, переносится только viewBox.
+  // Корень гарантирован (prefixSvg валидирует) — assert без изменения поведения.
   const symbol = symbolAst.children.find(
-    (child) => child.type === "element" && child.name === "svg",
-  );
+    (child): child is XastElement => child.type === "element" && child.name === "svg",
+  )!;
   symbol.name = "symbol";
   symbol.attributes = { id: name, viewBox: viewBox.trim() };
 
@@ -87,7 +91,7 @@ const buildSymbol = ({ name, content }) => {
  * @param {Array<{ name: string, content: string }>} icons
  * @returns {string}
  */
-export function buildSprite(icons) {
+export function buildSprite(icons?: Array<{ name: string; content: string }> | null): string {
   const names = new Set();
   const symbols = [];
 

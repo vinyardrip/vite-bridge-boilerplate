@@ -43,11 +43,14 @@
 
 import { parseSvg } from "svgo/lib/parser.js";
 import { stringifySvg } from "svgo/lib/stringifier.js";
+import type { XastElement, XastRoot } from "svgo/lib/types.js";
+
+import type { AssetOptions, SvgEntry } from "../types.ts";
 
 const ERROR_PREFIX = "[svg:project]";
 
 /** Экранирование значения атрибута в ручной сборке (AST-сериализация экранирует сама). */
-const escapeHtml = (value) =>
+const escapeHtml = (value: unknown): string =>
   String(value).replace(/[&<>"']/g, (ch) => {
     switch (ch) {
       case "&":
@@ -64,17 +67,24 @@ const escapeHtml = (value) =>
   });
 
 /** file из манифеста и так относительный, но контракт check-build — без ведущего слеша. */
-const toRelative = (file) => String(file).replace(/^\/+/, "");
+const toRelative = (file: string): string => String(file).replace(/^\/+/, "");
 
 /** Пары [name, value] → строка атрибутов (undefined/null/false скипаются, true — голый атрибут). */
-const renderAttrs = (pairs) =>
+const renderAttrs = (
+  pairs: Array<[string, string | number | boolean | undefined]>,
+): string =>
   pairs
     .filter(([, value]) => value !== undefined && value !== null && value !== false)
     .map(([name, value]) => (value === true ? name : `${name}="${escapeHtml(value)}"`))
     .join(" ");
 
 /** Общие для inline/sprite атрибуты-дефолты: aria-hidden (если нет aria-label) + focusable. */
-const iconDefaults = (options) => {
+const iconDefaults = (
+  options?: AssetOptions,
+): {
+  "aria-hidden"?: string | number | boolean;
+  focusable: string | number | boolean;
+} => {
   const { "aria-label": ariaLabel, "aria-hidden": ariaHidden, focusable } = options ?? {};
   return {
     "aria-hidden": ariaHidden ?? (ariaLabel === undefined ? "true" : undefined),
@@ -82,11 +92,15 @@ const iconDefaults = (options) => {
   };
 };
 
-const mergeClass = (existing, extra) =>
+const mergeClass = (existing: string | undefined, extra: string | undefined) =>
   [existing, extra].filter((part) => typeof part === "string" && part !== "").join(" ") || undefined;
 
 /** inline: атрибуты поверх корня AST (AST-сериализация сама экранирует значения). */
-const projectInline = (entry, options, inlineContent) => {
+const projectInline = (
+  entry: SvgEntry,
+  options?: AssetOptions,
+  inlineContent?: string | null,
+): string => {
   if (typeof inlineContent !== "string" || inlineContent.trim() === "") {
     throw new Error(`${ERROR_PREFIX} "${entry.source}": mode "inline" требует inlineContent`);
   }
@@ -98,7 +112,9 @@ const projectInline = (entry, options, inlineContent) => {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${ERROR_PREFIX} "${entry.source}": нечитаемый XML (${message})`);
   }
-  const root = ast.children.find((child) => child.type === "element" && child.name === "svg");
+  const root = ast.children.find(
+    (child): child is XastElement => child.type === "element" && child.name === "svg",
+  );
   if (root === undefined) {
     throw new Error(`${ERROR_PREFIX} "${entry.source}": нет корневого <svg>`);
   }
@@ -120,7 +136,7 @@ const projectInline = (entry, options, inlineContent) => {
 };
 
 /** sprite: обертка <svg> + <use href="file#symbol">. */
-const projectSprite = (entry, options) => {
+const projectSprite = (entry: SvgEntry, options?: AssetOptions): string => {
   if (!entry.file) {
     throw new Error(`${ERROR_PREFIX} "${entry.source}": mode "sprite" без file в записи`);
   }
@@ -143,7 +159,7 @@ const projectSprite = (entry, options) => {
 };
 
 /** img: <img src loading alt [width] [height] class …>. */
-const projectImg = (entry, options) => {
+const projectImg = (entry: SvgEntry, options?: AssetOptions): string => {
   if (!entry.file) {
     throw new Error(`${ERROR_PREFIX} "${entry.source}": mode "img" без file в записи`);
   }
@@ -178,7 +194,11 @@ const projectImg = (entry, options) => {
  * @param {string|null} [inlineContent] Нормализованный SVG (только для mode: "inline").
  * @returns {string}
  */
-export function projectSvg(entry, options = {}, inlineContent = null) {
+export function projectSvg(
+  entry: SvgEntry,
+  options: AssetOptions = {},
+  inlineContent: string | null = null,
+): string {
   switch (entry.mode) {
     case "inline":
       return projectInline(entry, options, inlineContent);

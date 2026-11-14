@@ -16,11 +16,13 @@
  * =================================================================================================
  */
 
+import type { SmartPlugin } from "../../types.ts";
+
 /** Длина SVG: число с опциональной экспонентой и опциональным суффиксом px. */
 const LENGTH_RE = /^\s*([0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)\s*(?:px)?\s*$/;
 
 /** @param {string | undefined} value @returns {number | null} Число > 0 или null. */
-const parseLength = (value) => {
+const parseLength = (value: string | undefined): number | null => {
   if (value === undefined) {
     return null;
   }
@@ -32,7 +34,7 @@ const parseLength = (value) => {
   return Number.isFinite(num) && num > 0 ? num : null;
 };
 
-const synthViewBox = {
+const synthViewBox: SmartPlugin = {
   name: "synthViewBox",
   type: "visitor",
   fn: () => ({

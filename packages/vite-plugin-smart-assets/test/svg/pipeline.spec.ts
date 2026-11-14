@@ -17,7 +17,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
-import { processSvgBatch } from "../../src/svg/pipeline.js";
+import type { SvgManifestFragment, SvgOutput } from "../../src/types.ts";
+import { processSvgBatch } from "../../src/svg/pipeline.ts";
 
 const rawDir = "frontend/raw";
 
@@ -48,11 +49,11 @@ after(async () => {
   await fs.rm(tmp, { recursive: true, force: true });
 });
 
-const absPath = (name) => path.resolve(rawDir, name);
+const absPath = (name: string) => path.resolve(rawDir, name);
 const SPRITE_URL_RE = /^assets\/icons\/sprite\.[0-9a-f]{8}\.svg$/;
 
 /*! Базовый пакет считается один раз (мемоизация) — файлы уже в tmpdir. */
-let baseResult = null;
+let baseResult: { outputs: SvgOutput[]; manifest: SvgManifestFragment } | null = null;
 const baseBatch = async () => {
   baseResult ??= await processSvgBatch(
     [
@@ -78,14 +79,14 @@ describe("Блок A — базовый пакет (1 inline + 2 kind-sprite)", 
   test("inline-файл содержит нормализованный контент иконки", async () => {
     const { outputs } = await baseBatch();
     const inline = outputs.find((output) => output.fileName === "assets/ui/inline.svg");
-    assert.ok(inline.content.includes('<path fill="currentColor" d="M4 4h16v16H4z"/>'), inline.content);
+    assert.ok(inline!.content.includes('<path fill="currentColor" d="M4 4h16v16H4z"/>'), inline!.content);
   });
 
   test("спрайт содержит оба символа (sprite-a, sprite-b)", async () => {
     const { outputs } = await baseBatch();
     const sprite = outputs.find((output) => SPRITE_URL_RE.test(output.fileName));
-    assert.ok(sprite.content.includes('<symbol id="sprite-a"'), sprite.content);
-    assert.ok(sprite.content.includes('<symbol id="sprite-b"'), sprite.content);
+    assert.ok(sprite!.content.includes('<symbol id="sprite-a"'), sprite!.content);
+    assert.ok(sprite!.content.includes('<symbol id="sprite-b"'), sprite!.content);
   });
 
   test("manifest: 3 записи, отсортированы по source", async () => {
@@ -100,12 +101,12 @@ describe("Блок A — базовый пакет (1 inline + 2 kind-sprite)", 
 
   test("запись inline: file/kind/mode/hash, symbol нет", async () => {
     const { manifest } = await baseBatch();
-    const entry = manifest.entries.find((e) => e.source === "frontend/raw/inline.svg");
+    const entry = manifest.entries.find((e) => e.source === "frontend/raw/inline.svg")!;
     assert.equal(entry.file, "assets/ui/inline.svg");
     assert.equal(entry.kind, "icon");
     assert.equal(entry.mode, "inline");
     assert.equal(entry.symbol, undefined);
-    assert.match(entry.hash, /^[0-9a-f]{8}$/);
+    assert.match(entry.hash!, /^[0-9a-f]{8}$/);
   });
 
   test("sprite-записи: file = url спрайта, hash совпадает с хешем в имени, symbol по имени", async () => {
@@ -114,10 +115,10 @@ describe("Блок A — базовый пакет (1 inline + 2 kind-sprite)", 
       ["frontend/raw/sprite-a.svg", "sprite-a"],
       ["frontend/raw/sprite-b.svg", "sprite-b"],
     ]) {
-      const entry = manifest.entries.find((e) => e.source === source);
+      const entry = manifest.entries.find((e) => e.source === source)!;
       assert.equal(entry.mode, "sprite");
-      assert.match(entry.file, SPRITE_URL_RE);
-      assert.ok(entry.file === `assets/icons/sprite.${entry.hash}.svg`, entry.file);
+      assert.match(entry.file!, SPRITE_URL_RE);
+      assert.ok(entry.file === `assets/icons/sprite.${entry.hash}.svg`, entry.file!);
       assert.equal(entry.symbol, symbol);
     }
   });
@@ -129,7 +130,7 @@ describe("Блок B — fail-fast", () => {
     try {
       await assert.rejects(
         () => processSvgBatch([absPath("broken.svg")]),
-        (error) =>
+        (error: unknown) =>
           error instanceof Error &&
           error.message.includes("[svg:pipeline]") &&
           error.message.includes("frontend/raw/broken.svg"),

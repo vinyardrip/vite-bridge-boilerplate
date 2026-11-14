@@ -19,10 +19,12 @@
  * =================================================================================================
  */
 
-import { parseStyleDecls } from "../utils/parse-style.js";
+import type { SmartPlugin } from "../../types.ts";
+import type { XastElement, XastParent } from "svgo/lib/types.js";
+import { parseStyleDecls } from "../utils/parse-style.ts";
 
 /** Значение — рабочий цвет? ("" / none / currentColor / url(...) — нет). */
-const asColor = (value) => {
+const asColor = (value: string): string | null => {
   const v = String(value).trim();
   if (v === "" || v === "none" || v === "currentColor" || v.includes("url(")) {
     return null;
@@ -30,22 +32,27 @@ const asColor = (value) => {
   return v.toLowerCase();
 };
 
-const convertColorsToCurrent = {
+const convertColorsToCurrent: SmartPlugin = {
   name: "convertColorsToCurrent",
   type: "visitor",
   fn: (root) => {
     let hasUrlRef = false;
-    const colors = new Set();
+    const colors = new Set<string>();
     /** { node, name, color } — атрибуты fill/stroke. */
-    const attrTargets = [];
+    const attrTargets: Array<{ node: XastElement; name: string; color: string }> = [];
     /** { node, prop, color } — инлайн-стили. */
-    const styleTargets = [];
+    const styleTargets: Array<{ node: XastElement; prop: string; color: string }> = [];
 
-    const walk = (node) => {
+    const walk = (node: XastParent): void => {
       for (const child of node.children) {
         if (child.type !== "element") {
           // Текст <style> тоже часть тела: url(#) в CSS-правилах блокирует конвертацию.
-          if (child.type === "text" && node.name === "style" && child.value.includes("url(#")) {
+          if (
+            child.type === "text" &&
+            node.type === "element" &&
+            node.name === "style" &&
+            child.value.includes("url(#")
+          ) {
             hasUrlRef = true;
           }
           continue;
@@ -83,7 +90,7 @@ const convertColorsToCurrent = {
     walk(root);
 
     if (hasUrlRef || colors.size !== 1) {
-      return;
+      return null;
     }
     const [only] = colors;
 
@@ -104,6 +111,7 @@ const convertColorsToCurrent = {
         )
         .join(";");
     }
+    return null;
   },
 };
 

@@ -14,9 +14,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { projectSvg } from "../../src/svg/project.js";
+import type { AssetOptions, SvgEntry } from "../../src/types.ts";
+import { projectSvg } from "../../src/svg/project.ts";
 
-const svgEntry = {
+const svgEntry: SvgEntry = {
   source: "raw/icons/user.svg",
   file: "assets/icons/sprite.abc.svg",
   kind: "icon",
@@ -113,7 +114,7 @@ describe("Блок B — sprite", () => {
 });
 
 describe("Блок C — img", () => {
-  const imgEntry = {
+  const imgEntry: SvgEntry = {
     source: "raw/img/hero.svg",
     file: "assets/img/hero.deadbeef.svg",
     kind: "illustration",
@@ -160,12 +161,13 @@ describe("Блок C — img", () => {
 
 describe("Блок D — error", () => {
   test("возвращает пустую строку и предупреждает в console.warn", () => {
-    const warnings = [];
+    const warnings: string[] = [];
     const original = console.warn;
-    console.warn = (message) => warnings.push(String(message));
+    console.warn = (message: unknown) => warnings.push(String(message));
     try {
       const out = projectSvg({
         source: "raw/icons/junk.svg",
+        file: null,
         kind: "unknown",
         mode: "error",
       });
@@ -174,8 +176,8 @@ describe("Блок D — error", () => {
       console.warn = original;
     }
     assert.equal(warnings.length, 1, warnings.join("\n"));
-    assert.ok(warnings[0].includes("raw/icons/junk.svg"), warnings[0]);
-    assert.ok(warnings[0].includes("error"), warnings[0]);
+    assert.ok(warnings[0]!.includes("raw/icons/junk.svg"), warnings[0]);
+    assert.ok(warnings[0]!.includes("error"), warnings[0]);
   });
 });
 
@@ -198,6 +200,9 @@ describe("Блок E — options-passthrough и ошибки", () => {
   });
 
   test("неизвестный mode — fail-fast [svg:project]", () => {
-    assert.throws(() => projectSvg({ ...svgEntry, mode: "banana" }), /svg:project/);
+    assert.throws(
+      () => projectSvg({ ...svgEntry, mode: "banana" } as unknown as SvgEntry),
+      /svg:project/,
+    );
   });
 });

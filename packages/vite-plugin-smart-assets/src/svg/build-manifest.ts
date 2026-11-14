@@ -45,26 +45,28 @@
  * =================================================================================================
  */
 
+import type { ManifestEntry, SvgAssetInput, SvgEntry, SvgManifestFragment, SvgMode } from "../types.ts";
+
 const ERROR_PREFIX = "[svg:build-manifest]";
 
 /** Словарь mode из assignModes (classify.js) — пятое значение = баг конвейера. */
-const MODES = new Set(["inline", "sprite", "img", "error"]);
+const MODES = new Set<SvgMode>(["inline", "sprite", "img", "error"]);
 
 /** Имя без расширения и без подпапок: "raw/icons/nav/arrow.svg" → "arrow". */
-const stemOf = (source) => {
+const stemOf = (source: string): string => {
   const file = source.slice(source.lastIndexOf("/") + 1);
   const dot = file.lastIndexOf(".");
   return dot > 0 ? file.slice(0, dot) : file;
 };
 
 /** file всегда относительный: ведущие слеши срезаются (контракт check-build). */
-const toRelative = (url) => String(url).replace(/^\/+/, "");
+const toRelative = (url: string): string => String(url).replace(/^\/+/, "");
 
 /** Каталог инлайнов от корня outDir с учетом scope: "assets" → assets/ui, "" (WP) → ui. */
-const uiDirOf = (scope) => `${scope ? `${scope}/` : ""}ui`;
+const uiDirOf = (scope: string): string => `${scope ? `${scope}/` : ""}ui`;
 
 /** Один обработанный SVG → запись манифеста. Поля в порядке ТЗ. */
-const toEntry = (asset, uiDir) => {
+const toEntry = (asset: SvgAssetInput, uiDir: string): SvgEntry => {
   const source = String(asset.source ?? "");
   if (source === "") {
     throw new Error(`${ERROR_PREFIX} запись без source (исходный путь — ключ манифеста)`);
@@ -101,7 +103,10 @@ const toEntry = (asset, uiDir) => {
  *   на несуществующий "assets/ui/…".
  * @returns {{ entries: Array<{ source: string, file: string|null, kind: string, mode: string, symbol: string|undefined, hash: string|undefined }> }}
  */
-export function buildSvgManifest(svgAssets, { scope = "assets" } = {}) {
+export function buildSvgManifest(
+  svgAssets: SvgAssetInput[],
+  { scope = "assets" }: { scope?: string } = {},
+): SvgManifestFragment {
   if (!Array.isArray(svgAssets)) {
     throw new Error(`${ERROR_PREFIX} ожидался массив svgAssets, пришло ${typeof svgAssets}`);
   }
@@ -116,14 +121,26 @@ export function buildSvgManifest(svgAssets, { scope = "assets" } = {}) {
  * Сливает SVG-фрагмент с существующим манифестом (чистая: existing не мутируется).
  * Посторонние поля и чужие entries сохраняются; повторный merge с тем же
  * фрагментом не создает дублей (записи заменяются по source).
+ *
+ * existing — «чужой» манифест (assets-manifest.json плагина, объект Vite-манифеста
+ * с произвольными ключами): читаются только entries[].source, остальные поля
+ * переносятся как есть ([key: string]: unknown).
  * @param {object} [existing] Манифест сборки (например, assets-manifest.json плагина).
  * @param {{ entries: Array<object> }} [fragment] Фрагмент из buildSvgManifest.
  * @returns {object} Новый объект манифеста.
  */
-export function mergeSvgManifest(existing, fragment) {
-  const manifest = existing ?? {};
+export function mergeSvgManifest(
+  existing?: { entries?: Array<{ source: string }>; [key: string]: unknown } | null,
+  fragment?: SvgManifestFragment | null,
+): { entries: ManifestEntry[]; [key: string]: unknown } {
+  // existing может быть пустым объектом — строгий тип через cast (runtime не менялся).
+  const manifest = existing ?? ({} as { entries?: Array<{ source: string }>; [key: string]: unknown });
   const svgEntries = fragment?.entries ?? [];
-  const svgBySource = new Map(svgEntries.map((entry) => [entry.source, entry]));
-  const kept = (manifest.entries ?? []).filter((entry) => !svgBySource.has(entry.source));
+  const svgBySource = new Map<string, SvgEntry>(svgEntries.map((entry) => [entry.source, entry]));
+  // Чужие entries обрабатываются непрозрачно (читается только source) —
+  // на выходе типизируются как ManifestEntry[] (cast, runtime не менялся).
+  const kept = (manifest.entries ?? []).filter(
+    (entry) => !svgBySource.has(entry.source),
+  ) as ManifestEntry[];
   return { ...manifest, entries: [...kept, ...svgEntries] };
 }

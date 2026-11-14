@@ -21,8 +21,9 @@
 
 import { optimize } from "svgo";
 
-import { extractMeta } from "./extract-meta.js";
-import { presetSmart } from "./preset-smart.js";
+import type { SvgMeta } from "../types.ts";
+import { extractMeta } from "./extract-meta.ts";
+import { presetSmart } from "./preset-smart.ts";
 
 const ERROR_PREFIX = "[svg:normalize]";
 
@@ -30,7 +31,7 @@ const ERROR_PREFIX = "[svg:normalize]";
  * @param {string} svgSource Сырой SVG из файла.
  * @returns {{ svg: string, meta: { title?: string, desc?: string } }}
  */
-export function normalize(svgSource) {
+export function normalize(svgSource: string): { svg: string; meta: SvgMeta } {
   const { svg, meta } = extractMeta(svgSource);
 
   let result;

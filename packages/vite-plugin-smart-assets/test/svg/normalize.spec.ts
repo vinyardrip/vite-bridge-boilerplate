@@ -19,16 +19,16 @@ import path from "node:path";
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { normalize } from "../../src/svg/normalize.js";
+import { normalize } from "../../src/svg/normalize.ts";
 
 const fixturesDir = fileURLToPath(new URL("./fixtures/", import.meta.url));
-const fixture = (name) => readFileSync(path.join(fixturesDir, name), "utf8");
+const fixture = (name: string): string => readFileSync(path.join(fixturesDir, name), "utf8");
 
 /** Корневой открывающий тег <svg ...> вывода. */
-const rootTag = (svg) => /^<svg[^>]*>/.exec(svg)[0];
+const rootTag = (svg: string): string => /^<svg[^>]*>/.exec(svg)![0];
 
 /** Все url(#ref) вывода резолвятся в существующие id. */
-const assertUrlRefsResolve = (svg) => {
+const assertUrlRefsResolve = (svg: string): void => {
   for (const match of svg.matchAll(/url\(#([^)\s]+)\)/g)) {
     assert.ok(
       svg.includes(`id="${match[1]}"`),
@@ -84,7 +84,7 @@ describe("Блок B — синтез viewBox", () => {
   test("no-viewbox-no-size.svg: throw [svg:normalize]", () => {
     assert.throws(
       () => normalize(fixture("no-viewbox-no-size.svg")),
-      (error) =>
+      (error: unknown) =>
         error instanceof Error &&
         error.message.includes("[svg:normalize]") &&
         error.message.includes("viewBox"),

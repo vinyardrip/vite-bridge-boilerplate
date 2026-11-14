@@ -24,12 +24,13 @@ import { gzipSync } from "node:zlib";
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { classifyOne, assignModes } from "../../src/svg/classify.js";
-import { normalize } from "../../src/svg/normalize.js";
+import type { AssignItem, ClassifyResult } from "../../src/types.ts";
+import { classifyOne, assignModes } from "../../src/svg/classify.ts";
+import { normalize } from "../../src/svg/normalize.ts";
 
 const classifyDir = fileURLToPath(new URL("./fixtures/classify/", import.meta.url));
 const realDir = fileURLToPath(new URL("./fixtures/real/", import.meta.url));
-const readFixture = (dir, name) => readFileSync(path.join(dir, name), "utf8");
+const readFixture = (dir: string, name: string): string => readFileSync(path.join(dir, name), "utf8");
 
 describe("Блок A — classifyOne: фикстуры fixtures/classify", () => {
   // [файл, ожидаемый kind, ожидаемый reason] — дерево решений из ТЗ.
@@ -72,7 +73,7 @@ describe("Блок A — classifyOne: фикстуры fixtures/classify", () =>
 });
 
 describe("Блок B — assignModes: пороги inline-vs-sprite", () => {
-  const icon = (index, size = 100, gzipSize = 50) => ({
+  const icon = (index: number, size = 100, gzipSize = 50): AssignItem => ({
     path: `icons/icon-${index}.svg`,
     kind: "icon",
     size,
@@ -131,7 +132,7 @@ describe("Блок B — assignModes: пороги inline-vs-sprite", () => {
     const items = [
       icon(1),
       icon(2),
-      { path: "images/photo.svg", kind: "illustration", size: 10 * 1024 * 1024, gzipSize: 5 * 1024 * 1024 },
+      { path: "images/photo.svg", kind: "illustration", size: 10 * 1024 * 1024, gzipSize: 5 * 1024 * 1024 } satisfies AssignItem,
     ];
     const result = assignModes(items);
 
@@ -143,10 +144,10 @@ describe("Блок B — assignModes: пороги inline-vs-sprite", () => {
 
   test("не-иконки получают фиксированные mode", () => {
     const items = [
-      { path: "a.svg", kind: "animated", size: 1, gzipSize: 1 },
-      { path: "b.svg", kind: "sprite", size: 1, gzipSize: 1 },
-      { path: "c.svg", kind: "illustration", size: 1, gzipSize: 1 },
-      { path: "d.svg", kind: "unknown", size: 1, gzipSize: 1 },
+      { path: "a.svg", kind: "animated", size: 1, gzipSize: 1 } satisfies AssignItem,
+      { path: "b.svg", kind: "sprite", size: 1, gzipSize: 1 } satisfies AssignItem,
+      { path: "c.svg", kind: "illustration", size: 1, gzipSize: 1 } satisfies AssignItem,
+      { path: "d.svg", kind: "unknown", size: 1, gzipSize: 1 } satisfies AssignItem,
     ];
     const result = assignModes(items);
 
@@ -157,7 +158,7 @@ describe("Блок B — assignModes: пороги inline-vs-sprite", () => {
   });
 
   test("path и kind передаются насквозь; пустой список → пустой результат", () => {
-    const items = [icon(7), { path: "x.svg", kind: "animated", size: 1, gzipSize: 1 }];
+    const items = [icon(7), { path: "x.svg", kind: "animated", size: 1, gzipSize: 1 } satisfies AssignItem];
     const result = assignModes(items);
 
     assert.deepEqual(result.map((r) => r.path), ["icons/icon-7.svg", "x.svg"]);
@@ -192,7 +193,7 @@ describe("Блок C — реальные иконки fixtures/real через 
   }
 
   test("реальные веса 10 иконок → assignModes inline (raw и gzip)", () => {
-    const items = realFiles.map((name) => {
+    const items: AssignItem[] = realFiles.map((name) => {
       const { svg } = normalize(readFixture(realDir, name));
       return {
         path: `icons/${name}`,

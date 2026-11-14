@@ -16,9 +16,9 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildSprite } from "../../src/svg/build-sprite.js";
+import { buildSprite } from "../../src/svg/build-sprite.ts";
 
-const svg = (attrs, body) => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`;
+const svg = (attrs: string, body: string): string => `<svg xmlns="http://www.w3.org/2000/svg" ${attrs}>${body}</svg>`;
 
 describe("Блок A — безопасная обертка", () => {
   test("корень: width/height=0, position:absolute, aria-hidden, без display:none", () => {
@@ -72,7 +72,7 @@ describe("Блок B — базовая сборка", () => {
 });
 
 describe("Блок C — коллизии ID", () => {
-  const gradient = (extra) =>
+  const gradient = (extra: string): string =>
     svg(
       'viewBox="0 0 24 24"',
       `<defs><linearGradient id="g1"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient></defs><path fill="url(#g1)" d="M4 4h16v16H4z" ${extra}/>`,
@@ -107,7 +107,7 @@ describe("Блок C — коллизии ID", () => {
 });
 
 describe("Блок D — утечка стилей", () => {
-  const animated = (cls) =>
+  const animated = (cls: string): string =>
     svg(
       'viewBox="0 0 24 24"',
       `<style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}.${cls}{animation:spin 1s linear infinite}</style><path class="${cls}" d="M4 4h16v16H4z"/>`,
@@ -188,28 +188,37 @@ describe("Блок F — ошибки и крайние случаи", () => {
   test("дубликат имени иконки → throw [svg:build-sprite]", () => {
     assert.throws(
       () => buildSprite([{ name: "user", content: svg('viewBox="0 0 8 8"', "") }, { name: "user", content: svg('viewBox="0 0 8 8"', "") }]),
-      (error) => error instanceof Error && error.message.includes("[svg:build-sprite]") && error.message.includes("duplicate"),
+      (error: unknown) => error instanceof Error && error.message.includes("[svg:build-sprite]") && error.message.includes("duplicate"),
     );
   });
 
   test("нет viewBox → throw (normalize гарантирует)", () => {
     assert.throws(
       () => buildSprite([{ name: "x", content: '<svg xmlns="http://www.w3.org/2000/svg"><path/></svg>' }]),
-      (error) => error.message.includes("[svg:build-sprite]") && error.message.includes("viewBox"),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.includes("[svg:build-sprite]") &&
+        error.message.includes("viewBox"),
     );
   });
 
   test("битый XML → throw с сообщением парсера", () => {
     assert.throws(
       () => buildSprite([{ name: "x", content: "<svg viewBox=" }]),
-      (error) => error.message.includes("[svg:build-sprite]") && error.message.includes('icon "x"'),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.includes("[svg:build-sprite]") &&
+        error.message.includes('icon "x"'),
     );
   });
 
   test("невалидное имя (начинается с цифры) → throw", () => {
     assert.throws(
       () => buildSprite([{ name: "9icon", content: svg('viewBox="0 0 8 8"', "") }]),
-      (error) => error.message.includes("[svg:build-sprite]") && error.message.includes("invalid icon name"),
+      (error: unknown) =>
+        error instanceof Error &&
+        error.message.includes("[svg:build-sprite]") &&
+        error.message.includes("invalid icon name"),
     );
   });
 

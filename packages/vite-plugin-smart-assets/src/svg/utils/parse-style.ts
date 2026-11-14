@@ -18,7 +18,9 @@
  * @param {string} styleValue
  * @returns {Array<{ prop: string, value: string }>}
  */
-export const parseStyleDecls = (styleValue) =>
+export const parseStyleDecls = (
+  styleValue: string,
+): Array<{ prop: string; value: string }> =>
   String(styleValue)
     .split(";")
     .map((decl) => {
@@ -28,4 +30,6 @@ export const parseStyleDecls = (styleValue) =>
       }
       return { prop: decl.slice(0, idx).trim().toLowerCase(), value: decl.slice(idx + 1).trim() };
     })
-    .filter((decl) => decl !== null && decl.prop !== "");
+    .filter(
+      (decl): decl is { prop: string; value: string } => decl !== null && decl.prop !== "",
+    );

@@ -25,15 +25,25 @@
  * =================================================================================================
  */
 
+import type { SvgMeta } from "../types.ts";
+
+type Capture = {
+  name: "title" | "desc";
+  start: number;
+  depth: number;
+  contentStart: number;
+  isMeta: boolean;
+};
+
 const ROOT_TAG_RE = /<svg[\s>]/;
 
 /**
  * @param {string} svgSource
  * @returns {{ svg: string, meta: { title?: string, desc?: string } }}
  */
-export function extractMeta(svgSource) {
+export function extractMeta(svgSource: string): { svg: string; meta: SvgMeta } {
   const src = String(svgSource);
-  const meta = /** @type {{ title?: string, desc?: string }} */ ({});
+  const meta: SvgMeta = {};
 
   const rootMatch = ROOT_TAG_RE.exec(src);
   if (!rootMatch) {
@@ -48,10 +58,10 @@ export function extractMeta(svgSource) {
   }
 
   /** Вырезки: [{ start, end }] — удаляем от больших индексов к меньшим. */
-  const removals = [];
-  const found = { title: false, desc: false };
+  const removals: Array<{ start: number; end: number }> = [];
+  const found: Record<string, boolean> = { title: false, desc: false };
   /** Открытые захваты: { name, start, depth, contentStart } — ждут </title>. */
-  const captures = { title: null, desc: null };
+  const captures: Record<string, Capture | null> = { title: null, desc: null };
   let depth = 0; // 0 — прямые дети корня
   let pos = rootOpenEnd + 1;
 

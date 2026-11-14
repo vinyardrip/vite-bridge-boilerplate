@@ -75,14 +75,31 @@ import { createRequire } from "node:module";
 
 import sharp from "sharp";
 
-import { mergeSvgManifest } from "./svg/build-manifest.js";
-import { processSvgBatch } from "./svg/pipeline.js";
+import type {
+  Manifest,
+  RasterEntry,
+  RasterVariant,
+  SmartAssetsOptions,
+  SmartAssetsPlugin,
+  SvgManifestFragment,
+  SvgOutput,
+} from "./types.ts";
+import { mergeSvgManifest } from "./svg/build-manifest.ts";
+import { processSvgBatch } from "./svg/pipeline.ts";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
 
+/** Маршрут: расширения → папка внутри scope, тип записи, нужен ли sharp-конвейер. */
+interface Route {
+  extensions: string[];
+  folder: string;
+  type: string;
+  raster: boolean;
+}
+
 /** Маршруты: расширения → папка внутри scope, тип записи, нужен ли sharp-конвейер. */
-const ROUTES = {
+const ROUTES: Record<string, Route> = {
   img: { extensions: [".jpg", ".jpeg", ".png"], folder: "img", type: "img", raster: true },
 };
 
@@ -96,9 +113,13 @@ const RETINA_MIN_WIDTH = 800;
 const HASH_LENGTH = 8;
 
 /** Расширение файла → формат sharp для toFormat(). */
-const SHARP_FORMAT = { ".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png" };
+const SHARP_FORMAT: Record<string, "jpeg" | "png"> = {
+  ".jpg": "jpeg",
+  ".jpeg": "jpeg",
+  ".png": "png",
+};
 
-const MIME = {
+const MIME: Record<string, string> = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
   png: "image/png",
@@ -108,7 +129,7 @@ const MIME = {
 };
 
 /** Современные форматы, генерируемые рядом с оригиналом (качество — конвенция проекта). */
-const MODERN_FORMATS = [
+const MODERN_FORMATS: Array<{ format: "webp" | "avif"; quality: number }> = [
   { format: "webp", quality: 80 },
   { format: "avif", quality: 80 },
 ];
@@ -122,9 +143,9 @@ const FALLBACK_FORMATS = new Set(["jpg", "jpeg", "png"]);
  *  жадный префикс [./w/-] допускает его (и отсутствие), схема остается якорем. */
 const CSS_TOKEN_RE = /url\((['"]?)[.\w/-]*?smart-asset:([a-zA-Z0-9._-]+):([a-z0-9]+)\1\)/g;
 
-const toPosix = (p) => p.split(path.sep).join("/");
+const toPosix = (p: string) => p.split(path.sep).join("/");
 
-const escapeHtml = (value) =>
+const escapeHtml = (value: unknown) =>
   String(value).replace(/[&<>"']/g, (ch) => {
     switch (ch) {
       case "&":
@@ -140,7 +161,7 @@ const escapeHtml = (value) =>
     }
   });
 
-const contentHash = (buffer) =>
+const contentHash = (buffer: Uint8Array) =>
   crypto.createHash("sha256").update(buffer).digest("hex").slice(0, HASH_LENGTH);
 
 /**
@@ -152,31 +173,36 @@ const contentHash = (buffer) =>
  *                                                    (статика: "assets" → dist/assets/img; WP-сборка
  *                                                    проекта передает "" → <тема>/assets/img, плоско).
  * @param {string}  [options.manifestFile="assets-manifest.json"] Имя манифеста в корне outDir.
- * @param {string}  [options.generatedScssFile="frontend/src/scss/generated/_smart-assets-map.scss"]
- *                                                    Куда писать Sass-карту путей + smart-asset-url().
- * @returns {import("vite").Plugin & { entry(name: string): object|undefined, pictureHtml(name: string, opts?: object): string }}
+ * @param {SmartAssetsOptions} [options]
  */
-export function smartAssets(options = {}) {
+export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin {
   const rawDir = options.rawDir ?? "frontend/raw";
   const scope = options.scope ?? "assets";
   const manifestFile = options.manifestFile ?? "assets-manifest.json";
   const generatedScssFile =
     options.generatedScssFile ?? "frontend/src/scss/generated/_smart-assets-map.scss";
 
-  const dirFor = (route) => (scope ? `${scope}/` : "") + route.folder;
+  const dirFor = (route: Route) => (scope ? `${scope}/` : "") + route.folder;
 
   /** command из configResolved: "build" → токены, "serve" → абсолютные dev-URL. */
-  let command = "build";
+  let command: "build" | "serve" = "build";
 
   /** Состояние: считается в buildStart/configureServer, читается фильтрами и generateBundle. */
-  const state = {
+  const state: {
+    ready: boolean;
+    manifest: Manifest | null;
+    /** output path → Buffer (эмиты в build + dev-middleware). */
+    files: Map<string, Uint8Array>;
+    /** имя без расширения → entry (API pictureHtml/entry). */
+    byName: Map<string, RasterEntry>;
+    /** SVG-конвейер (шаг 8): [{ fileName, content }] + фрагмент манифеста. */
+    svgOutputs: SvgOutput[];
+    svgManifest: SvgManifestFragment;
+  } = {
     ready: false,
     manifest: null,
-    /** output path → Buffer (эмиты в build + dev-middleware). */
     files: new Map(),
-    /** имя без расширения → entry (API pictureHtml/entry). */
     byName: new Map(),
-    /** SVG-конвейер (шаг 8): [{ fileName, content }] + фрагмент манифеста. */
     svgOutputs: [],
     svgManifest: { entries: [] },
   };
@@ -184,10 +210,12 @@ export function smartAssets(options = {}) {
   /*!
    * Полный цикл: скан raw/ → хеш → retina-решение → sharp-варианты → состояние
    * + сгенерированная Sass-карта. Идемпотентно (state.ready).
+   * Возвращает манифест (для writeGeneratedScss — единый источник типов).
    */
-  async function ensureProcessed() {
+  async function ensureProcessed(): Promise<Manifest> {
     if (state.ready) {
-      return;
+      // Инвариант: ready=true ⟺ state.manifest установлен (invalidate сбрасывает оба).
+      return state.manifest!;
     }
 
     if (!fs.existsSync(rawDir)) {
@@ -198,18 +226,18 @@ export function smartAssets(options = {}) {
       );
     }
 
-    const manifest = {
+    const manifest: Manifest = {
       plugin: "vite-plugin-smart-assets",
       version,
       rawDir: toPosix(rawDir),
       entries: [],
     };
-    const usedOutputs = new Set();
+    const usedOutputs = new Set<string>();
     let variantCount = 0;
     let retinaCount = 0;
 
     const found = fs
-      .readdirSync(rawDir, { recursive: true })
+      .readdirSync(rawDir, { recursive: true, encoding: "utf8" })
       .filter((rel) => {
         const abs = path.join(rawDir, rel);
         // Только файлы; скрытые (.gitkeep и т.п.) не маршрутизируем.
@@ -241,16 +269,24 @@ export function smartAssets(options = {}) {
       const relPosix = toPosix(rel);
       const dir = dirFor(route);
       const stem = relPosix.slice(0, -ext.length); // "sub/hero" — подпапки сохраняются
-      const nameFor = (suffix, format) => `${dir}/${stem}${suffix}.${format}`;
+      const nameFor = (suffix: string, format: string) => `${dir}/${stem}${suffix}.${format}`;
 
-      const entry = {
+      const variants: RasterVariant[] = [];
+      const entry: RasterEntry = {
         source: path.posix.join(toPosix(rawDir), relPosix),
         type: route.type,
         hash,
         size: source.length,
+        variants,
       };
-      const variants = [];
-      const addVariant = (fileName, format, descriptor, width, height, buffer) => {
+      const addVariant = (
+        fileName: string,
+        format: string,
+        descriptor: "1x" | "2x",
+        width: number | null,
+        height: number | null,
+        buffer: Uint8Array,
+      ): void => {
         if (usedOutputs.has(fileName)) {
           console.warn(
             `[smart-assets] вариант ${format} (${descriptor}) для "${relPosix}" пропущен: ` +
@@ -272,14 +308,17 @@ export function smartAssets(options = {}) {
         // Растр: sharp-метаданные → retina-решение → серии форматов.
         try {
           const meta = await sharp(source).metadata();
-          const retina = meta.width > RETINA_MIN_WIDTH;
-          const oneWidth = retina ? Math.max(1, Math.round(meta.width / 2)) : meta.width;
-          const dims = (width) => ({
+          const retina = meta.width! > RETINA_MIN_WIDTH;
+          const oneWidth = retina ? Math.max(1, Math.round(meta.width! / 2)) : meta.width!;
+          const dims = (width: number) => ({
             width,
-            height: Math.round((width * meta.height) / meta.width),
+            height: Math.round((width * meta.height!) / meta.width!),
           });
 
-          const encode = async (format, width) => {
+          const encode = async (
+            format: "webp" | "avif",
+            width: number | null,
+          ): Promise<Buffer> => {
             let pipeline = sharp(source);
             if (width) {
               pipeline = pipeline.resize({ width });
@@ -346,17 +385,19 @@ export function smartAssets(options = {}) {
             (v) => v.format === ext.slice(1) && v.descriptor === "1x",
           );
           entry.retina = retina;
-          entry.width = primary.width;
-          entry.height = primary.height;
-          entry.output = primary.path;
+          // primary всегда существует: серия "1x" исходного формата добавлена выше.
+          entry.width = primary!.width;
+          entry.height = primary!.height;
+          entry.output = primary!.path;
           variantCount += variants.length - 1;
           if (retina) {
             retinaCount += 1;
           }
         } catch (error) {
           // Принцип проекта: один битый файл не роняет сборку.
+          const message = error instanceof Error ? error.message : String(error);
           console.warn(
-            `[smart-assets] "${relPosix}" не обработан sharp (${error.message}) — ` +
+            `[smart-assets] "${relPosix}" не обработан sharp (${message}) — ` +
               `маршрутизирую оригинал без вариантов`,
           );
           const output = nameFor(`.${hash}`, ext.slice(1));
@@ -381,10 +422,11 @@ export function smartAssets(options = {}) {
 
     // SVG-конвейер (шаг 8): normalize → classify → inline/sprite/img + манифест.
     if (svgFiles.length > 0) {
-      const svgResult = await processSvgBatch(
-        svgFiles.map((rel) => path.join(rawDir, rel)),
-        { rawDir, scope },
-      );
+      const svgResult: { outputs: SvgOutput[]; manifest: SvgManifestFragment } =
+        await processSvgBatch(
+          svgFiles.map((rel) => path.join(rawDir, rel)),
+          { rawDir, scope },
+        );
       state.svgOutputs = svgResult.outputs;
       state.svgManifest = svgResult.manifest;
       // В общий files: generateBundle эмитит, dev-middleware раздает
@@ -398,13 +440,14 @@ export function smartAssets(options = {}) {
     state.manifest = manifest;
     state.ready = true;
 
-    const imgEntries = manifest.entries.filter((e) => e.type === "img").length;
+    const imgEntries = manifest.entries.filter((e) => "type" in e && e.type === "img").length;
     const svgCount = state.svgManifest.entries.length;
     console.log(
       `[smart-assets] ${manifest.entries.length + svgCount} файл(ов) из ${toPosix(rawDir)}: ` +
         `${imgEntries} img (+${variantCount} вариантов, ${retinaCount} retina), ` +
         `${svgCount} svg (inline/sprite/img по конвейеру)`,
     );
+    return manifest;
   }
 
   /*!
@@ -414,9 +457,9 @@ export function smartAssets(options = {}) {
    * схемо-подобные URL; generateBundle подставит реальные пути), serve —
    * абсолютный /<scope>/... (отдает middleware).
    */
-  function writeGeneratedScss() {
-    const rasterEntries = state.manifest.entries.filter(
-      (e) => e.type === "img" && e.variants.length > 0,
+  function writeGeneratedScss(manifest: Manifest) {
+    const rasterEntries = manifest.entries.filter(
+      (e): e is RasterEntry => "type" in e && e.type === "img" && e.variants.length > 0,
     );
     const body = rasterEntries
       .map((entry) => {
@@ -456,8 +499,8 @@ export function smartAssets(options = {}) {
 
   async function ensureReady() {
     if (!state.ready) {
-      await ensureProcessed();
-      writeGeneratedScss();
+      const manifest = await ensureProcessed();
+      writeGeneratedScss(manifest);
     }
   }
 
@@ -476,8 +519,8 @@ export function smartAssets(options = {}) {
    * CSS-артефактах. Путь вычисляется ОТНОСИТЕЛЬНО каталога css-файла
    * (css/app.*.css → ../assets/img/...; в WP-сборке → ../img/...).
    */
-  function replaceCssTokens(source, cssFileName) {
-    return String(source).replace(CSS_TOKEN_RE, (match, _quote, name, format) => {
+  function replaceCssTokens(source: string | Uint8Array, cssFileName: string): string {
+    return String(source).replace(CSS_TOKEN_RE, (match: string, _quote: string, name: string, format: string) => {
       const entry = state.byName.get(name);
       const variant = entry?.variants.find(
         (v) => v.format === format && v.descriptor === "1x",
@@ -494,7 +537,7 @@ export function smartAssets(options = {}) {
     });
   }
 
-  const plugin = {
+  const plugin: SmartAssetsPlugin = {
     name: "vite-plugin-smart-assets",
 
     configResolved(config) {
@@ -533,7 +576,7 @@ export function smartAssets(options = {}) {
       });
 
       server.watcher.add(path.resolve(rawDir));
-      const onChange = async (file) => {
+      const onChange = async (file: string) => {
         if (!path.resolve(file).startsWith(path.resolve(rawDir))) {
           return;
         }

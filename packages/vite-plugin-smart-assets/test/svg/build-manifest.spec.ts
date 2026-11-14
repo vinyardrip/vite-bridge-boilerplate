@@ -17,9 +17,10 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildSvgManifest, mergeSvgManifest } from "../../src/svg/build-manifest.js";
+import type { SvgAssetInput } from "../../src/types.ts";
+import { buildSvgManifest, mergeSvgManifest } from "../../src/svg/build-manifest.ts";
 
-const spriteIcon = {
+const spriteIcon: SvgAssetInput = {
   source: "raw/icons/user.svg",
   kind: "icon",
   mode: "sprite",
@@ -74,20 +75,20 @@ describe("Блок B — инлайн", () => {
         hash: "a1b2c3d4",
       },
     ]);
-    assert.equal(entry.file, "assets/ui/user.svg");
+    assert.equal(entry!.file, "assets/ui/user.svg");
   });
 
   test("symbol у инлайна undefined, даже если передан", () => {
     const { entries: [entry] } = buildSvgManifest([{ ...spriteIcon, mode: "inline" }]);
-    assert.equal(entry.symbol, undefined);
-    assert.equal(entry.file, "assets/ui/user.svg");
+    assert.equal(entry!.symbol, undefined);
+    assert.equal(entry!.file, "assets/ui/user.svg");
   });
 
   test("animated тоже инлайнится по mode: file в assets/ui/", () => {
     const { entries: [entry] } = buildSvgManifest([
       { source: "raw/icons/spinner.svg", kind: "animated", mode: "inline", hash: "1234abcd" },
     ]);
-    assert.equal(entry.file, "assets/ui/spinner.svg");
+    assert.equal(entry!.file, "assets/ui/spinner.svg");
     assert.equal(entry.kind, "animated");
   });
 
@@ -95,7 +96,7 @@ describe("Блок B — инлайн", () => {
     const { entries: [entry] } = buildSvgManifest([
       { source: "raw/icons/nav/arrow.svg", kind: "icon", mode: "inline" },
     ]);
-    assert.equal(entry.file, "assets/ui/arrow.svg");
+    assert.equal(entry!.file, "assets/ui/arrow.svg");
   });
 
   test("scope \"\" (WP-сборка): file = ui/<имя>.svg — совпадает с эмиттенным файлом", () => {
@@ -103,7 +104,7 @@ describe("Блок B — инлайн", () => {
       [{ source: "raw/icons/user.svg", kind: "icon", mode: "inline", hash: "a1b2c3d4" }],
       { scope: "" },
     );
-    assert.equal(entry.file, "ui/user.svg");
+    assert.equal(entry!.file, "ui/user.svg");
   });
 })
 
@@ -119,20 +120,20 @@ describe("Блок C — относительные пути", () => {
     },
     { source: "raw/icons/junk.svg", kind: "unknown", mode: "error" },
   ]);
-  const bySource = (source) => entries.find((entry) => entry.source === source);
+  const bySource = (source: string) => entries.find((entry) => entry.source === source);
 
   test("sprite: ведущий слеш url срезан", () => {
-    assert.equal(bySource("raw/icons/user.svg").file, "assets/icons/sprite.a1b2c3d4.svg");
+    assert.equal(bySource("raw/icons/user.svg")!.file, "assets/icons/sprite.a1b2c3d4.svg");
   });
 
   test("img: оптимизированный SVG, путь без ведущего слеша", () => {
-    const entry = bySource("raw/img/hero.svg");
+    const entry = bySource("raw/img/hero.svg")!;
     assert.equal(entry.file, "assets/img/hero.deadbeef.svg");
     assert.equal(entry.symbol, undefined);
   });
 
   test("error: файл не эмитится — file null", () => {
-    assert.equal(bySource("raw/icons/junk.svg").file, null);
+    assert.equal(bySource("raw/icons/junk.svg")!.file, null);
   });
 
   test("ни в одном file нет ведущего слеша (контракт check-build)", () => {
@@ -161,7 +162,7 @@ describe("Блок D — слияние с существующим манифе
     assert.equal(merged.entries.length, existing.entries.length + fragment.entries.length);
     assert.deepEqual(merged.entries[0], existing.entries[0]);
     assert.deepEqual(merged.entries[1], existing.entries[1]);
-    assert.ok(merged.entries.slice(2).every((entry) => entry.mode !== undefined));
+    assert.ok(merged.entries.slice(2).every((entry) => !("mode" in entry) || entry.mode !== undefined));
   });
 
   test("посторонние поля манифеста (plugin/version/rawDir) сохранены", () => {
@@ -193,7 +194,7 @@ describe("Блок D — слияние с существующим манифе
 
   test("existing не мутируется", () => {
     assert.equal(existing.entries.length, 2);
-    assert.ok(existing.entries.every((entry) => entry.mode === undefined));
+    assert.ok(existing.entries.every((entry) => !("mode" in entry)));
     assert.deepEqual(existing.entries, [
       { source: "frontend/raw/hero.jpg", output: "assets/img/hero.jpg", type: "img", size: 28381 },
       { source: "frontend/src/js/app.js", file: "js/app.DhEzk3I3.js", isEntry: true },
@@ -210,20 +211,26 @@ describe("Блок D — слияние с существующим манифе
 
 describe("Блок E — ошибки (fail-fast)", () => {
   test("не-массив входа → Error [svg:build-manifest]", () => {
-    assert.throws(() => buildSvgManifest("raw/icons/user.svg"), /svg:build-manifest/);
-    assert.throws(() => buildSvgManifest(null), /svg:build-manifest/);
+    assert.throws(() => buildSvgManifest("raw/icons/user.svg" as unknown as SvgAssetInput[]), /svg:build-manifest/);
+    assert.throws(() => buildSvgManifest(null as unknown as SvgAssetInput[]), /svg:build-manifest/);
   });
 
   test("запись без source → Error", () => {
     assert.throws(
-      () => buildSvgManifest([{ kind: "icon", mode: "sprite", url: "assets/icons/sprite.a1b2c3d4.svg" }]),
+      () =>
+        buildSvgManifest([
+          { kind: "icon", mode: "sprite", url: "assets/icons/sprite.a1b2c3d4.svg" } as unknown as SvgAssetInput,
+        ]),
       /svg:build-manifest/,
     );
   });
 
   test("неизвестный mode → Error (словарь assignModes)", () => {
     assert.throws(
-      () => buildSvgManifest([{ source: "raw/icons/user.svg", kind: "icon", mode: "banana" }]),
+      () =>
+        buildSvgManifest([
+          { source: "raw/icons/user.svg", kind: "icon", mode: "banana" } as unknown as SvgAssetInput,
+        ]),
       /svg:build-manifest/,
     );
   });

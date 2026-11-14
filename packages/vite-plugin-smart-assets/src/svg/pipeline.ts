@@ -49,24 +49,25 @@ import path from "node:path";
 import crypto from "node:crypto";
 import zlib from "node:zlib";
 
-import { normalize } from "./normalize.js";
-import { classifyOne, assignModes } from "./classify.js";
-import { prefixSvg } from "./prefix.js";
-import { buildSprite } from "./build-sprite.js";
-import { buildSvgManifest } from "./build-manifest.js";
+import type { AssignItem, SvgAssetInput, SvgKind, SvgManifestFragment, SvgOutput } from "../types.ts";
+import { normalize } from "./normalize.ts";
+import { classifyOne, assignModes } from "./classify.ts";
+import { prefixSvg } from "./prefix.ts";
+import { buildSprite } from "./build-sprite.ts";
+import { buildSvgManifest } from "./build-manifest.ts";
 
 const ERROR_PREFIX = "[svg:pipeline]";
 const HASH_LENGTH = 8;
 
-const toPosix = (p) => p.split(path.sep).join("/");
+const toPosix = (p: string): string => p.split(path.sep).join("/");
 
 /** 8-символьный контентный хэш (конвенция проекта, как в index.js). */
-const contentHash = (buffer) =>
+const contentHash = (buffer: Uint8Array) =>
   crypto.createHash("sha256").update(buffer).digest("hex").slice(0, HASH_LENGTH);
 
-const gzipByteLength = (buffer) => zlib.gzipSync(buffer).length;
+const gzipByteLength = (buffer: Uint8Array): number => zlib.gzipSync(buffer).length;
 
-const wrap = (context, error) => {
+const wrap = (context: string, error: unknown): Error => {
   const message = error instanceof Error ? error.message : String(error);
   return new Error(`${ERROR_PREFIX} "${context}": ${message}`);
 };
@@ -80,12 +81,15 @@ const wrap = (context, error) => {
  *   scope  — каталог внутри outDir ("assets" → assets/ui/…, "" → ui/… в WP).
  * @returns {Promise<{ outputs: Array<{ fileName: string, content: string }>, manifest: object }>}
  */
-export async function processSvgBatch(filePaths, { rawDir = "", scope = "assets" } = {}) {
+export async function processSvgBatch(
+  filePaths?: string[] | null,
+  { rawDir = "", scope = "assets" }: { rawDir?: string; scope?: string } = {},
+): Promise<{ outputs: SvgOutput[]; manifest: SvgManifestFragment }> {
   const dir = scope ? `${scope}/` : "";
   const rawDirAbs = rawDir ? path.resolve(rawDir) : "";
 
   /*! 1) чтение + normalize + classify. Ошибки — fail-fast с контекстом файла. */
-  const items = [];
+  const items: Array<{ relWithin: string; relSource: string; content: string; kind: SvgKind; reason: string }> = [];
   for (const absPath of filePaths ?? []) {
     const abs = String(absPath);
     const relWithin = rawDirAbs
@@ -119,7 +123,7 @@ export async function processSvgBatch(filePaths, { rawDir = "", scope = "assets"
   }
 
   /*! 2) метаданные (по нормализованному контенту) + mode-решение по пакету. */
-  const measured = items.map((item) => ({
+  const measured: AssignItem[] = items.map((item) => ({
     path: item.relSource,
     kind: item.kind,
     size: Buffer.byteLength(item.content, "utf8"),
@@ -128,10 +132,10 @@ export async function processSvgBatch(filePaths, { rawDir = "", scope = "assets"
   const modes = assignModes(measured);
 
   /*! 3) проекции: inline/img сразу, sprite-кандидаты копятся на спрайт. */
-  const outputs = [];
-  const svgAssets = [];
-  const spriteIcons = [];
-  const usedInline = new Set();
+  const outputs: SvgOutput[] = [];
+  const svgAssets: SvgAssetInput[] = [];
+  const spriteIcons: Array<{ name: string; content: string; relSource: string; kind: SvgKind }> = [];
+  const usedInline = new Set<string>();
 
   items.forEach((item, index) => {
     const mode = modes[index].mode;

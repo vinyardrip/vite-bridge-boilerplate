@@ -28,8 +28,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import nunjucks from "nunjucks";
-import { processSvgBatch } from "../../src/svg/pipeline.js";
-import { projectSvg } from "../../src/svg/project.js";
+import type { AssetOptions, SvgManifestFragment } from "../../src/types.ts";
+import { processSvgBatch } from "../../src/svg/pipeline.ts";
+import { projectSvg } from "../../src/svg/project.ts";
 
 const rawDir = "frontend/raw";
 
@@ -50,9 +51,9 @@ const macroDir = path.resolve(
 
 let tmp = "";
 let originalCwd = "";
-let manifest = null;
-let inlineByFile = new Map();
-let env = null;
+let manifest: SvgManifestFragment | null = null;
+let inlineByFile = new Map<string, string>();
+let env: nunjucks.Environment | null = null;
 
 before(async () => {
   tmp = await fs.mkdtemp(path.join(os.tmpdir(), "svg-njk-macros-"));
@@ -73,8 +74,8 @@ before(async () => {
   // Аналог vite.config.js: env с autoescape: true (как у njk-frontmatter) +
   // фильтры, отдающие SafeString той же копии nunjucks.
   env = nunjucks.configure([macroDir], { autoescape: true, noCache: true });
-  env.addFilter("smartSvg", (name, options, className) => {
-    const entry = manifest.entries.find(
+  env.addFilter("smartSvg", (name: string, options: AssetOptions | null, className?: string) => {
+    const entry = manifest!.entries.find(
       (candidate) => candidate.source === `${rawDir}/${name}.svg`,
     );
     if (!entry) {
@@ -86,12 +87,12 @@ before(async () => {
     if (className && iconOptions.class === undefined) {
       iconOptions.class = className;
     }
-    const inlineContent = inlineByFile.get(entry.file) ?? null;
+    const inlineContent = inlineByFile.get(entry.file ?? "") ?? null;
     return new nunjucks.runtime.SafeString(projectSvg(entry, iconOptions, inlineContent));
   });
   env.addFilter(
     "smartPicture",
-    (name, options) =>
+    (name: string, options?: { alt?: string }) =>
       new nunjucks.runtime.SafeString(
         `<picture><img src="assets/img/${name}.jpg" alt="${(options ?? {}).alt ?? ""}"></picture>`,
       ),
@@ -103,8 +104,8 @@ after(async () => {
   await fs.rm(tmp, { recursive: true, force: true });
 });
 
-const renderMacro = (expression) =>
-  env.renderString(`{% import "_ui.njk" as ui %}{{ ${expression} }}`);
+const renderMacro = (expression: string) =>
+  env!.renderString(`{% import "_ui.njk" as ui %}{{ ${expression} }}`, {});
 
 describe("Блок A — ui.icon на inline-иконке", () => {
   test("{{ ui.icon('phone', 'demo-class') }} → <svg> с currentColor, без <use>", () => {

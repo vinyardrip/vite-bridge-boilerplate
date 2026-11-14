@@ -16,12 +16,14 @@
  * =================================================================================================
  */
 
+import type { SmartPlugin } from "../../types.ts";
+
 /** Сжать пробельные серии к одному пробелу и обрезать края.
  * @param {string} value @returns {string} */
-const collapse = (value) => value.replace(/\s+/g, " ").trim();
+const collapse = (value: string): string => value.replace(/\s+/g, " ").trim();
 
 /** Сплит по ';' вне скобок (url(data:...;...) и функции). @param {string} text */
-const splitTopLevel = (text) => {
+const splitTopLevel = (text: string): string[] => {
   const parts = [];
   let depth = 0;
   let current = "";
@@ -45,7 +47,7 @@ const splitTopLevel = (text) => {
 };
 
 /** Канонизация блока деклараций: `prop:value;...` (порядок сохранён). */
-const normalizeDeclarations = (block) =>
+const normalizeDeclarations = (block: string): string =>
   splitTopLevel(block)
     .map((decl) => {
       const idx = decl.indexOf(":");
@@ -64,7 +66,7 @@ const normalizeDeclarations = (block) =>
  * (@media, @supports, @keyframes) — рекурсивно. Имена сохраняются.
  * @param {string} css @returns {string}
  */
-const normalizeCss = (css) => {
+const normalizeCss = (css: string): string => {
   const src = css.replace(/\/\*[\s\S]*?\*\//g, "");
   const out = [];
   let pos = 0;
@@ -113,7 +115,7 @@ const normalizeCss = (css) => {
   return out.join("");
 };
 
-const normalizeStyleElement = {
+const normalizeStyleElement: SmartPlugin = {
   name: "normalizeStyleElement",
   type: "visitor",
   fn: () => ({

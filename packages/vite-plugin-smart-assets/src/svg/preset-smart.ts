@@ -40,17 +40,19 @@
  * =================================================================================================
  */
 
+import type { Config } from "svgo";
+
 import removeDimensions from "svgo/plugins/removeDimensions.js";
 import removeComments from "svgo/plugins/removeComments.js";
 import removeMetadata from "svgo/plugins/removeMetadata.js";
 import removeEditorsNSData from "svgo/plugins/removeEditorsNSData.js";
 import sortAttrs from "svgo/plugins/sortAttrs.js";
 
-import synthViewBox from "./plugins/synthViewBox.js";
-import normalizeStyleElement from "./plugins/normalizeStyleElement.js";
-import convertColorsToCurrent from "./plugins/convertColorsToCurrent.js";
+import synthViewBox from "./plugins/synthViewBox.ts";
+import normalizeStyleElement from "./plugins/normalizeStyleElement.ts";
+import convertColorsToCurrent from "./plugins/convertColorsToCurrent.ts";
 
-export const presetSmart = [
+export const presetSmart: NonNullable<Config["plugins"]> = [
   {
     name: "preset-default",
     params: {

@@ -41,8 +41,10 @@
  */
 
 import { parseSvg } from "svgo/lib/parser.js";
+import type { XastElement, XastParent, XastRoot } from "svgo/lib/types.js";
 
-import { parseStyleDecls } from "./utils/parse-style.js";
+import type { AssignItem, AssignResult, AssignThresholds, ClassifyResult } from "../types.ts";
+import { parseStyleDecls } from "./utils/parse-style.ts";
 
 const ERROR_REASON_PREFIX = "parse error";
 const ICON_MAX_BYTES = 4 * 1024;
@@ -56,14 +58,14 @@ const ANIMATION_ELEMENTS = new Set([
   "mpath",
 ]);
 
-const DEFAULT_THRESHOLDS = {
+const DEFAULT_THRESHOLDS: Required<AssignThresholds> = {
   count: 15,
   rawBytes: 30 * 1024,
   gzipBytes: 15 * 1024,
 };
 
 /** Значение fill/stroke — рабочий цвет? ("" / none / currentColor / url(...) — нет). */
-const asColor = (value) => {
+const asColor = (value: string): string | null => {
   const v = String(value).trim();
   if (v === "" || v === "none" || v === "currentColor" || v.includes("url(")) {
     return null;
@@ -72,11 +74,13 @@ const asColor = (value) => {
 };
 
 /** Корневой <svg> AST (может отсутствовать в мусорном входе). */
-const svgRoot = (ast) =>
-  ast.children.find((child) => child.type === "element" && child.name === "svg");
+const svgRoot = (ast: XastRoot): XastElement | undefined =>
+  ast.children.find(
+    (child): child is XastElement => child.type === "element" && child.name === "svg",
+  );
 
 /** viewBox — маленький прямоугольник "0 0 N N", 0 < N ≤ 64? */
-const hasSmallStandardViewBox = (root) => {
+const hasSmallStandardViewBox = (root: XastElement | undefined): boolean => {
   const viewBox = root?.attributes?.viewBox;
   if (typeof viewBox !== "string") {
     return false;
@@ -94,7 +98,7 @@ const hasSmallStandardViewBox = (root) => {
  * @param {string} normalizedSvg Уже прогнанный через normalize().
  * @returns {{ kind: 'sprite'|'animated'|'illustration'|'icon'|'unknown', reason: string }}
  */
-export function classifyOne(normalizedSvg) {
+export function classifyOne(normalizedSvg: string): ClassifyResult {
   const source = String(normalizedSvg);
 
   let ast;
@@ -113,13 +117,13 @@ export function classifyOne(normalizedSvg) {
   let hasInlineAnimation = false;
   let hasCurrentColor = false;
   const colors = new Set();
-  const styleTexts = [];
+  const styleTexts: string[] = [];
 
-  const visit = (node) => {
+  const visit = (node: XastParent): void => {
     for (const child of node.children) {
       // Текст <style> — CSS: часть тела (в CDATA тоже).
       if (child.type === "text" || child.type === "cdata") {
-        if (node.name === "style") {
+        if (node.type === "element" && node.name === "style") {
           styleTexts.push(String(child.value));
         }
         continue;
@@ -234,7 +238,7 @@ export function classifyOne(normalizedSvg) {
  * @param {{ count?: number, rawBytes?: number, gzipBytes?: number }} [thresholds]
  * @returns {Array<{path: string, kind: string, mode: 'inline'|'sprite'|'img'|'error', reason: string}>}
  */
-export function assignModes(items, thresholds) {
+export function assignModes(items: AssignItem[], thresholds?: AssignThresholds): AssignResult[] {
   const limits = { ...DEFAULT_THRESHOLDS, ...(thresholds ?? {}) };
 
   let count = 0;
