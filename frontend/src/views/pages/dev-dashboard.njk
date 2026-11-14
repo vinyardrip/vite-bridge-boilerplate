@@ -1,0 +1,99 @@
+---
+# =================================================================================================
+# dev-dashboard.njk
+# =================================================================================================
+title: "Dev Dashboard"
+layout: "layouts/_default.njk"
+body_class: "page-dev-dashboard"
+is_dev_dashboard: true
+---
+{% extends "layouts/_default.njk" %}
+
+{% block content %}
+<div class="dev-dash" data-dev-dashboard>
+  <header class="dev-dash__header">
+    <h1>Dev Dashboard</h1>
+    <span class="dev-dash__header-meta">
+      Local sandbox · {{ site.name or 'Vite Bridge Boilerplate' }}
+    </span>
+  </header>
+
+  <div class="dev-dash__body">
+    <aside class="dev-dash__sidebar" aria-label="Tools">
+      <div class="dev-dash__tabs" role="tablist">
+        <button type="button" class="dev-dash__tab" role="tab" data-tab="pages" aria-selected="true" aria-controls="dev-dash-panel-pages">Pages</button>
+        <button type="button" class="dev-dash__tab" role="tab" data-tab="typography" aria-selected="false" aria-controls="dev-dash-panel-typography">Typography &amp; Fonts</button>
+      </div>
+
+      <div class="dev-dash__panels">
+        <section class="dev-dash__panel" id="dev-dash-panel-pages" data-panel="pages" role="tabpanel">
+          <ul class="dev-dash__pages" data-page-list aria-label="Available pages"></ul>
+          <p class="dev-dash__pages-empty" data-pages-empty hidden>No pages discovered in <code>src/views/pages/</code>.</p>
+        </section>
+
+        <section class="dev-dash__panel" id="dev-dash-panel-typography" data-panel="typography" role="tabpanel" hidden>
+          <div class="dev-dash__field">
+            <label for="dev-dash-font-stack">Font stack</label>
+            <select id="dev-dash-font-stack" data-font-stack>
+              <option value="web" selected>Web fonts (current build)</option>
+              <option value="fallback">System fallback only</option>
+            </select>
+          </div>
+          <div class="dev-dash__field">
+            <label for="dev-dash-base-font">Base font</label>
+            <select id="dev-dash-base-font" data-base-font>
+              <option value="JetBrains Mono">JetBrains Mono</option>
+              <option value="Oswald">Oswald</option>
+              <option value="Spectral">Spectral</option>
+              <option value="Spectral SC">Spectral SC</option>
+              <option value="monospace">monospace</option>
+              <option value="sans-serif">sans-serif</option>
+              <option value="serif">serif</option>
+            </select>
+          </div>
+          <label class="dev-dash__toggle">
+            <input type="checkbox" data-bold-italic checked />
+            Show bold &amp; italic rows
+          </label>
+          <div class="dev-dash__active-font" data-active-font aria-live="polite">
+            <span class="dev-dash__active-font-label">Active font:</span>
+            <code data-active-font-name>JetBrains Mono</code>
+            <span class="dev-dash__active-font-hint" data-active-font-hint>Web fonts</span>
+          </div>
+          <h3 class="dev-dash__subhead">Typography sample</h3>
+          <div class="dev-dash__sample" data-typo-sample>
+            <div class="dev-dash__sample-row"><span class="dev-dash__sample-tag">H1</span><h1 class="dev-dash__h1">The quick brown fox</h1></div>
+            <div class="dev-dash__sample-row"><span class="dev-dash__sample-tag">P</span><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p></div>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <section class="dev-dash__main">
+      <div class="dev-dash__toolbar" role="toolbar">
+        <label for="dev-dash-viewport">Viewport:</label>
+        <select id="dev-dash-viewport" data-viewport-select>
+          <option value="375">Mobile — 375px</option>
+          <option value="768">Tablet — 768px</option>
+          <option value="1024">Laptop — 1024px</option>
+          <option value="1440" selected>Desktop — 1440px</option>
+          <option value="100%">Full Width</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <input type="number" min="240" max="3840" step="1" data-viewport-custom class="dev-dash__custom-input" placeholder="px" hidden />
+        <span class="dev-dash__viewport-indicator" data-viewport-indicator>1440 px</span>
+      </div>
+      <div class="dev-dash__viewport-wrap" data-viewport-wrap>
+        <div class="dev-dash__viewport-frame">
+          <iframe class="dev-dash__viewport" data-preview-iframe src="/" title="Page preview" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{# Скрипт страницы. ВНИМАНИЕ: Vite-корень этого проекта — корень репо
+   (не frontend/), поэтому путь начинается с /frontend/src/... (как и
+   тег app.ts в layouts/_default.njk). Страница dev-only: в сборку
+   dev-dashboard не попадает (исключен в collectRollupInputs). #}
+<script type="module" src="/frontend/src/js/modules/dev-dashboard.ts"></script>
+{% endblock %}

@@ -62,13 +62,62 @@ const readSiteData = () => {
 // generateBundle: рендерит .njk и эмитит .html). app.js нужен как отдельная
 // точка входа, чтобы он попал в бандл и в manifest.json для get_asset().
 const collectRollupInputs = () => {
-  const pages = globSync("frontend/src/views/pages/*.njk");
+  // !DEV-ONLY СТРАНИЦЫ: не попадают в production-сборку. Страница остается
+  // доступной в `pnpm dev` через middleware vite-plugin-njk-frontmatter,
+  // но .html-файл не эмитится в dist. test-fonts/styleguide здесь
+  // НЕ исключаются — сейчас они собираются в dist намеренно.
+  const DEV_ONLY_PAGES = new Set(["dev-dashboard"]);
+  const pages = globSync("frontend/src/views/pages/*.njk").filter(
+    (file) => !DEV_ONLY_PAGES.has(path.basename(file, path.extname(file))),
+  );
   const entries = [...pages, "frontend/src/js/app.ts"];
 
   return Object.fromEntries(
     entries.map((file) => [path.basename(file, path.extname(file)), file]),
   );
 };
+
+/*!
+ * Локальный плагин (только dev): «красивые» URL для dev-страниц.
+ *
+ * Middleware vite-plugin-njk-frontmatter отдает страницы .njk только по
+ * путям с расширением (/pages/dev-dashboard.html), а его плагин имеет
+ * enforce: "pre" — его middleware регистрируется раньше middleware
+ * обычных (без enforce) плагинов. Поэтому этот плагин тоже объявлен с
+ * enforce: "pre" И В МАССИВЕ РАНЬШЕ njk-плагина: иначе rewrite срабатывает
+ * слишком поздно и расширless-URL остаются 404 (проверено).
+ *
+ * Правила rewrite:
+ *   - только GET и путь из ОДНОГО сегмента без точки (ассеты /frontend/...,
+ *     /assets/... и т.п. не задеты);
+ *   - rewrite только если frontend/src/views/pages/<slug>.njk существует
+ *     (проверка на каждый запрос — новые страницы подхватываются без
+ *     рестарта сервера);
+ *   - /dev-dashboard → /dev-dashboard.html (та же схема, что у плагина);
+ *   - apply: "serve" — в production-сборке плагин не участвует.
+ */
+const njkPrettyUrlsPlugin = (): Plugin => ({
+  name: "vite-njk-pretty-urls",
+  enforce: "pre",
+  apply: "serve",
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (!req.url || req.method !== "GET") return next();
+      const { pathname, search } = new URL(req.url, "http://localhost");
+      const match = pathname.match(/^\/([A-Za-z0-9][A-Za-z0-9_-]*)$/);
+      if (!match) return next();
+      const slug = match[1];
+      const pageFile = path.resolve(
+        __dirname,
+        "frontend/src/views/pages",
+        `${slug}.njk`,
+      );
+      if (!fs.existsSync(pageFile)) return next();
+      req.url = `/${slug}.html${search}`;
+      next();
+    });
+  },
+});
 
 /*!
  * Локальный плагин: инжект <script>/<link> в HTML-страницы, собранные из .njk.
@@ -231,6 +280,11 @@ export default defineConfig(({ command, mode }) => {
         "Spectral SC": ["Georgia", "serif"],
       },
     } as unknown as Parameters<typeof FontaineTransform.vite>[0]),
+
+    /*! --- DEV-ONLY PRETTY URLS (/dev-dashboard → /dev-dashboard.html) --- */
+    // Должен стоять В МАССИВЕ ДО nunjucksFrontMatterPlugin — см. комментарий
+    // у njkPrettyUrlsPlugin (порядок регистрации middleware критичен).
+    njkPrettyUrlsPlugin(),
 
     /*! --- НАСТРОЙКА NUNJUCKS & FRONTMATTER --- */
     nunjucksFrontMatterPlugin({
