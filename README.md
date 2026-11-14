@@ -249,12 +249,12 @@ smart-assets (Phase 3+): в `index.html` есть демо-`<picture>` от `ui.
 **E2E** (`pnpm playwright test`) — тесты в `frontend/tests/` против собранной версии
 (preview-сервер, порты из `playwright.config.ts`):
 
-- `page-smoke.spec.js` — страницы открываются, разметка на месте, нет ошибок в консоли;
-- `interactive.spec.js` — модули modals (открытие/закрытие, Esc, оверлей, кнопка закрытия),
+- `page-smoke.spec.ts` — страницы открываются, разметка на месте, нет ошибок в консоли;
+- `interactive.spec.ts` — модули modals (открытие/закрытие, Esc, оверлей, кнопка закрытия),
   mobile-menu (`.active` + `aria-expanded`), accordion, scroll-to-top, video (iframe по клику);
-- `forms.spec.js` — санитайзер телефона + маска Inputmask, honeypot, скрытое поле `loc`,
+- `forms.spec.ts` — санитайзер телефона + маска Inputmask, honeypot, скрытое поле `loc`,
   блокировка отправки невалидной формы;
-- `picture.spec.js` — image-пайплайн: `<picture>` с AVIF/WebP на главной,
+- `picture.spec.ts` — image-пайплайн: `<picture>` с AVIF/WebP на главной,
   атрибуты обернутого `<img>`, варианты отдаются сервером, браузер выбирает AVIF.
 
 Прогон: **64 теста (chromium + firefox) — все зелёные**; build-smoke: **42/42**.
@@ -363,7 +363,7 @@ pnpm sync:theme   # rsync dist/ → backend/wp-content/themes/my-theme/assets/
 В сборке `base: './'`: пути к CSS/JS в собранном HTML — относительные
 (`css/app.*.css`, `js/app.*.js`), поэтому `dist/index.html` открывается
 двойным кликом (file://) **со стилями и картинками** — это проверяется
-тестом `frontend/tests/build-output.spec.js`.
+тестом `frontend/tests/build-output.spec.ts`.
 
 Ограничение платформы: исполняемый JS (`type="module"`) браузеры блокируют
 на file:// (CORS для ES-модулей) — интерактив работает через `pnpm preview`
