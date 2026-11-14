@@ -182,6 +182,16 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
   const generatedScssFile =
     options.generatedScssFile ?? "frontend/src/scss/generated/_smart-assets-map.scss";
 
+  /**
+   * Корень дискового кеша sharp-вариантов: по умолчанию
+   * node_modules/.cache/smart-assets (относительно корня Vite —
+   * резолвится в configResolved, до buildStart/configureServer).
+   * Кеш персистентен между запусками dev-сервера и сборок: старт
+   * больше не перекодирует неизменившиеся исходники sharp'ом
+   * (на этом проекте: ~10 c → <1 c; AVIF-энкод — главный тормоз).
+   */
+  let cacheRoot = "";
+
   const dirFor = (route: Route) => (scope ? `${scope}/` : "") + route.folder;
 
   /** command из configResolved: "build" → токены, "serve" → абсолютные dev-URL. */
@@ -206,6 +216,64 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
     svgOutputs: [],
     svgManifest: { entries: [] },
   };
+
+  /*! --- Дисковый кеш sharp-вариантов (персистентен между запусками) --- */
+
+  /** Запись кеша одного растрового исходника. */
+  interface RasterCacheRecord {
+    /** Полный sha256 ИСХОДНИКА — ключ релевантности. */
+    hash: string;
+    /** Выходные пути зависят от scope/rawDir — валидны только при совпадении. */
+    scope: string;
+    rawDir: string;
+    pluginVersion: string;
+    entry: RasterEntry;
+  }
+
+  /** Индекс кеша: relPosix исходника → запись. Читается с диска лениво. */
+  let cacheIndex: Record<string, RasterCacheRecord> | null = null;
+  let cacheDirty = false;
+  let cacheHits = 0;
+  let cacheMisses = 0;
+
+  const fullSourceHash = (buffer: Uint8Array) =>
+    crypto.createHash("sha256").update(buffer).digest("hex");
+
+  function loadCacheIndex(): Record<string, RasterCacheRecord> {
+    if (cacheIndex) {
+      return cacheIndex;
+    }
+    try {
+      const raw = JSON.parse(
+        fs.readFileSync(path.join(cacheRoot, "cache.json"), "utf8"),
+      ) as { sources?: Record<string, RasterCacheRecord> };
+      cacheIndex = raw.sources ?? {};
+    } catch {
+      // Нет кеша/битый JSON — работаем как с пустым (первый прогон).
+      cacheIndex = {};
+    }
+    return cacheIndex;
+  }
+
+  /** Файл кеша варианта: путь от корня outDir кодируется в одно имя (см. encodeURIComponent). */
+  const cacheVariantFile = (variantPath: string) =>
+    path.join(cacheRoot, "files", encodeURIComponent(variantPath));
+
+  /** Чтение варианта из кеша; null — файл отсутствует/нечитаем (ветка трактуется как промах). */
+  function readCachedVariant(variantPath: string): Buffer | null {
+    try {
+      return fs.readFileSync(cacheVariantFile(variantPath));
+    } catch {
+      return null;
+    }
+  }
+
+  /** Сохранение варианта на диск кеша (каталог создается лениво). */
+  function writeVariantToCache(variantPath: string, buffer: Uint8Array): void {
+    const file = cacheVariantFile(variantPath);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, buffer);
+  }
 
   /*!
    * Полный цикл: скан raw/ → хеш → retina-решение → sharp-варианты → состояние
@@ -233,6 +301,7 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
       entries: [],
     };
     const usedOutputs = new Set<string>();
+    const processedRasters = new Set<string>();
     let variantCount = 0;
     let retinaCount = 0;
 
@@ -266,7 +335,12 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
       const abs = path.join(rawDir, rel);
       const source = fs.readFileSync(abs);
       const hash = contentHash(source);
+      const fullHash = fullSourceHash(source);
       const relPosix = toPosix(rel);
+      processedRasters.add(relPosix);
+      // Успешность sharp-прохода: ошибку sharp не кешируем — файл
+      // перекодируется при следующем запуске (см. сохранение кеша ниже).
+      let sharpOk = false;
       const dir = dirFor(route);
       const stem = relPosix.slice(0, -ext.length); // "sub/hero" — подпапки сохраняются
       const nameFor = (suffix: string, format: string) => `${dir}/${stem}${suffix}.${format}`;
@@ -306,6 +380,66 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
         entry.output = output;
       } else {
         // Растр: sharp-метаданные → retina-решение → серии форматов.
+        //
+        // !КЕШ: неизменившийся исходник (полный sha256 + те же scope/rawDir/
+        // версия плагина + все файлы вариантов на диске в кеш-каталоге)
+        // восстанавливается из node_modules/.cache/smart-assets — sharp
+        // не запускается. Хит завершает итерацию досрочно (continue),
+        // чтобы не трогать отлаженный sharp-путь ниже.
+        const cachedRecord = loadCacheIndex()[relPosix];
+        const cacheValid =
+          !!cachedRecord &&
+          cachedRecord.hash === fullHash &&
+          cachedRecord.scope === scope &&
+          cachedRecord.rawDir === toPosix(rawDir) &&
+          cachedRecord.pluginVersion === version &&
+          cachedRecord.entry.variants.length > 0 &&
+          cachedRecord.entry.variants.every((v) =>
+            fs.existsSync(cacheVariantFile(v.path)),
+          );
+
+        if (cacheValid && cachedRecord) {
+          for (const v of cachedRecord.entry.variants) {
+            addVariant(
+              v.path,
+              v.format,
+              v.descriptor,
+              v.width,
+              v.height,
+              readCachedVariant(v.path)!,
+            );
+          }
+          entry.retina = cachedRecord.entry.retina;
+          // primary всегда существует: серия "1x" исходного формата попадает
+          // в кеш только из успешного sharp-прохода (см. ветку промаха ниже).
+          const primary = variants.find(
+            (v) => v.format === ext.slice(1) && v.descriptor === "1x",
+          );
+          entry.width = primary!.width;
+          entry.height = primary!.height;
+          entry.output = primary!.path;
+          variantCount += variants.length - 1;
+          if (entry.retina) {
+            retinaCount += 1;
+          }
+          cacheHits += 1;
+
+          // Хвост итерации — дублирован из-за досрочного continue (см. выше).
+          entry.variants = variants;
+          manifest.entries.push(entry);
+          const byName = path.basename(relPosix, ext);
+          if (state.byName.has(byName)) {
+            console.warn(
+              `[smart-assets] дубликат basename "${byName}" в ${toPosix(rawDir)} — ` +
+                `фильтры smartPicture/bgset будут находить только первый`,
+            );
+          } else {
+            state.byName.set(byName, entry);
+          }
+          continue;
+        }
+
+        // Промах кеша (или валидация не прошла) — полный sharp-проход.
         try {
           const meta = await sharp(source).metadata();
           const retina = meta.width! > RETINA_MIN_WIDTH;
@@ -393,6 +527,7 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
           if (retina) {
             retinaCount += 1;
           }
+          sharpOk = true;
         } catch (error) {
           // Принцип проекта: один битый файл не роняет сборку.
           const message = error instanceof Error ? error.message : String(error);
@@ -407,6 +542,30 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
       }
 
       entry.variants = variants;
+
+      // !КЕШ (промах): успешный sharp-проход сохраняется на диск — файлы
+      // вариантов + запись индекса с полным хешем исходника. Ошибка sharp
+      // НЕ кешируется (sharpOk=false) — файл перекодируется при следующем
+      // запуске. Апгрейд sharp может дать иные байты — осознанно не ключуем
+      // версию sharp (настройки кодека в MODERN_FORMATS не менялись).
+      if (sharpOk) {
+        for (const v of variants) {
+          const buffer = state.files.get(v.path);
+          if (buffer) {
+            writeVariantToCache(v.path, buffer);
+          }
+        }
+        loadCacheIndex()[relPosix] = {
+          hash: fullHash,
+          scope,
+          rawDir: toPosix(rawDir),
+          pluginVersion: version,
+          entry: structuredClone(entry),
+        };
+        cacheDirty = true;
+        cacheMisses += 1;
+      }
+
       manifest.entries.push(entry);
 
       const byName = path.basename(relPosix, ext);
@@ -436,6 +595,26 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
       }
     }
 
+    // !КЕШ: prune записей удаленных исходников + сохранение индекса
+    // (одна запись на диск за прогон). Файлы-сироты в cache/files/ не
+    // удаляются — при возврате файла в raw/ они переиспользуются.
+    const index = loadCacheIndex();
+    let pruned = false;
+    for (const key of Object.keys(index)) {
+      if (!processedRasters.has(key)) {
+        delete index[key];
+        pruned = true;
+      }
+    }
+    if (cacheDirty || pruned) {
+      fs.mkdirSync(cacheRoot, { recursive: true });
+      fs.writeFileSync(
+        path.join(cacheRoot, "cache.json"),
+        JSON.stringify({ version: 1, sources: index }, null, 2),
+        "utf8",
+      );
+    }
+
     manifest.entries.sort((a, b) => a.source.localeCompare(b.source));
     state.manifest = manifest;
     state.ready = true;
@@ -447,6 +626,14 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
         `${imgEntries} img (+${variantCount} вариантов, ${retinaCount} retina), ` +
         `${svgCount} svg (inline/sprite/img по конвейеру)`,
     );
+    if (cacheHits + cacheMisses > 0) {
+      console.log(
+        `[smart-assets] кеш raster: ${cacheHits}/${cacheHits + cacheMisses} из дискового кеша` +
+          (cacheMisses > 0
+            ? ` (перекодировано ${cacheMisses})`
+            : " (перекодирования не было)"),
+      );
+    }
     return manifest;
   }
 
@@ -542,6 +729,10 @@ export function smartAssets(options: SmartAssetsOptions = {}): SmartAssetsPlugin
 
     configResolved(config) {
       command = config.command;
+      cacheRoot = path.resolve(
+        config.root,
+        options.cacheDir ?? "node_modules/.cache/smart-assets",
+      );
     },
 
     async buildStart() {

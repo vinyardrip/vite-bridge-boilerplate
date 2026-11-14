@@ -35,13 +35,20 @@
  *        so the developer can see exactly which stack is in effect —
  *        e.g. "JetBrains Mono" or "Arial (Fallback Mode)")
  *
- * This file is loaded only by dev-dashboard.njk, NOT by app.ts, so it
+ * This file is loaded only by dev-dashboard.njk, NOT by app.ts (layout
+ * skips app.ts on this page — см. _default.njk — чтобы виджет
+ * debug-css-overflow жил только внутри iframe-превью), so the module
  * never ships in production builds (the page itself is excluded from
  * collectRollupInputs in vite.config.ts). Guarded by `typeof document`
  * so the module is safe to import in Node tests.
  *
  * =================================================================================================
  */
+
+// Стили страницы: CSS в dev идет через JS-импорт, а app.ts на дашборде
+// не грузится (см. шапку) — поэтому общий app.scss (вместе со стилями
+// pages barrel, включая _dev-dashboard.scss) импортируем здесь.
+import '../../scss/app.scss';
 
 // ---------------------------------------------------------------------------
 // Page discovery via Vite's import.meta.glob. At dev time Vite resolves

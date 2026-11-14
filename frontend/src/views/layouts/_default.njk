@@ -53,7 +53,28 @@ _default.njk (v4.0 - На основе вашего кода)
     {% if isDev %}
       <script type="module" src="http://localhost:5173/@vite/client"></script>
     {% endif %}
-    <script type="module" src="/frontend/src/js/app.ts"></script>
+
+    {# ШРИФТЫ: Google CSS с display=swap, асинхронная загрузка
+       (media="print" → onload) — CSS шрифтов НЕ блокирует рендер текста.
+       В dev vite-plugin-webfont-dl перехватывает эту ссылку (его regex ищет
+       rel=stylesheet + href fonts.googleapis.com) и подменяет на свою
+       /@webfonts/webfonts.css с дисковым кешем; в сборке njk-страницы
+       рендерятся в обход transformIndexHtml — ссылка остается как есть
+       (async + swap, рендер не блокируется). Раньше шрифты не грузились
+       ВООБЩЕ: опции google:/custom: плагин v3.12+ не читает, @font-face
+       в проекте не было — текст рендерился системными фолбэками. #}
+    <link rel="stylesheet" media="print" onload="this.onload=null;this.removeAttribute('media');" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;700&family=Spectral:wght@700&family=Spectral+SC:wght@700&display=swap">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;700&family=Spectral:wght@700&family=Spectral+SC:wght@700&display=swap">
+    </noscript>
+
+    {# app.ts НЕ грузится на dev-dashboard: dev-IIFE в нем инициализирует
+       debug-css-overflow, а виджет должен жить только на реальных страницах
+       (внутри iframe-превью дашборда). Стили дашборда подтягивает сам
+       dev-dashboard.ts (import app.scss) — CSS в dev идет через JS-импорт. #}
+    {% if not is_dev_dashboard %}
+      <script type="module" src="/frontend/src/js/app.ts"></script>
+    {% endif %}
 
     {% block head %}{% endblock %}
   </head>

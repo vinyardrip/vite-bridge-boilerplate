@@ -152,6 +152,12 @@ export interface SmartAssetsOptions {
   scope?: string;
   manifestFile?: string;
   generatedScssFile?: string;
+  /**
+   * Каталог дискового кеша sharp-вариантов (относительно корня Vite).
+   * По умолчанию "node_modules/.cache/smart-assets" — повторный старт
+   * dev-сервера/сборки не перекодирует неизменившиеся исходники.
+   */
+  cacheDir?: string;
 }
 
 /** Options pictureHtml(): готовая <picture>-разметка растрового ассета. */
