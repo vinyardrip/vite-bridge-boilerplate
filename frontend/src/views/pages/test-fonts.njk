@@ -22,8 +22,8 @@ body_class: "page-font-test"
   <div class="font-tester__guide">
     <h2>Как это работает?</h2>
     <ol>
-      <li><strong>Слева ("Ожидание"):</strong> Текст отображается с применением нужных CSS-свойств <code>font-family</code> и <code>font-weight</code>. Так он <strong>должен</strong> выглядеть.</li>
-      <li><strong>Справа ("Результат"):</strong> JavaScript через <code>document.fonts</code> API проверяет, загружен ли фактически данный шрифт в браузере.</li>
+      <li><strong>Сверху ("Ожидание"):</strong> Текст отображается с применением нужных CSS-свойств <code>font-family</code> и <code>font-weight</code>. Так он <strong>должен</strong> выглядеть.</li>
+      <li><strong>Снизу ("Результат"):</strong> Тот же текст принудительно системным шрифтом (<code>monospace</code> для Mono-семейств, иначе <code>sans-serif</code>) — эталон для визуального сравнения. JavaScript через <code>document.fonts</code> API дополнительно проверяет, загружена ли грань, и ставит статус-бейдж.</li>
       <li><strong>Статус:</strong> Если шрифт успешно загружен, вы увидите зеленую плашку "Успешно". Если браузер использует системный fallback-шрифт (например, Times New Roman или Arial), вы увидите красную плашку "Ошибка".</li>
     </ol>
   </div>
