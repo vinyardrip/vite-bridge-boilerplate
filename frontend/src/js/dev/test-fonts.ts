@@ -22,7 +22,7 @@
  * @param {string} style - Значение font-style.
  * @returns {boolean} - true, если шрифт загружен, иначе false.
  */
-const isFontLoaded = (family, weight, style) => {
+const isFontLoaded = (family: string, weight: string, style: string): boolean => {
   // Формируем строку для проверки, например: "bold 700 16px 'Spectral SC'"
   // Размер шрифта (16px) здесь не важен, но синтаксис его требует.
   const fontCheckString = `${style} ${weight} 16px "${family}"`;
@@ -41,8 +41,8 @@ const isFontLoaded = (family, weight, style) => {
  * Находит все тестовые карточки на странице и запускает для них проверку.
  * @param {HTMLElement} container - DOM-элемент, в котором находятся карточки.
  */
-export const initFontTester = (container) => {
-  const cards = container.querySelectorAll(".font-test-card");
+export const initFontTester = (container: HTMLElement): void => {
+  const cards = container.querySelectorAll<HTMLElement>(".font-test-card");
 
   if (cards.length === 0) {
     return;
@@ -54,7 +54,7 @@ export const initFontTester = (container) => {
   document.fonts.ready.then(() => {
     cards.forEach((card) => {
       const { family, weight, style } = card.dataset;
-      const statusElement = card.querySelector("[data-status]");
+      const statusElement = card.querySelector<HTMLElement>("[data-status]");
 
       if (!family || !weight || !style || !statusElement) {
         return;

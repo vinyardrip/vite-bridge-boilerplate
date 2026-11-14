@@ -10,12 +10,12 @@
  * =================================================================================================
  */
 export const initMobileMenu = () => {
-  const menuWrapper = document.querySelector('.menu');
+  const menuWrapper = document.querySelector<HTMLElement>('.menu');
   if (!menuWrapper) {
     return;
   }
 
-  const button = menuWrapper.querySelector('.menu__btn');
+  const button = menuWrapper.querySelector<HTMLButtonElement>('.menu__btn');
   if (!button) {
     return;
   }
@@ -24,6 +24,7 @@ export const initMobileMenu = () => {
     menuWrapper.classList.toggle('active');
     // Управляем атрибутом aria-expanded для доступности
     const isExpanded = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', !isExpanded);
+    // setAttribute приводит значение к строке — передаем ее явно.
+    button.setAttribute('aria-expanded', String(!isExpanded));
   });
 };

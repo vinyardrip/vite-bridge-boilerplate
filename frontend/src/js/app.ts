@@ -1,6 +1,6 @@
 /*!
  * =================================================================================================
- * app.js
+ * app.ts
  * =================================================================================================
  *
  * Главный JavaScript-файл проекта. Точка входа для всех скриптов.
@@ -36,10 +36,10 @@ import '../scss/app.scss';
     });
 
     /*! --- Инициализация тестера шрифтов --- */
-    const fontTester = document.querySelector('#font-tester');
+    const fontTester = document.querySelector<HTMLElement>('#font-tester');
 
     if (fontTester) {
-      import('./dev/test-fonts.js').then(({ initFontTester }) => {
+      import('./dev/test-fonts.ts').then(({ initFontTester }) => {
         initFontTester(fontTester);
       });
     }
@@ -57,16 +57,16 @@ import '../scss/app.scss';
  * =================================================================================================
  */
 // Импорт утилит
-import './modules/detect-touch.js';
+import './modules/detect-touch.ts';
 
 // Импорт модулей компонентов
-import { initScrollToTop } from './modules/scroll-to-top.js';
-import { initMobileMenu } from './modules/mobile-menu.js';
-import { initModals } from './modules/modals.js';
-import { initForms } from './modules/forms.js';
-import { initLazyLoadVideos } from './modules/video.js';
-import { initScrollableTables } from './modules/scrollable-tables.js';
-import { initAccordion } from './modules/accordion.js';
+import { initScrollToTop } from './modules/scroll-to-top.ts';
+import { initMobileMenu } from './modules/mobile-menu.ts';
+import { initModals } from './modules/modals.ts';
+import { initForms } from './modules/forms.ts';
+import { initLazyLoadVideos } from './modules/video.ts';
+import { initScrollableTables } from './modules/scrollable-tables.ts';
+import { initAccordion } from './modules/accordion.ts';
 
 // Запускаем скрипты после полной загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {

@@ -9,10 +9,10 @@
  * =================================================================================================
  */
 import Inputmask from 'inputmask';
-import { openModal } from './modals.js';
+import { openModal } from './modals.ts';
 
 // Логика кастомного тултипа для полей телефона
-const initPhoneTooltip = (phoneInput) => {
+const initPhoneTooltip = (phoneInput: HTMLInputElement): void => {
   phoneInput.addEventListener('input', () => {
     if (phoneInput.validity.patternMismatch) {
       phoneInput.setCustomValidity(
@@ -25,7 +25,11 @@ const initPhoneTooltip = (phoneInput) => {
 };
 
 // ... (функции sendFormData и simulateFormSubmission без изменений) ...
-const sendFormData = (form, data, button) => {
+const sendFormData = (
+  form: HTMLFormElement,
+  data: Record<string, FormDataEntryValue>,
+  button: HTMLButtonElement | null,
+): void => {
   fetch('mailer/smart.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -52,7 +56,11 @@ const sendFormData = (form, data, button) => {
   });
 };
 
-const simulateFormSubmission = (form, data, button) => {
+const simulateFormSubmission = (
+  form: HTMLFormElement,
+  data: Record<string, FormDataEntryValue>,
+  button: HTMLButtonElement | null,
+): void => {
   console.log('ИМИТАЦИЯ ОТПРАВКИ (DEV-РЕЖИМ). Данные:', data);
   setTimeout(() => {
     console.log('Форма успешно отправлена (имитация)');
@@ -64,13 +72,13 @@ const simulateFormSubmission = (form, data, button) => {
 
 
 export const initForms = () => {
-  const forms = document.querySelectorAll('[data-form]');
+  const forms = document.querySelectorAll<HTMLFormElement>('[data-form]');
 
   forms.forEach((form, formIndex) => {
-    const phoneInput = form.querySelector('input[type="tel"]');
-    const submitButton = form.querySelector('button[type="submit"]');
-    const locationInput = form.querySelector('input[name="loc"]');
-    const botField = form.querySelector('input[name="bot-field"]');
+    const phoneInput = form.querySelector<HTMLInputElement>('input[type="tel"]');
+    const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const locationInput = form.querySelector<HTMLInputElement>('input[name="loc"]');
+    const botField = form.querySelector<HTMLInputElement>('input[name="bot-field"]');
 
     if (locationInput) {
       locationInput.value = `Форма №${formIndex + 1}`;
@@ -87,7 +95,8 @@ export const initForms = () => {
       // 3. ВОССТАНОВЛЕННАЯ ЛОГИКА: Санитайзер ввода
       phoneInput.addEventListener('input', (e) => {
         // Этот обработчик удаляет все символы, кроме цифр и знака "+"
-        e.target.value = e.target.value.replace(/[^0-9+]/g, '');
+        const target = e.target as HTMLInputElement;
+        target.value = target.value.replace(/[^0-9+]/g, '');
       });
     }
 

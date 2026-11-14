@@ -13,8 +13,8 @@
  */
 
 // --- Вспомогательная функция для обновления состояния одной таблицы ---
-const updateTableState = (wrapper) => {
-  const table = wrapper.querySelector('table');
+const updateTableState = (wrapper: HTMLElement): void => {
+  const table = wrapper.querySelector<HTMLTableElement>('table');
   if (!table) return;
 
   const boxWidth = wrapper.offsetWidth;
@@ -32,7 +32,7 @@ const updateTableState = (wrapper) => {
 
 // --- Основная функция-инициализатор ---
 export const initScrollableTables = () => {
-  const tables = document.querySelectorAll('table');
+  const tables = document.querySelectorAll<HTMLTableElement>('table');
   if (!tables.length) {
     return;
   }
@@ -40,7 +40,7 @@ export const initScrollableTables = () => {
   // 1. Оборачиваем каждую таблицу
   tables.forEach((table) => {
     // Проверяем, не была ли таблица уже обернута
-    if (table.parentNode.classList.contains('big-table')) {
+    if ((table.parentNode as HTMLElement).classList.contains('big-table')) {
       return;
     }
 
@@ -76,6 +76,6 @@ export const initScrollableTables = () => {
 
   // 4. Обновляем состояние всех таблиц при ресайзе окна
   window.addEventListener('resize', () => {
-    document.querySelectorAll('.big-table').forEach(updateTableState);
+    document.querySelectorAll<HTMLElement>('.big-table').forEach(updateTableState);
   });
 };

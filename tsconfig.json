@@ -16,6 +16,9 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["node"],
 
+    // Импорты внутри TS-кода проекта — с явным расширением .ts
+    // (noEmit — бандлит Vite/esbuild, компиляции нет).
+    "allowImportingTsExtensions": true,
     // Пока выключен — включается на шаге 4 после переименования конфигов.
     "strict": false,
     "esModuleInterop": true,

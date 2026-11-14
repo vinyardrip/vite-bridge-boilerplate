@@ -92,7 +92,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 │   └── src/
 │       ├── assets/           # fonts, icons, images, svg (легаси-источники, мигрируются в raw/)
 │       ├── data/             # Глобальные данные шаблонов (site.json)
-│       ├── js/               # app.js (точка входа), lib/, modules/
+│       ├── js/               # app.ts (точка входа), lib/, modules/
 │       ├── scss/             # ITCSS: abstracts, base, layout, components, pages, utils, vendor, generated
 │       └── views/            # Nunjucks: layouts, pages, partials, components, macros
 ├── packages/                 # Локальные пакеты pnpm-workspace (vite-plugin-smart-assets)
@@ -336,7 +336,7 @@ backend/wp-content/themes/my-theme/
 Как работает подключение ассетов (`inc/enqueue-assets.php`):
 
 - **Production:** после `pnpm build && pnpm sync:theme` в теме лежит
-  `assets/manifest.json` + собранные файлы. `get_asset('frontend/src/js/app.js')`
+  `assets/manifest.json` + собранные файлы. `get_asset('frontend/src/js/app.ts')`
   возвращает версионированный URL с хешем; CSS берётся из поля `css` entry.
 - **Development:** если `manifest.json` отсутствует, `get_asset()` возвращает адрес
   файла на dev-сервере Vite (`http://localhost:5173`) — работает HMR из `pnpm dev`.
@@ -457,7 +457,7 @@ wp-content/uploads/2026/11/photo.jpg.webp   ← сиблинг WebP
   шаблона пришёл каждый фрагмент. В production-сборку не попадает (apply: "serve").
 - **debug-css-overflow** — виджет-детектор горизонтального переполнения в dev-режиме
   (горячие клавиши: Alt+O — подсветка нарушителей, Ctrl+Alt+O — свернуть виджет).
-  Подключен в `app.js` под `if (import.meta.env.DEV)` и вырезается из production-бандла.
+  Подключен в `app.ts` под `if (import.meta.env.DEV)` и вырезается из production-бандла.
 
 ## Рабочий процесс
 

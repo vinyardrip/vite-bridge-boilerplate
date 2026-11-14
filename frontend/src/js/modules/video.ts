@@ -13,7 +13,7 @@
 // --- Вспомогательные функции ---
 
 // Создает iframe
-const createIframe = (id) => {
+const createIframe = (id: string): HTMLIFrameElement => {
   const iframe = document.createElement('iframe');
   const query = '?rel=0&showinfo=0&autoplay=1';
   const url = `https://www.youtube.com/embed/${id}${query}`;
@@ -27,9 +27,9 @@ const createIframe = (id) => {
 };
 
 // Настраивает конкретный видео-блок
-const setupVideo = (video) => {
-  const link = video.querySelector('.video__link');
-  const button = video.querySelector('.video__btn');
+const setupVideo = (video: HTMLElement): void => {
+  const link = video.querySelector<HTMLAnchorElement>('.video__link');
+  const button = video.querySelector<HTMLButtonElement>('.video__btn');
   const id = video.dataset.videoId;
 
   if (!id || !link || !button) {
@@ -52,7 +52,7 @@ const setupVideo = (video) => {
 // --- Основная функция-инициализатор ---
 
 export const initLazyLoadVideos = () => {
-  const videos = document.querySelectorAll('.video[data-video-id]');
+  const videos = document.querySelectorAll<HTMLElement>('.video[data-video-id]');
   if (videos.length) {
     videos.forEach(setupVideo);
   }

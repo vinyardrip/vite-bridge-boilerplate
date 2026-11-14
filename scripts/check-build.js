@@ -75,9 +75,10 @@ if (fs.existsSync(MANIFEST_PATH)) {
 }
 
 if (manifest) {
-  const appEntry = manifest["frontend/src/js/app.js"];
+  // Точка входа мигрировала на TypeScript (app.ts) — ключ манифеста = исходник.
+  const appEntry = manifest["frontend/src/js/app.ts"];
   check(
-    "manifest.json содержит точку входа frontend/src/js/app.js",
+    "manifest.json содержит точку входа frontend/src/js/app.ts",
     Boolean(appEntry?.file),
   );
 

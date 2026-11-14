@@ -10,12 +10,12 @@
  * =================================================================================================
  */
 export const initAccordion = () => {
-  const items = document.querySelectorAll('.accordion__btn');
+  const items = document.querySelectorAll<HTMLButtonElement>('.accordion__btn');
   if (!items.length) {
     return;
   }
 
-  const toggleAccordion = (clickedItem) => {
+  const toggleAccordion = (clickedItem: HTMLButtonElement): void => {
     const isExpanded = clickedItem.getAttribute('aria-expanded') === 'true';
 
     // Сначала закрываем все элементы

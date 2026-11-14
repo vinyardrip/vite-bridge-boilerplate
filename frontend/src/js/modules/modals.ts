@@ -41,11 +41,11 @@ const unlockScroll = () => {
 };
 
 // --- Основная логика ---
-const overlay = document.querySelector('#overlay');
-const modalWindows = document.querySelectorAll('[data-modal-window]');
+const overlay = document.querySelector<HTMLElement>('#overlay');
+const modalWindows = document.querySelectorAll<HTMLElement>('[data-modal-window]');
 
 // Функция для открытия конкретного модального окна
-export const openModal = (modalId) => {
+export const openModal = (modalId: string): void => {
   if (!overlay) return;
 
   // Сначала скрываем все окна
@@ -54,7 +54,7 @@ export const openModal = (modalId) => {
   });
 
   // Находим и показываем нужное окно
-  const targetModal = document.querySelector(`[data-modal-window="${modalId}"]`);
+  const targetModal = document.querySelector<HTMLElement>(`[data-modal-window="${modalId}"]`);
   if (targetModal) {
     targetModal.style.display = 'block';
     overlay.classList.add('overlay-active');
@@ -75,14 +75,15 @@ const closeModal = () => {
 export const initModals = () => {
   if (!overlay) return;
 
-  const triggers = document.querySelectorAll('[data-modal-trigger]');
-  const closeButtons = document.querySelectorAll('[data-modal-close]');
+  const triggers = document.querySelectorAll<HTMLElement>('[data-modal-trigger]');
+  const closeButtons = document.querySelectorAll<HTMLElement>('[data-modal-close]');
 
   // Обработчики для кнопок-триггеров
   triggers.forEach((trigger) => {
     trigger.addEventListener('click', (e) => {
       e.preventDefault();
-      const modalId = trigger.dataset.modalTrigger;
+      // Отсутствие data-modal-trigger — мусорный триггер: ищем несуществующее окно (no-op).
+      const modalId = trigger.dataset.modalTrigger ?? '';
       openModal(modalId);
     });
   });

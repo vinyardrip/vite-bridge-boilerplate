@@ -62,7 +62,7 @@ const readSiteData = () => {
 // точка входа, чтобы он попал в бандл и в manifest.json для get_asset().
 const collectRollupInputs = () => {
   const pages = globSync("frontend/src/views/pages/*.njk");
-  const entries = [...pages, "frontend/src/js/app.js"];
+  const entries = [...pages, "frontend/src/js/app.ts"];
 
   return Object.fromEntries(
     entries.map((file) => [path.basename(file, path.extname(file)), file]),
@@ -103,7 +103,7 @@ const injectTagsIntoNjkHtml = () => ({
       (file) =>
         file.type === "chunk" &&
         file.isEntry &&
-        file.facadeModuleId?.replace(/\\/g, "/").endsWith("js/app.js"),
+        file.facadeModuleId?.replace(/\\/g, "/").endsWith("js/app.ts"),
     );
 
     if (!appChunk) {
@@ -126,7 +126,7 @@ const injectTagsIntoNjkHtml = () => ({
 
       if (appChunk) {
         source = source.replace(
-          /src="\/frontend\/src\/js\/app\.js"/g,
+          /src="\/frontend\/src\/js\/app\.ts"/g,
           `src="${rel(appChunk.fileName)}"`,
         );
       }
@@ -429,7 +429,7 @@ export default defineConfig(({ command, mode }) => {
         // Точки входа: все Nunjucks-страницы + JS-точка входа (см. collectRollupInputs).
         // В WP-режиме HTML не нужен (шаблоны рендерит PHP) — только JS-точка входа.
         input: isWpBuild
-          ? { app: "frontend/src/js/app.js" }
+          ? { app: "frontend/src/js/app.ts" }
           : collectRollupInputs(),
         output: {
           entryFileNames: "js/[name].[hash].js",

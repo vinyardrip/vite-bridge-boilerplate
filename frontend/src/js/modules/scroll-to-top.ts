@@ -16,19 +16,19 @@
  * @param {number} endPosition - Конечная позиция скролла (в px от верха).
  * @param {number} duration - Продолжительность анимации в мс.
  */
-const smoothScrollTo = (endPosition, duration) => {
+const smoothScrollTo = (endPosition: number, duration: number): void => {
   const startPosition = window.scrollY;
   const distance = endPosition - startPosition;
-  let startTime = null;
+  let startTime: number | null = null;
 
-  const easeInOutCubic = (t, b, c, d) => {
+  const easeInOutCubic = (t: number, b: number, c: number, d: number): number => {
     t /= d / 2;
     if (t < 1) return (c / 2) * t * t * t + b;
     t -= 2;
     return (c / 2) * (t * t * t + 2) + b;
   };
 
-  const animation = (currentTime) => {
+  const animation = (currentTime: number): void => {
     if (startTime === null) startTime = currentTime;
     const timeElapsed = currentTime - startTime;
     const run = easeInOutCubic(timeElapsed, startPosition, distance, duration);
@@ -42,7 +42,7 @@ const smoothScrollTo = (endPosition, duration) => {
 // --- Main Function -----------------------------------------------------------
 export const initScrollToTop = () => {
   // --- Constants -------------------------------------------------------------
-  const button = document.querySelector('#scroll-to-top');
+  const button = document.querySelector<HTMLElement>('#scroll-to-top');
   const scrollThreshold = 500; // Порог в px, после которого кнопка появляется
   const animationDuration = 750; // Длительность плавного скролла в мс
 
