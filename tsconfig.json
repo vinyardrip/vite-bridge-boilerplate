@@ -1,0 +1,50 @@
+{
+  /*!
+   * =================================================================================================
+   * Корневой tsconfig — типизация для всего монорепо, кроме пакета
+   * packages/vite-plugin-smart-assets (у него свой tsconfig со strict:true).
+   *
+   * Содержит только проверку типов (noEmit) — бандлинг делает Vite/esbuild,
+   * тесты запускает tsx. По мере миграции strict включается здесь (шаг 4)
+   * и в пакетах.
+   * =================================================================================================
+   */
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+
+    // Пока выключен — включается на шаге 4 после переименования конфигов.
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./frontend/src/*"]
+    }
+  },
+  "include": [
+    "frontend/src",
+    "frontend/tests",
+    "scripts",
+    "*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "packages",
+    "dist",
+    "dist-wp",
+    "backend",
+    "playwright-report",
+    "test-results",
+    ".ck",
+    ".dpx"
+  ]
+}

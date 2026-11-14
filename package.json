@@ -31,7 +31,8 @@
     "images:convert": "node scripts/convert-images.js",
     "images:compress": "node scripts/compress-images.js",
     "svg:optimize": "node scripts/optimize-svg.js",
-    "test": "pnpm --filter vite-plugin-smart-assets test"
+    "test": "pnpm --filter vite-plugin-smart-assets test",
+    "typecheck": "tsc --noEmit"
   },
   "type": "module",
   "keywords": [],
@@ -41,6 +42,7 @@
     "@atrocityz/vite-plugin-html-img-to-picture": "^1.0.8",
     "@biomejs/biome": "^2.3.2",
     "@playwright/test": "^1.56.1",
+    "@types/node": "^22.20.5",
     "@vituum/vite-plugin-nunjucks": "^1.1.0",
     "autoprefixer": "^10.4.21",
     "baseline-browser-mapping": "^2.11.13",
@@ -64,6 +66,8 @@
     "sharp": "^0.34.4",
     "svgo": "^4.0.0",
     "tinify": "^1.8.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
     "vite": "^7.1.12",
     "vite-imagetools": "^12.0.0",
     "vite-njk-trace": "^1.0.1",
