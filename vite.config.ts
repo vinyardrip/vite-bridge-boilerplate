@@ -64,9 +64,11 @@ const readSiteData = () => {
 const collectRollupInputs = () => {
   // !DEV-ONLY СТРАНИЦЫ: не попадают в production-сборку. Страница остается
   // доступной в `pnpm dev` через middleware vite-plugin-njk-frontmatter,
-  // но .html-файл не эмитится в dist. test-fonts/styleguide здесь
-  // НЕ исключаются — сейчас они собираются в dist намеренно.
-  const DEV_ONLY_PAGES = new Set(["dev-dashboard"]);
+  // но .html-файл не эмитится в dist. test-fonts — инструмент диагностики
+  // шрифтов: в собранном виде он не работает (JS отключен проверкой
+  // site.production) и на проде не нужен. styleguide в dist собирается
+  // намеренно — это витрина компонентов.
+  const DEV_ONLY_PAGES = new Set(["dev-dashboard", "test-fonts"]);
   const pages = globSync("frontend/src/views/pages/*.njk").filter(
     (file) => !DEV_ONLY_PAGES.has(path.basename(file, path.extname(file))),
   );
@@ -436,8 +438,12 @@ export default defineConfig(({ command, mode }) => {
     removeOrphanSourcemaps(),
   ];
 
-  /*! --- УСЛОВНОЕ ПОДКЛЮЧЕНИЕ АНАЛИЗАТОРА СБОРКИ --- */
-  if (process.env.ANALYZE) {
+  /*! --- УСЛОВНОЕ ПОДКЛЮЧЕНИЕ АНАЛИЗАТОРА СБОРКИ ---
+  Только при ANALYZE=true (pnpm build:stats). Строгое сравнение со строкой:
+  любая непустая строка или true в bash превращаются в строку "true",
+  поэтому сравниваем именно с ней. stats.html пишется в dist/ — в обычной
+  сборке (без ANALYZE) файл не создается, чтобы не засорять прод. */
+  if (process.env.ANALYZE === "true") {
     plugins.push(
       visualizer({
         open: true,
@@ -517,7 +523,13 @@ export default defineConfig(({ command, mode }) => {
             if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType))
               return "img/[name].[hash][extname]";
             if (/woff|woff2|eot|ttf|otf/i.test(extType))
-              return "fonts/[name].[hash][extname]";
+              // Шрифты: dist — в assets/fonts/ (консолидация статики рядом
+              // с assets/img и assets/icons от smart-assets/public);
+              // WP — ПЛОСКО в fonts/ (outDir уже <тема>/assets/, префикс
+              // "assets/" дал бы assets/assets/fonts/).
+              return isWpBuild
+                ? "fonts/[name].[hash][extname]"
+                : "assets/fonts/[name].[hash][extname]";
             return "[name].[hash][extname]";
           },
           manualChunks(id) {

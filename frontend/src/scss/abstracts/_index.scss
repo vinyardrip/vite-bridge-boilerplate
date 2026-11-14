@@ -8,3 +8,9 @@
 @forward "variables";
 @forward "functions";
 @forward "mixins";
+
+// @font-face для ЛОКАЛЬНЫХ шрифтов (файлы в frontend/src/assets/fonts/).
+// Не содержит членов (переменных/миксинов) — только CSS-правила, которые
+// попадают в сборку через этот barrel. Google-шрифты подключает
+// vite-plugin-webfont-dl, их сюда добавлять не нужно.
+@forward "fonts";

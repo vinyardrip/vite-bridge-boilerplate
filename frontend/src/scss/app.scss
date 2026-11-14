@@ -66,3 +66,6 @@
 //    в <head> ненохранившим (non-render-blocking) способом — и в dev,
 //    и в production. Раньше здесь был @import "virtual:fonts.css",
 //    который не резолвится ни одним плагином в цепочке сборки.
+//    Исключение — ЛОКАЛЬНЫЕ шрифты: их @font-face живет в
+//    abstracts/_fonts.scss (уже подключен через barrel abstracts,
+//    см. пункт 1).

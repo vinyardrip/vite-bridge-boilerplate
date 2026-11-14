@@ -30,13 +30,9 @@ test.describe('Собранные страницы', () => {
     await expect(page.locator('.video[data-video-id]')).toBeAttached();
   });
 
-  test('страница тестирования шрифтов открывается', async ({ page }) => {
-    await page.goto('/test-fonts.html');
-    await expect(page).toHaveTitle(/Диагностика веб-шрифтов/);
-    await expect(page.locator('#font-tester')).toBeAttached();
-    // Карточки шрифтов сгенерированы из site.json
-    await expect(page.locator('.font-test-card')).toHaveCount(4);
-  });
+  // Страница test-fonts — dev-only (не собирается в dist, см. DEV_ONLY_PAGES
+  // в vite.config.ts), поэтому смоук-теста собранной версии у нее нет.
+  // Проверка в dev: pnpm dev → http://localhost:5173/test-fonts
 
   test('в html присутствует класс no-touch на десктопе', async ({ page }) => {
     await page.goto('/');
