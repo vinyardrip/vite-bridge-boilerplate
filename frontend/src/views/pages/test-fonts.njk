@@ -35,6 +35,14 @@ body_class: "page-font-test"
       Для каждого шрифта в этом массиве Nunjucks автоматически создаст тестовый блок.
     #}
     {% for font in site.fonts %}
+      {# Фолбэк для сравнения: monospace для Mono-семейств, иначе sans-serif
+         (тот же принцип, что у Dev Dashboard). Строки сравнения рендерит
+         ШАБЛОН — они видны и без JS, в т.ч. в собранной test-fonts.html
+         (статусы «Успешно/Ошибка» добавляет JS-модуль modules/dev/test-fonts.ts). #}
+      {% set fallbackFamily = "sans-serif" %}
+      {% if "Mono" in font.name or "mono" in font.name %}
+        {% set fallbackFamily = "monospace" %}
+      {% endif %}
       <div
         class="font-test-card"
         data-family="{{ font.name }}"
@@ -44,18 +52,33 @@ body_class: "page-font-test"
         <div class="font-test-card__header">
           <h3 class="font-test-card__title">{{ font.name }}</h3>
           <div class="font-test-card__meta">
-            <span>Weight: {{ font.weight }}</span>
-            {# Мы добавляем этот span с результатом, который наш JS найдет и заполнит #}
+            <span>Weight: {{ font.weight }} · Style: {{ font.style }}</span>
+            {# Бейдж результата, который JS-модуль заполнит после document.fonts.ready #}
             <span class="font-test-card__status" data-status="pending">Проверка...</span>
           </div>
         </div>
         <div class="font-test-card__body">
-          <p
-            class="font-test-card__preview"
-            style="font-family: '{{ font.name }}', serif; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
-          >
-            {{ font.text }}
-          </p>
+          {# Строка 1 — «Ожидание» (Target): целевой шрифт с нужным весом/стилем. #}
+          <div class="font-test-card__row">
+            <span class="font-test-card__label">Ожидание:</span>
+            <p
+              class="font-test-card__preview font-test-card__preview--target"
+              style="font-family: '{{ font.name }}', {{ fallbackFamily }}; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
+            >
+              {{ font.text }}
+            </p>
+          </div>
+          {# Строка 2 — «Результат» (Fallback): системный фолбэк тем же весом/стилем,
+             чтобы разница была видна только в начертании, а не в размере. #}
+          <div class="font-test-card__row">
+            <span class="font-test-card__label">Результат:</span>
+            <p
+              class="font-test-card__preview font-test-card__preview--fallback"
+              style="font-family: {{ fallbackFamily }}; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
+            >
+              {{ font.text }}
+            </p>
+          </div>
         </div>
       </div>
     {% endfor %}

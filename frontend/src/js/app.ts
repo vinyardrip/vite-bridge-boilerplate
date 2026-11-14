@@ -39,7 +39,9 @@ import '../scss/app.scss';
     const fontTester = document.querySelector<HTMLElement>('#font-tester');
 
     if (fontTester) {
-      import('./dev/test-fonts.ts').then(({ initFontTester }) => {
+      // Модуль переехал из js/dev/ в modules/dev/ (рядом с dev-dashboard.ts);
+      // строки сравнения Target/Fallback рендерит шаблон, модуль ставит статусы.
+      import('./modules/dev/test-fonts.ts').then(({ initFontTester }) => {
         initFontTester(fontTester);
       });
     }
