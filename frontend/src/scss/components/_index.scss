@@ -4,9 +4,13 @@
 // Этот файл собирает все компоненты и предоставляет их для использования
 // в главном файле стилей app.scss.
 
+@forward "buttons";
+@forward "fields";
+@forward "cards";
 @forward "scroll-to-top";
 @forward "mobile-menu";
 @forward "modals";
-@forward "form";
+@forward "forms";
 @forward "video";
 @forward "accordion";
+@forward "test-bg";

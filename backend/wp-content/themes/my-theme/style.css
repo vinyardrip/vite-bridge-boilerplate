@@ -1,0 +1,17 @@
+/*
+====================================================================================================
+Theme Name: My Theme
+Theme URI: https://example.com
+Description: Тема проекта Vite Bridge Boilerplate. Стили и скрипты собираются Vite и подключаются через manifest.json (inc/enqueue-assets.php).
+Version: 1.0.0
+Author: Vinyardrip
+License: ISC
+Text Domain: my-theme
+====================================================================================================
+*/
+
+/*
+ * Этот файл нужен WordPress для регистрации темы (заголовок выше обязателен).
+ * Рабочие стили НЕ пишутся здесь: они собираются Vite из frontend/src/scss
+ * и подключаются в inc/enqueue-assets.php.
+ */

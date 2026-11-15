@@ -1,0 +1,310 @@
+---
+title: Styleguide | Vite Bridge Boilerplate
+description: "Живая документация UI-кита: дизайн-токены, типографика, кнопки, поля ввода и карточки. Каждый пример — реальный компонент проекта."
+body_class: "styleguide-page"
+---
+{% extends "layouts/_default.njk" %}
+
+{% block content %}
+
+{# ====================================================================
+     ШАПКА ДОКУМЕНТАЦИИ
+==================================================================== #}
+<div class="sg-hero">
+  <div class="sg-hero__inner">
+    <h1 class="sg-hero__title">Styleguide</h1>
+    <p class="sg-hero__descr">
+      Живая документация UI-кита. Каждый пример на этой странице — настоящий
+      компонент проекта: тот же Nunjucks-макрос и тот же SCSS, что попадают
+      в продакшен. Если изменили компонент — изменится и документация.
+    </p>
+    <div class="sg-hero__tags">
+      <span class="sg-hero__tag">Nunjucks-макросы</span>
+      <span class="sg-hero__tag">SCSS / ITCSS</span>
+      <span class="sg-hero__tag">БЭМ</span>
+      <span class="sg-hero__tag">vite build → dist/ + manifest.json</span>
+    </div>
+  </div>
+</div>
+
+{# ====================================================================
+     НАВИГАЦИЯ ПО РАЗДЕЛАМ
+==================================================================== #}
+<nav class="sg-nav" aria-label="Разделы стайлгайда">
+  <ul class="sg-nav__list" role="list">
+    <li><a class="sg-nav__link" href="#sg-start">Быстрый старт</a></li>
+    <li><a class="sg-nav__link" href="#sg-colors">Цвета</a></li>
+    <li><a class="sg-nav__link" href="#sg-typography">Типографика</a></li>
+    <li><a class="sg-nav__link" href="#sg-buttons">Кнопки</a></li>
+    <li><a class="sg-nav__link" href="#sg-fields">Поля ввода</a></li>
+    <li><a class="sg-nav__link" href="#sg-cards">Карточки</a></li>
+  </ul>
+</nav>
+
+<main class="sg-main">
+
+  {% import "macros/_ui.njk" as ui %}
+  {% import "macros/_docs.njk" as docs %}
+
+  {# ====================================================================
+       БЫСТРЫЙ СТАРТ
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-start',
+         title='Быстрый старт',
+         descr='Компоненты — это Nunjucks-макросы. Импортируйте библиотеку в шаблоне и вызывайте макрос с нужными параметрами; классы и разметку макрос подставит сам.'
+       ) %}
+    <pre class="sg-code" data-lang="njk"><code>{% raw %}{# в шаблоне страницы или партиала #}
+{% import "macros/_ui.njk" as ui %}
+
+{{ ui.button('Отправить заявку') }}
+{{ ui.input(name='phone', type='tel', label='Телефон') }}{% endraw %}</code></pre>
+
+    <p class="sg-section__descr">
+      Где что живет: макросы — <code>frontend/src/views/macros/_ui.njk</code>,
+      стили компонентов — <code>frontend/src/scss/components/</code>,
+      дизайн-токены — <code>frontend/src/scss/abstracts/_variables.scss</code>.
+    </p>
+  {% endcall %}
+
+  {# ====================================================================
+       ЦВЕТА
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-colors',
+         title='Цвета (дизайн-токены)',
+         descr='Все цвета проекта объявлены CSS-переменными в abstracts/_variables.scss. В компонентах используйте только переменные — тогда смена палитры меняет весь сайт одной правкой.'
+       ) %}
+    <div class="sg-swatches">
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--primary"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Primary</span>
+          <span class="sg-swatch__value">--color-primary</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--accent"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Accent</span>
+          <span class="sg-swatch__value">--color-accent</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--text"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Text base</span>
+          <span class="sg-swatch__value">--color-text-base</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--muted"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Text muted</span>
+          <span class="sg-swatch__value">--color-text-muted</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--border"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Border</span>
+          <span class="sg-swatch__value">--color-border</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--surface"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Surface muted</span>
+          <span class="sg-swatch__value">--color-surface-muted</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--success"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Success</span>
+          <span class="sg-swatch__value">--color-success</span>
+        </div>
+      </div>
+      <div class="sg-swatch">
+        <div class="sg-swatch__color sg-swatch__color--danger"></div>
+        <div class="sg-swatch__meta">
+          <span class="sg-swatch__name">Danger</span>
+          <span class="sg-swatch__value">--color-danger</span>
+        </div>
+      </div>
+    </div>
+
+    <pre class="sg-code" data-lang="scss"><code>{% raw %}/* Правильно: через токен */
+.card { border-color: var(--color-border); }
+
+/* Неправильно: магическое значение мимо системы */
+.card { border-color: #e2e6ee; }{% endraw %}</code></pre>
+  {% endcall %}
+
+  {# ====================================================================
+       ТИПОГРАФИКА
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-typography',
+         title='Типографика',
+         descr='Шкала задана в abstracts/_variables.scss через clamp(): размеры плавно растут вместе с экраном, без ручных media-запросов. Классы .h1–.h3 повторяют стили заголовков — используйте их, когда семантически нужен другой тег.'
+       ) %}
+    <div class="sg-type-list">
+      <div class="sg-type">
+        <span class="sg-type__label">h1 · .h1</span>
+        <h1>Заголовок первого уровня</h1>
+      </div>
+      <div class="sg-type">
+        <span class="sg-type__label">h2 · .h2</span>
+        <h2>Заголовок второго уровня</h2>
+      </div>
+      <div class="sg-type">
+        <span class="sg-type__label">h3 · .h3</span>
+        <h3>Заголовок третьего уровня</h3>
+      </div>
+      <div class="sg-type">
+        <span class="sg-type__label">p</span>
+        <p>
+          Основной текст страницы. Ровная линия в полтора интервала, комфортная
+          длина строки и аккуратные отступы между абзацами — база читабельности.
+        </p>
+      </div>
+      <div class="sg-type">
+        <span class="sg-type__label">a</span>
+        <p><a href="#sg-typography">Ссылка внутри текста</a> — акцентный цвет и смена цвета при наведении.</p>
+      </div>
+    </div>
+
+    <pre class="sg-code" data-lang="njk"><code>{% raw %}{# Тег — когда это реально заголовок #}
+&lt;h2&gt;Преимущества&lt;/h2&gt;
+
+{# Класс — когда нужна ВИЗУАЛЬНАЯ иерархия без смены семантики #}
+&lt;p class="h3"&gt;Цена со скидкой&lt;/p&gt;{% endraw %}</code></pre>
+  {% endcall %}
+
+  {# ====================================================================
+       КНОПКИ
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-buttons',
+         title='Кнопки',
+         descr='Макрос ui.button() рендерит <button>, а если передать href — ссылку <a> с теми же стилями. Вариант задается параметром variant, размер — size. Стили: components/_buttons.scss.'
+       ) %}
+    <div class="sg-demo">
+      {{ ui.button('Основная', variant='primary') }}
+      {{ ui.button('Вторичная', variant='secondary') }}
+      {{ ui.button('С обводкой', variant='outline') }}
+      {{ ui.button('Текстовая', variant='ghost') }}
+    </div>
+
+    <div class="sg-demo">
+      {{ ui.button('Малая', size='sm') }}
+      {{ ui.button('Обычная') }}
+      {{ ui.button('Большая', size='lg') }}
+      {{ ui.button('Недоступна', disabled=true) }}
+      {{ ui.button('Ссылка-кнопка', href='#sg-buttons', variant='outline', size='sm') }}
+    </div>
+
+    <pre class="sg-code" data-lang="njk"><code>{% raw %}{% import "macros/_ui.njk" as ui %}
+
+{{ ui.button('Отправить заявку') }}
+{{ ui.button('Подробнее', variant='outline') }}
+{{ ui.button('Смотреть всё', href='/catalog/', variant='ghost') }}
+{{ ui.button('Загрузка...', disabled=true) }}
+{{ ui.button('Малая', size='sm') }}{% endraw %}</code></pre>
+  {% endcall %}
+
+  {# ====================================================================
+       ПОЛЯ ВВОДА
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-fields',
+         title='Поля ввода',
+         descr='Универсальные элементы форм: обертка .field (лейбл + поле + подсказка), контролы .input/.textarea и чекбокс .checkbox. Макрос ui.input() для типа tel сам подставляет плейсхолдер, маску и autocomplete. Стили: components/_fields.scss.'
+       ) %}
+    <div class="sg-demo sg-demo--column">
+      {{ ui.input(name='sg-name', label='Ваше имя', placeholder='Иван') }}
+      {{ ui.input(name='sg-phone', type='tel', label='Телефон', required=true) }}
+
+      <div class="field field--error">
+        <label class="field__label" for="sg-email">E-mail</label>
+        <input class="input" type="email" id="sg-email" name="sg-email" value="test@@example">
+        <p class="field__error">Проверьте адрес: кажется, в нем опечатка.</p>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="sg-msg">Сообщение</label>
+        <textarea class="textarea" id="sg-msg" name="sg-msg" placeholder="Расскажите о задаче"></textarea>
+        <p class="field__hint">До 500 символов. Ответим в течение рабочего дня.</p>
+      </div>
+
+      <label class="checkbox">
+        <input type="checkbox" name="sg-consent" checked>
+        <span>Соглашаюсь с обработкой персональных данных</span>
+      </label>
+    </div>
+
+    <pre class="sg-code" data-lang="njk"><code>{% raw %}{% import "macros/_ui.njk" as ui %}
+
+{{ ui.input(name='name', label='Ваше имя', placeholder='Иван') }}
+{{ ui.input(name='phone', type='tel', label='Телефон', required=true) }}
+
+{# Текстarea и состояние ошибки — обычной разметкой #}
+&lt;textarea class="textarea" name="message"&gt;&lt;/textarea&gt;
+
+&lt;div class="field field--error"&gt;
+  &lt;label class="field__label" for="email"&gt;E-mail&lt;/label&gt;
+  &lt;input class="input" type="email" id="email" name="email"&gt;
+  &lt;p class="field__error"&gt;Проверьте адрес.&lt;/p&gt;
+&lt;/div&gt;{% endraw %}</code></pre>
+  {% endcall %}
+
+  {# ====================================================================
+       КАРТОЧКИ
+  ==================================================================== #}
+  {% call docs.section(
+         id='sg-cards',
+         title='Карточки',
+         descr='Макрос ui.card(): заголовок и текст — параметрами, а содержимое футера (кнопки, ссылки) передается блоком {% call %}. В сетке карточки вытягиваются на одну высоту, футер прижат к низу. Стили: components/_cards.scss.'
+       ) %}
+    <div class="sg-demo sg-demo--grid">
+      {{ ui.card(
+           title='Аудит',
+           text='Проверим текущую воронку и найдем точки роста конверсии.'
+         ) }}
+
+      {% call ui.card(
+           title='Редизайн',
+           text='Обновим визуал и UI-кит под задачи бизнеса.'
+         ) %}
+        {{ ui.button('Подробнее', variant='outline', size='sm') }}
+      {% endcall %}
+
+      {% call ui.card(
+           title='Поддержка',
+           text='Возьмем на себя доработки, A/B-тесты и мониторинг метрик после запуска. Отчитываемся ежемесячно.'
+         ) %}
+        {{ ui.button('Оставить заявку', size='sm') }}
+        {{ ui.button('Условия', variant='ghost', size='sm') }}
+      {% endcall %}
+    </div>
+
+    <pre class="sg-code" data-lang="njk"><code>{% raw %}{% import "macros/_ui.njk" as ui %}
+
+{# Простая карточка #}
+{{ ui.card(title='Аудит', text='Найдем точки роста.') }}
+
+{# С футером — через блок call #}
+{% call ui.card(title='Редизайн', text='Обновим визуал.') %}
+  {{ ui.button('Подробнее', variant='outline', size='sm') }}
+{% endcall %}{% endraw %}</code></pre>
+  {% endcall %}
+
+</main>
+
+<footer class="sg-footer">
+  Страница собрана из тех же макросов и стилей, что и продакшен-страницы:
+  styleguide.njk → macros/_ui.njk → scss/components/.
+</footer>
+
+{% endblock %}

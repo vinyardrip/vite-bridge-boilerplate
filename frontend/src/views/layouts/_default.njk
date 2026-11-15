@@ -4,10 +4,7 @@ _default.njk (v4.0 - На основе вашего кода)
 ====================================================================================================
 
 Главный макет-обертка для СТАТИЧЕСКОЙ разработки.
-
-Dev-клиент Vite (@vite/client) и трансформация модулей подключаются
-АВТОМАТИЧЕСКИ (server.transformIndexHtml в vite-plugin-njk-frontmatter),
-поэтому никакие хардкод-скрипты с портом 5173 в шаблоне не нужны.
+Использует прямое подключение к Vite Dev Server, как и требуется для нашего рабочего процесса.
 
 ----------------------------------------------------------------------------------------------------
 ШПАРГАЛКА ПО NUNJUCKS
@@ -37,42 +34,55 @@ Dev-клиент Vite (@vite/client) и трансформация модуле�
     <meta name="description" content="{{ description or site.description or 'Описание по умолчанию' }}">
     <meta name="keywords" content="{{ keywords or site.keywords or '' }}">
 
-    {#
-      Фавикон-теги (<link rel="icon|apple-touch-icon|manifest">, theme-color)
-      в продакшн-HTML инжектит плагин vite-html-asset-inject (см. vite.config.js) —
-      в шаблоне их не дублируем. Для dev-режима оставляем ссылку на перенесённый
-      из legacy/src/img/favicons/ фавикон (в продакшне она НЕ попадает в HTML
-      благодаря site.production, а vite-html-asset-inject перепишет /src/... путь
-      на собранный ассет при необходимости).
-    #}
-    {% if not site.production %}
-      <link rel="icon" href="/src/assets/images/favicons/favicon.svg" type="image/svg+xml">
-    {% endif %}
+    {# Фавиконки генерируются из frontend/public/favicon.svg командой
+       `pnpm favicons:generate` (автоматически перед каждой сборкой).
+       Готовые файлы лежат в frontend/public/assets/favicons/ — корень
+       public/ не засоряем. Пути относительные: работает и в dev, и в
+       собранном dist при base: './' (открытие через file://). #}
+    <link rel="icon" href="./assets/favicons/favicon.ico" sizes="any">
+    <link rel="icon" href="./assets/favicons/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./assets/favicons/apple-touch-icon-180x180.png">
 
     {# ПОДКЛЮЧАЕМ МЕТА-ТЕГИ ДЛЯ СОЦСЕТЕЙ #}
     {% block social_meta %}
       {% include "../partials/_meta-social.njk" %}
     {% endblock %}
 
-    {#
-      Dev-скрипты Vite (HMR-клиент и трансформация модулей) инжектятся
-      автоматически через server.transformIndexHtml. В продакшн-HTML этот
-      тег заменяется на собранный чанк плагином vite-html-asset-inject
-      (см. vite.config.js).
-    #}
-    <script type="module" src="/src/js/app.js"></script>
+    {# Скрипт Vite-клиента нужен только в dev-режиме (HMR).
+       В сборке `isDev` равен false и скрипт не попадает в HTML. #}
+    {% if isDev %}
+      <script type="module" src="http://localhost:5173/@vite/client"></script>
+    {% endif %}
+
+    {# ШРИФТЫ: Google CSS с display=swap, асинхронная загрузка
+       (media="print" → onload) — CSS шрифтов НЕ блокирует рендер текста.
+       В dev vite-plugin-webfont-dl перехватывает эту ссылку (его regex ищет
+       rel=stylesheet + href fonts.googleapis.com) и подменяет на свою
+       /@webfonts/webfonts.css с дисковым кешем; в сборке njk-страницы
+       рендерятся в обход transformIndexHtml — ссылка остается как есть
+       (async + swap, рендер не блокируется). Раньше шрифты не грузились
+       ВООБЩЕ: опции google:/custom: плагин v3.12+ не читает, @font-face
+       в проекте не было — текст рендерился системными фолбэками. #}
+    <link rel="stylesheet" media="print" onload="this.onload=null;this.removeAttribute('media');" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;700&family=Spectral:wght@700&family=Spectral+SC:wght@700&display=swap">
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;700&family=Spectral:wght@700&family=Spectral+SC:wght@700&display=swap">
+    </noscript>
+
+    {# app.ts НЕ грузится на dev-dashboard: dev-IIFE в нем инициализирует
+       debug-css-overflow, а виджет должен жить только на реальных страницах
+       (внутри iframe-превью дашборда). Стили дашборда подтягивает сам
+       dev-dashboard.ts (import app.scss) — CSS в dev идет через JS-импорт. #}
+    {% if not is_dev_dashboard %}
+      <script type="module" src="/frontend/src/js/app.ts"></script>
+    {% endif %}
 
     {% block head %}{% endblock %}
   </head>
   <body class="{% if body_class %}{{ body_class }}{% else %}page__body{% endif %}">
 
-    {# SVG-символы (vite-plugin-svg-sprite) инжектятся в DOM из app.js;
-       пустой <svg> из partials/_sprite-inline.njk в legacy-разметке отсутствовал
-       (спрайт был закомментирован) — include убран как фантомный элемент. #}
+    {% include "../partials/_sprite-inline.njk" %}
 
-    {# Класс .out — обёртка из legacy-макета: на ней висит фон всего сайта
-       (bg-all.svg, см. scss/legacy/_common.sass). #}
-    <div class="out">
+    <div class="site-container">
       {% block content %}{% endblock %}
     </div>
 

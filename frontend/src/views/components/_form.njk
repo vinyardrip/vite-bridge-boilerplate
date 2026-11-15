@@ -1,27 +1,26 @@
-{#
-  Форма заявки. Перенесено из legacy/src/templates/components/_form.njk.
-  Сырая HTML-разметка (без макросов), чтобы не зависеть от macros/_ui.njk.
-#}
-<form action="#" class="form">
+{% import "../macros/_ui.njk" as ui %}
+
+<form action="#" class="form" data-form="data-form" novalidate="novalidate">
+  {# Добавляем "ловушку для ботов" #}
+  {{ ui.honeypot() }}
+  {# Добавляем скрытое поле для номера формы, JS заполнит его #}
+  {{ ui.hiddenInput(name='loc', value='') }}
+
   <div class="form__cta">
-    {#<span class="decor">01</span>#}
-    <div class="form__cta-title">Бесплатная консультация</div>
-    <div class="form__cta-descr">Звоните или оставьте свой номер</div>
+    <h3 class="form__cta-title">Бесплатная консультация</h3>
+    <p class="form__cta-descr">Звоните или оставьте свой номер</p>
   </div>
   <div class="form__wrap">
     <div class="form__phone">
-      {#<span class="decor">02</span>#}
       <div class="form__phone-title">
         <span class="form-big-text">Номер телефона</span>
-        {#<span class="form-small-text">Ваш телефон</span>#}
       </div>
-      <input type="hidden" name="url" value="//">
-      <input type="tel" name="phone" class="form__phone-field" required placeholder="|+375..." pattern="\s*\+375\s?\(?(1[567]|2[12359]|33|44)\)?\s?\d{3}-\d{2}-\d{2}" autocomplete="tel"></div>
+      {{ ui.input(name='phone', type='tel', className='form__phone-field', required=true) }}
+    </div>
     <div class="form__btn">
-      {#<span class="decor">03</span>#}
-      <button class="btn nowrap">
-        {#<span class="form-big-text">Заказать звонок</span>#}
-        <span class="form-small-text">Перезвоните</span></button>
+      <button type="submit" class="btn nowrap">
+        <span class="form-small-text">Перезвоните</span>
+      </button>
     </div>
   </div>
 </form>

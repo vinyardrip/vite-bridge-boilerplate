@@ -1,19 +1,193 @@
 ---
-title: Согласование перепланировки квартиры в Минске Цена перепланировки Согласование под ключ
-description: Согласование перепланировки через разрешение под ключ, самовольной перепланировки или подготовка отдельных документов. Проект, технадзор, гидроизоляция, отопление
+title: Главная | Vite Bridge Boilerplate
+description: "Vite Bridge Boilerplate — стартовый шаблон для статических сайтов: Vite, Nunjucks, SCSS (ITCSS), UI-кит и оптимизация изображений из коробки."
 body_class: "main-page"
+canonical_url: "https://example.com/"
+social_image: "https://example.com/images/social-preview.jpg"
 ---
 {% extends "layouts/_default.njk" %}
 
 {% block content %}
-  {# Перенесено из legacy/src/templates (index.njk). Структура идентична оригиналу: секции лежат ПРЯМЫМИ детьми .out (обёртки-макета), без дополнительного <main class="main"> из boilerplate. #}
+
+  {% import "macros/_ui.njk" as ui %}
+
   {% include "partials/_header.njk" %}
-  {% include "partials/_hero.njk" %}
-  {% include "partials/_why.njk" %}
-  {% include "partials/_features.njk" %}
-  {% include "partials/_price.njk" %}
-  {% include "partials/_callme.njk" %}
-  {% include "partials/_howto.njk" %}
+
+  <main class="main">
+
+    {# ================================================================
+       HERO: заголовок, лид и кнопки (макрос ui.button)
+    ================================================================ #}
+    <section class="hero">
+      <div class="layout">
+        <div class="hero__inner">
+          <p class="hero__badge">Vite · Nunjucks · SCSS (ITCSS)</p>
+          <h1 class="hero__title">Стартовый шаблон для быстрых статических сайтов</h1>
+          <p class="hero__descr">
+            Готовая сборка с живым styleguide, UI-китом на Nunjucks-макросах,
+            оптимизацией изображений и e2e-тестами. Меняете дизайн-токены —
+            перекрашивается весь сайт.
+          </p>
+          <div class="hero__actions">
+            {{ ui.button('Оставить заявку', href='#contacts', size='lg') }}
+            {{ ui.button('Что внутри', href='#features', variant='outline', size='lg', class='hero__btn-outline') }}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {# ================================================================
+       ВОЗМОЖНОСТИ: сетка карточек (макрос ui.card)
+    ================================================================ #}
+    <section class="section" id="features">
+      <div class="layout">
+        <div class="section__head">
+          <h2 class="section__title">Что внутри</h2>
+          <p class="section__descr">
+            Четыре опоры бойлерплейта — от шаблонов до продакшен-сборки.
+          </p>
+        </div>
+        <div class="features__grid">
+          {{ ui.card(
+               title='UI-кит на макросах',
+               text='Кнопки, поля ввода и карточки — Nunjucks-макросы с BEM-стилями. Живые примеры и готовый код — на странице styleguide.'
+             ) }}
+          {% call ui.card(
+               title='Методология ITCSS',
+               text='Слои стилей от общих к частным: токены, база, компоненты, страницы. Порядок импортов защищает от войн специфичности.'
+             ) %}
+            {#- styleguide — dev-only страница (DEV_ONLY_PAGES в vite.config.ts):
+                в проде кнопка была бы 404, поэтому прячем через site.production -#}
+            {%- if not site.production %}
+            {{ ui.button('Смотреть токены', href='/styleguide.html', variant='outline', size='sm') }}
+            {%- endif %}
+          {% endcall %}
+          {% call ui.card(
+               title='Оптимизация ассетов',
+               text='Сжатие картинок через TinyPNG и чистка SVG на этапе сборки. Нет ключей или ассетов — сборка не падает, только предупреждает.'
+             ) %}
+            {{ ui.button('Как включить', href='#faq', variant='outline', size='sm') }}
+          {% endcall %}
+          {{ ui.card(
+               title='Тесты и сборка',
+               text='Smoke-тесты проверяют dist после каждой сборки, Playwright гоняет интерактив: модалки, меню, аккордеон, форму и видео.'
+             ) }}
+        </div>
+      </div>
+    </section>
+
+    {# ================================================================
+       ДЕМО ИЗОБРАЖЕНИЙ: макрос ui.picture() — исходник в frontend/raw/
+       (boiler-demo.jpg, 2x). Макрос сразу собирает <picture>: <source>
+       AVIF → WebP (retina-пары 1x/2x в srcset) + <img>-фолбэк с классом,
+       размерами против CLS и loading="lazy" (см. docs/ASSETS_GUIDE.md).
+    ================================================================ #}
+    <section class="section" id="images">
+      <div class="layout">
+        <div class="section__head">
+          <h2 class="section__title">Оптимизация изображений</h2>
+          <p class="section__descr">
+            В шаблоне этой страницы вызван макрос ui.picture() — он собирает
+            &lt;picture&gt; с AVIF- и WebP-источниками прямо на сборке.
+            Разметку можно сравнить в dist/index.html.
+          </p>
+        </div>
+        <figure class="showcase">
+          {{ ui.picture('boiler-demo', { alt: 'Абстрактный пейзаж в палитре проекта — демонстрация автоматической конвертации изображений', imgClass: 'showcase__img' }) }}
+        </figure>
+
+        {# ================================================================
+           ДЕМО CSS-ФОНА: миксин bgset() (abstracts/_mixins.scss) —
+           AVIF/WebP генерирует imagetools на сборке (?format= на исходнике),
+           фолбэк — сам исходник; Firefox получает image-set() с type()-хинтами
+           через @-moz-document url-prefix().
+        ================================================================ #}
+        <div class="test-bg" role="img"
+             aria-label="Демонстрация CSS-фона через миксин bgset: AVIF/WebP с фолбэками и image-set для Firefox">
+        </div>
+      </div>
+    </section>
+
+    {# ================================================================
+       ВИДЕО: ленивый YouTube-плеер (компонент _video.njk)
+    ================================================================ #}
+    <section class="section section--muted" id="video">
+      <div class="layout">
+        <div class="section__head">
+          <h2 class="section__title">Видео-презентация</h2>
+          <p class="section__descr">
+            Превью подгружается по клику — YouTube стартует только тогда,
+            когда пользователь действительно хочет смотреть.
+          </p>
+        </div>
+        <div class="section__video">
+          {% include "components/_video.njk" %}
+        </div>
+      </div>
+    </section>
+
+    {# ================================================================
+       FAQ: аккордеон (компонент _accordion.njk)
+    ================================================================ #}
+    <section class="section" id="faq">
+      <div class="layout">
+        <div class="section__head">
+          <h2 class="section__title">Частые вопросы</h2>
+          <p class="section__descr">
+            Коротко о самом важном — компонент аккордеона открывает один
+            ответ за раз.
+          </p>
+        </div>
+        <div class="faq__list">
+          {% include "components/_accordion.njk" %}
+        </div>
+      </div>
+    </section>
+
+    {# ================================================================
+       КОНТАКТЫ: форма заявки (компонент _form.njk)
+    ================================================================ #}
+    <section class="section section--muted" id="contacts">
+      <div class="layout">
+        <div class="section__head">
+          <h2 class="section__title">Бесплатная консультация</h2>
+          <p class="section__descr">
+            Оставьте номер — перезвоним и покажем, как адаптировать шаблон
+            под ваш проект.
+          </p>
+        </div>
+        {# ================================================================
+           ДЕМО INLINE-SVG: иконка из frontend/raw/phone.svg инлайнится на
+           сборке (ui.icon → фильтр smartSvg + projectSvg в vite.config.ts),
+           цвет наследуется от CSS color.
+        ================================================================ #}
+        <p class="contacts__svg-demo">
+          {{ ui.icon('phone', 'contacts__svg-demo-icon') }}
+          Это inline-SVG через ui.icon() — цвет наследуется от текста (currentColor).
+        </p>
+        <div class="contacts__form">
+          {% include "components/_form.njk" %}
+        </div>
+        <p class="contacts__note">
+          Отправляя форму, вы соглашаетесь с
+          <button type="button" class="contacts__policy-link" data-modal-trigger="policy">политикой конфиденциальности</button>.
+        </p>
+        <div class="contacts__demo">
+          <button type="button" class="btn btn--ghost btn--sm" data-modal-trigger="thanks">
+            Пример окна благодарности
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
   {% include "partials/_footer.njk" %}
+
+  {# Кнопка «наверх» #}
+  {% include "components/_scroll-to-top.njk" %}
+
+  {# Оверлей модальных окон (общий контейнер для всех окон страницы) #}
+  {% include "components/_modals.njk" %}
 
 {% endblock %}

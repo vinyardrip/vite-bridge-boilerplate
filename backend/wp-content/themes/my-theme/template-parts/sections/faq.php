@@ -1,0 +1,50 @@
+<?php
+/**
+ * =================================================================================================
+ * template-parts/sections/faq.php
+ * =================================================================================================
+ *
+ * Секция «Частые вопросы» — порт блока из frontend/src/views/pages/index.njk
+ * с разметкой компонента components/_accordion.njk.
+ * JS-логика привязывается к классу .accordion__btn.
+ * Подключается через get_template_part() во front-page.php.
+ *
+ * =================================================================================================
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+?>
+
+<section class="section" id="faq">
+	<div class="layout">
+		<div class="section__head">
+			<h2 class="section__title">Частые вопросы</h2>
+			<p class="section__descr">
+				Коротко о самом важном — компонент аккордеона открывает один
+				ответ за раз.
+			</p>
+		</div>
+		<div class="faq__list">
+			<div class="accordion">
+				<div class="accordion__wrap">
+					<button aria-expanded="true" class="accordion__btn">
+						<h3 class="accordion__title">Собирается ли проект без внешних сервисов?</h3>
+					</button>
+					<div class="accordion__content">
+						<p class="accordion__text">Да. Команда <code>pnpm build</code> работает офлайн: сжатие картинок через TinyPNG — опциональный шаг. Если ключей нет или папка ассетов пуста, скрипт лишь предупреждает и пропускает сжатие, а сборка не падает.</p>
+					</div>
+				</div>
+				<div class="accordion__wrap">
+					<button aria-expanded="false" class="accordion__btn">
+						<h3 class="accordion__title">Где посмотреть все компоненты UI-кита?</h3>
+					</button>
+					<div class="accordion__content">
+						<p class="accordion__text">На странице <a href="./styleguide.html">styleguide</a> собрана живая документация: дизайн-токены, типографика, кнопки, поля и карточки. Каждый пример — тот же макрос и тот же SCSS, что попадают в продакшен.</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

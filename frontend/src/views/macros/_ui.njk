@@ -16,24 +16,114 @@
 
     <!-- Вызов с дополнительным классом -->
     {{ ui.icon('arrow-right', 'button__icon') }}
+
+    <!-- Кнопка и карточка (живые примеры — на /styleguide.html) -->
+    {{ ui.button('Отправить', variant='primary') }}
+    {% call ui.card(title='Заголовок', text='Текст') %}{{ ui.button('Подробнее') }}{% endcall %}
   ----------------------------------------------------------------------------------------------------
 #}
 
 {#
-  Макрос для вставки SVG-иконки из автоматически генерируемого спрайта.
+  Макрос SVG-ИКОНКИ из конвейера smart-assets: файл frontend/raw/<name>.svg
+  на сборке проходит нормализацию → классификацию → манифест, а этот макрос
+  находит его запись и проецирует в готовый HTML (фильтр smartSvg в
+  vite.config.ts → projectSvg пакета vite-plugin-smart-assets).
 
-  @param {string} name - Имя (ID) иконки без префикса "icon-".
-  @param {string} [class] - (Опционально) Дополнительный CSS-класс для тега <svg>.
+  Что выдаст — решает конвейер, макросу все равно (один и тот же вызов):
+  • mode inline (монохромные иконки)  — нормализованный <svg> целиком,
+    цвет наследуется от CSS color (currentColor в разметке);
+  • mode sprite (много/тяжелых иконок) — <svg><use href="assets/icons/
+    sprite.<hash>.svg#<name>"></use></svg>, путь и symbol берутся из манифеста;
+  • mode img (иллюстрации/анимации)    — <img> с loading="lazy" и alt.
+
+  Результат — SafeString от фильтра: ни макросу, ни вызывающему шаблону
+  не нужен | safe.
+
+  Примеры:
+    {{ ui.icon('phone') }}
+    {{ ui.icon('phone', 'contacts__icon') }}
+    {{ ui.icon('banner', '', { alt: 'Баннер акции' }) }}   — SVG-иллюстрация (mode img)
+
+  Иконки нет в frontend/raw/ (или файл не распознан конвейером) →
+  понятная ошибка сборки с именем иконки.
+
+  @param {string} name - Имя файла в frontend/raw/ без расширения (подпапка — через слеш).
+  @param {string} [className] - Дополнительный CSS-класс для тега <svg>/<img>.
+  @param {object} [options] - Атрибуты проекции: alt (для mode img — обязателен по смыслу),
+    loading, aria-label (снимает aria-hidden), style, data-* и т.д.
 #}
-{% macro icon(name, class) %}
-  <svg class="icon icon-{{ name }}{% if class %} {{ class }}{% endif %}" aria-hidden="true" focusable="false">
-    {#
-      Локальная ссылка на символ спрайта: vite-plugin-svg-sprite инжектит
-      SVG-символы прямо в DOM при загрузке страницы (см. import ...svg в app.js),
-      поэтому внешний путь к файлу спрайта не нужен — достаточно #icon-{{ name }}.
-    #}
-    <use href="#icon-{{ name }}"></use>
-  </svg>
+{% macro icon(name, className='', options={}) -%}
+  {{- name | smartSvg(options, className) -}}
+{%- endmacro %}
+
+{#
+  Макрос РАСТРОВОЙ КАРТИНКИ из конвейера smart-assets: исходник кладут в
+  frontend/raw/ (jpg/png, для ретины — 2x), а макрос через фильтр smartPicture
+  собирает готовый <picture>: <source> AVIF → WebP → <img>-фолбэк,
+  retina-пары в srcset (1x/2x), размеры от CLS, loading="lazy".
+
+  Результат — SafeString от фильтра: | safe не нужен.
+
+  Примеры:
+    {{ ui.picture('hero') }}
+    {{ ui.picture('hero', { alt: 'Кухня в готовом интерьере' }) }}
+    {{ ui.picture('photo', { alt: '', imgClass: 'card__img' }) }}
+
+  Ассета нет в frontend/raw/ — макрос не роняет сборку: в разметку попадает
+  HTML-комментарий с именем ассета, плагин предупредит в логе.
+
+  @param {string} name - Имя файла в frontend/raw/ без расширения.
+  @param {object} [options] - { alt, imgClass, loading, decoding }.
+#}
+{% macro picture(name, options={}) -%}
+  {{- name | smartPicture(options) -}}
+{%- endmacro %}
+
+{#
+  Макрос кнопки. Если передан href — рендерит <a>, иначе <button>.
+  Стили: components/_buttons.scss (.btn + модификаторы BEM).
+
+  @param {string} text - Текст кнопки.
+  @param {string} [href] - Если задан, кнопка становится ссылкой <a>.
+  @param {string} [variant] - Вариант: 'primary' (умолчание) | 'secondary' | 'outline' | 'ghost'.
+  @param {string} [size] - Размер: 'sm' | 'lg' (без модификатора — обычный).
+  @param {string} [type] - Тип для <button> (умолчание 'button'; для отправки формы — 'submit').
+  @param {string} [class] - Дополнительные CSS-классы.
+  @param {boolean} [disabled] - Неактивное состояние (<button disabled> либо .is-disabled у ссылки).
+#}
+{% macro button(text, href, variant='primary', size, type='button', class, disabled=false) -%}
+  {%- set size_class = '' -%}
+  {%- if size -%}{% set size_class = ' btn--' ~ size %}{%- endif -%}
+  {%- set extra_class = '' -%}
+  {%- if class -%}{% set extra_class = ' ' ~ class %}{%- endif -%}
+  {%- set btn_class = 'btn btn--' ~ variant ~ size_class ~ extra_class -%}
+  {%- if href -%}
+  <a class="{{ btn_class }}{% if disabled %} is-disabled{% endif %}" href="{{ href }}"{% if disabled %} aria-disabled="true"{% endif %}>{{ text }}</a>
+  {%- else -%}
+  <button class="{{ btn_class }}" type="{{ type }}"{% if disabled %} disabled{% endif %}>{{ text }}</button>
+  {%- endif -%}
+{%- endmacro %}
+
+{#
+  Макрос карточки. Заголовок и текст — параметрами, а содержимое футера
+  (кнопки, ссылки) можно передать блоком {% call %} — оно попадет в .card__footer.
+  Стили: components/_cards.scss.
+
+  Пример:
+    {% call ui.card(title='Консультация', text='Разберем вашу задачу') %}
+      {{ ui.button('Записаться', href='#form') }}
+    {% endcall %}
+
+  @param {string} [title] - Заголовок карточки (не выводится, если пуст).
+  @param {string} [text] - Основной текст (не выводится, если пуст).
+  @param {string} [class] - Дополнительный CSS-класс для .card.
+#}
+{% macro card(title, text, class) %}
+  <div class="card{% if class %} {{ class }}{% endif %}">
+    {% if title %}<h3 class="card__title">{{ title }}</h3>{% endif %}
+    {% if text %}<p class="card__text">{{ text }}</p>{% endif %}
+    {% if caller %}<div class="card__footer">{{ caller() }}</div>{% endif %}
+  </div>
 {% endmacro %}
 
 {#
@@ -47,11 +137,22 @@
 {% endmacro %}
 
 {#
+  Макрос для скрытого поля ввода (например, служебный номер формы).
+  @param {string} name - Атрибут name (также используется как id).
+  @param {string} [value] - Значение по умолчанию.
+#}
+{% macro hiddenInput(name, value='') %}
+  <input type="hidden" id="{{ name }}" name="{{ name }}" value="{{ value }}">
+{% endmacro %}
+
+{#
   УМНЫЙ МАКРОС INPUT
   Генерирует поле ввода. Приоритет отдается переданным параметрам.
   Если type='tel' и placeholder не указан, используется значение по умолчанию.
+  Классы по умолчанию — из UI-кита (components/_fields.scss); для особых форм
+  (например, формы заявки) классы переопределяются параметрами.
 #}
-{% macro input(name, label, type='text', className, wrapperClass='form-field', labelClass='form-field__label', placeholder, required=false, pattern, autocomplete) -%}
+{% macro input(name, label, type='text', className='input', wrapperClass='field', labelClass='field__label', placeholder, required=false, pattern, autocomplete) -%}
   {#
     Логика с приоритетом:
     1. Сначала берем `placeholder`, который передал пользователь.
@@ -65,7 +166,7 @@
 
   {# Генерируем HTML для самого <input> #}
   {% set input_html %}
-  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="{{ className }}" {% if final_placeholder %} placeholder="{{ final_placeholder }}" {% endif %} {% if required %} required{% endif %}="required{% endif %}" {% if final_pattern %} pattern="{{ final_pattern }}" {% if final_autocomplete %} autocomplete="{{ final_autocomplete }}">
+  <input type="{{ type }}" id="{{ name }}" name="{{ name }}" class="{{ className }}"{% if final_placeholder %} placeholder="{{ final_placeholder }}"{% endif %}{% if required %} required="required"{% endif %}{% if final_pattern %} pattern="{{ final_pattern }}"{% endif %}{% if final_autocomplete %} autocomplete="{{ final_autocomplete }}"{% endif %}>
   {% endset %}
 
   {# Если передан `label`, оборачиваем инпут #}

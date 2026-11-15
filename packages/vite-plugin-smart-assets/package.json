@@ -1,0 +1,38 @@
+{
+  "name": "vite-plugin-smart-assets",
+  "version": "0.2.9",
+  "description": "Smart asset pipeline for Vite: scans raw sources, routes images/icons, generates hashed webp/avif variants with retina pairs and an assets manifest.",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test \"test/svg/*.spec.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "index.ts",
+    "src"
+  ],
+  "keywords": [
+    "vite",
+    "vite-plugin",
+    "assets",
+    "image-pipeline"
+  ],
+  "license": "ISC",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "dependencies": {
+    "sharp": "^0.34.4",
+    "svgo": "^3.3.5"
+  },
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/nunjucks": "^3.2.6",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

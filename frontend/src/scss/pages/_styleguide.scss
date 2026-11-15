@@ -1,0 +1,301 @@
+// ==========================================================================
+// PAGES: Styleguide
+// ==========================================================================
+// Стили страницы-документации /styleguide.html (живой UI-кит).
+// Стили самих компонентов (кнопки, поля, карточки) живут в components/ —
+// здесь только «оправа» документации: шапка, навигация, секции,
+// демо-площадки и блоки кода.
+
+@use "../abstracts" as *;
+
+// --------------------------------------------------------------------------
+// Шапка страницы
+// --------------------------------------------------------------------------
+.sg-hero {
+  padding: 3rem 1.5rem 2.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+}
+
+.sg-hero__inner {
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+}
+
+.sg-hero__title {
+  margin-bottom: 0.75rem;
+}
+
+.sg-hero__descr {
+  max-width: 62ch;
+  color: var(--color-text-muted);
+}
+
+// «Чипы» с технологиями в шапке
+.sg-hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.sg-hero__tag {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-white);
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+// --------------------------------------------------------------------------
+// Липкая навигация по разделам
+// --------------------------------------------------------------------------
+.sg-nav {
+  position: sticky;
+  top: 0;
+  z-index: z("sticky");
+  border-bottom: 1px solid var(--color-border);
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.sg-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+  padding: 0.625rem 1.5rem;
+}
+
+.sg-nav__link {
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: var(--color-text-base);
+
+  &:hover {
+    background-color: var(--color-surface-muted);
+    color: var(--color-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Каркас секций документации
+// --------------------------------------------------------------------------
+.sg-main {
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+  padding: 0 1.5rem 4rem;
+}
+
+.sg-section {
+  padding-top: 2.5rem;
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--color-border);
+
+  &:first-child {
+    margin-top: 0;
+    border-top: 0;
+  }
+
+  // Компенсируем высоту липкой навигации при переходе по якорю
+  scroll-margin-top: 4rem;
+}
+
+.sg-section__title {
+  margin-bottom: 0.5rem;
+}
+
+.sg-section__descr {
+  max-width: 70ch;
+  color: var(--color-text-muted);
+}
+
+// --------------------------------------------------------------------------
+// Демо-площадка: «живой» пример компонента
+// --------------------------------------------------------------------------
+.sg-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background-color: var(--color-surface-muted);
+}
+
+// Вертикальная раскладка (формы: поля шире, друг под другом)
+.sg-demo--column {
+  flex-direction: column;
+  align-items: stretch;
+
+  // Узкие элементы (инпуты) не растягиваем на всю ширину площадки
+  > * {
+    max-width: 26rem;
+  }
+}
+
+// Сетка (карточки): одинаковая высота ячеек
+.sg-demo--grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
+}
+
+// --------------------------------------------------------------------------
+// Блок с примером кода
+// --------------------------------------------------------------------------
+.sg-code {
+  margin-top: 1rem;
+  margin-bottom: 0; /* reset UA margin у pre */
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  background-color: #232936;
+  color: #dbe3f0;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  tab-size: 2;
+
+  code {
+    font: inherit;
+    color: inherit;
+  }
+
+  // Ярлык языка (njk / css / html) — через data-атрибут тега <pre>
+  &[data-lang]::before {
+    content: attr(data-lang);
+    display: block;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.6875rem;
+    color: #8b96ab;
+  }
+}
+
+// --------------------------------------------------------------------------
+// Раздел «Цвета»: карточки-образцы токенов
+// --------------------------------------------------------------------------
+.sg-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.sg-swatch {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background-color: var(--color-white);
+  overflow: hidden;
+}
+
+.sg-swatch__color {
+  height: 4.5rem;
+}
+
+.sg-swatch__meta {
+  padding: 0.75rem 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.sg-swatch__name {
+  display: block;
+  font-weight: 600;
+}
+
+.sg-swatch__value {
+  color: var(--color-text-muted);
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+}
+
+// Образцы ссылаются на те же токены, что и компоненты:
+// поменяли переменную — поменялся и стайлгайд.
+.sg-swatch__color--primary {
+  background-color: var(--color-primary);
+}
+
+.sg-swatch__color--accent {
+  background-color: var(--color-accent);
+}
+
+.sg-swatch__color--text {
+  background-color: var(--color-text-base);
+}
+
+.sg-swatch__color--muted {
+  background-color: var(--color-text-muted);
+}
+
+.sg-swatch__color--border {
+  background-color: var(--color-border);
+}
+
+.sg-swatch__color--surface {
+  background-color: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border); // иначе сливается с фоном
+}
+
+.sg-swatch__color--success {
+  background-color: var(--color-success);
+}
+
+.sg-swatch__color--danger {
+  background-color: var(--color-danger);
+}
+
+// --------------------------------------------------------------------------
+// Раздел «Типографика»: строка «образец + подпись класса»
+// --------------------------------------------------------------------------
+.sg-type-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.sg-type {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 1rem 0;
+
+  & + & {
+    border-top: 1px dashed var(--color-border);
+  }
+
+  @include breakpoint-down(sm) {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
+.sg-type__label {
+  font-family: "JetBrains Mono", "Courier New", monospace;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+// --------------------------------------------------------------------------
+// Подвал страницы-документации
+// --------------------------------------------------------------------------
+.sg-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}

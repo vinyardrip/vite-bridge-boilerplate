@@ -6,27 +6,31 @@
 @use "sass:map";
 @use "variables" as *; // Подтягиваем $font-size-root и $z-indices
 
+// Возвращает $font-size-root как безразмерное число (16 при 16px или 16).
+// Нужно, потому что $font-size-root объявлена с единицей (16px).
+@function root-size() {
+  @if math.is-unitless($font-size-root) {
+    @return $font-size-root;
+  }
+  @return math.div($font-size-root, 1px);
+}
+
 // Конвертирует пиксели в rem.
 // @use: font-size: rem(24);
-// Принимает как число с единицами (rem(24px)), так и без (rem(24)).
 @function rem($pixels) {
-  @if math.is-unitless($pixels) {
-    $pixels: $pixels * 1px;
-  }
-  @return math.div($pixels, $font-size-root) * 1rem;
+  @return math.div($pixels, root-size()) * 1rem;
 }
 
 // Конвертирует пиксели в em.
 // @use: font-size: em(12, 24);
-// Принимает числа с единицами и без.
 @function em($pixels, $context: $font-size-root) {
-  @if math.is-unitless($pixels) {
-    $pixels: $pixels * 1px;
-  }
+  $context-value: null;
   @if math.is-unitless($context) {
-    $context: $context * 1px;
+    $context-value: $context;
+  } @else {
+    $context-value: math.div($context, 1px);
   }
-  @return math.div($pixels, $context) * 1em;
+  @return math.div($pixels, $context-value) * 1em;
 }
 
 // Получает значение z-index из карты $z-indices.

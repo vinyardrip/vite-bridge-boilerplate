@@ -6,33 +6,28 @@
 @use "sass:math";
 @use "sass:meta";
 @use "variables" as *; // Подтягиваем карту $breakpoints
+// Сгенерированная карта smart-assets (пути + smart-asset-url()): пишется
+// плагином vite-plugin-smart-assets на buildStart/configureServer.
+@use "../generated/smart-assets-map" as smart;
 
 // --------------------------------------------------------------------------
 // Медиа-запросы (Media Queries)
 // --------------------------------------------------------------------------
 
-// Приватная функция-помощник для брейкпоинтов.
-// Приводит аргумент (ключ из $breakpoints, число с единицами или без) к
-// значению в px. Возвращает null, если брейкпоинт невалиден.
-// ВАЖНО: @return допустим только внутри @function, поэтому вся логика
-// вынесена сюда из миксинов (в миксинах @return запрещен).
-@function -breakpoint-value($breakpoint) {
+@mixin breakpoint-down($breakpoint) {
+  $value: null;
+
   @if meta.type-of($breakpoint) == "string" and map.has-key($breakpoints, $breakpoint) {
-    @return map.get($breakpoints, $breakpoint);
+    $value: map.get($breakpoints, $breakpoint);
   } @else if meta.type-of($breakpoint) == "number" and math.is-unitless($breakpoint) {
-    @return $breakpoint * 1px;
+    $value: $breakpoint * 1px;
   } @else if meta.type-of($breakpoint) == "number" and not math.is-unitless($breakpoint) {
-    @return $breakpoint;
+    $value: $breakpoint;
   } @else {
     @warn "Invalid breakpoint `#{$breakpoint}`.";
-    @return null;
   }
-}
 
-@mixin breakpoint-down($breakpoint) {
-  $value: -breakpoint-value($breakpoint);
-
-  @if $value {
+  @if $value != null {
     @media (max-width: #{$value - 0.02px}) {
       @content;
     }
@@ -40,9 +35,19 @@
 }
 
 @mixin breakpoint-up($breakpoint) {
-  $value: -breakpoint-value($breakpoint);
+  $value: null;
 
-  @if $value {
+  @if meta.type-of($breakpoint) == "string" and map.has-key($breakpoints, $breakpoint) {
+    $value: map.get($breakpoints, $breakpoint);
+  } @else if meta.type-of($breakpoint) == "number" and math.is-unitless($breakpoint) {
+    $value: $breakpoint * 1px;
+  } @else if meta.type-of($breakpoint) == "number" and not math.is-unitless($breakpoint) {
+    $value: $breakpoint;
+  } @else {
+    @warn "Invalid breakpoint `#{$breakpoint}`.";
+  }
+
+  @if $value != null {
     @media (min-width: #{$value}) {
       @content;
     }
@@ -160,6 +165,67 @@
   background-position: 50% 50%;
 }
 
+// --------------------------------------------------------------------------
+// Фон с AVIF/WebP-вариантами и фолбэками (bgset)
+// --------------------------------------------------------------------------
+
+// Порт "battle-tested" миксина bgset из старого бойлерплейта, переехавший на
+// smart-assets пайплайн: исходники живут в frontend/raw/, варианты (webp/avif,
+// quality 80, retina-пары) и хешированные имена генерирует
+// vite-plugin-smart-assets на buildStart — ДО компиляции Sass.
+//
+// КАСКАД: браузер применяет последнее ВАЛИДНОЕ объявление background-image.
+// Браузер без поддержки AVIF отбрасывает это объявление (невалидный формат)
+// и берет WebP; без WebP — берет фолбэк исходного формата. Порядок: сначала
+// худший. Формат фолбэка определяется по карте сгенерированных ассетов
+// (jpg > png — какой найден в raw/), руками его больше не передают.
+//
+// !МЕХАНИКА ПУТЕЙ: url() пишет функция smart-asset-url() из сгенерированного
+// файла generated/_smart-assets-map.scss. В build она возвращает ТОКЕН
+// url(smart-asset:name:format) — Vite не пытается резолвить схемо-подобные
+// URL в CSS (сборочных файлов еще не существует на этапе transform), а
+// generateBundle плагина подменяет токены на реальные относительные пути
+// (css/app.*.css → ../assets/img/name.<hash>.<ext>; WP-сборка → ../img/...).
+// В dev функция возвращает /assets/... — их отдает middleware плагина.
+//
+// !FIREFOX: @-moz-document url-prefix() — легаси-хак, применяющийся ТОЛЬКО в
+// Firefox (остальные браузеры отбрасывают незнакомый @-rule целиком).
+// Firefox исторически некорректно вел себя с каскадом background-image
+// (скачивал и фолбэк, и новый формат), поэтому внутри — image-set() с
+// явными type()-хинтами: браузер выбирает формат до скачивания.
+//
+// @param {string} $image - имя исходника в frontend/raw/ без расширения.
+@mixin bgset($image) {
+  $formats: map.get(smart.$smart-assets-map, $image);
+
+  @if not $formats {
+    @warn "bgset: ассет '#{$image}' не найден в карте smart-assets " +
+      "(frontend/raw/#{$image}.jpg|png) — фон не будет работать";
+  }
+
+  // Формат фолбэка: что лежит в raw/ (jpg или png).
+  // (if()-функция не используется — deprecation в sass 1.100.)
+  $fallback-format: "jpg";
+  @if not map.has-key($formats, "jpg") {
+    $fallback-format: "png";
+  }
+  $fallback-mime: "image/jpeg";
+  @if $fallback-format == "png" {
+    $fallback-mime: "image/png";
+  }
+
+  background-image: smart.smart-asset-url($image, $fallback-format);
+  background-image: smart.smart-asset-url($image, "webp");
+  background-image: smart.smart-asset-url($image, "avif");
+  @-moz-document url-prefix() {
+    background-image: image-set(
+      smart.smart-asset-url($image, "avif") type("image/avif"),
+      smart.smart-asset-url($image, "webp") type("image/webp"),
+      smart.smart-asset-url($image, $fallback-format) type("#{$fallback-mime}")
+    );
+  }
+}
+
 @mixin z-depth($dp: 2) {
   @if $dp == 2 {
     box-shadow: var(--shadow-2dp);
@@ -185,72 +251,5 @@
 @mixin scrollbar-thumb() {
   &::-webkit-scrollbar-thumb {
     @content;
-  }
-}
-
-// --------------------------------------------------------------------------
-// Шрифты (Font Faces & Aliases)
-// --------------------------------------------------------------------------
-
-// Универсальный миксин для объявления @font-face.
-// Генерирует блок с woff2 и woff форматами.
-// Путь к файлу: ../../assets/fonts/#{$filename} (относительно файла-источника).
-@mixin font($family, $filename, $weight: 400, $style: normal) {
-  @font-face {
-    font-family: $family;
-    src:
-      url("../../assets/fonts/#{$filename}.woff2") format("woff2"),
-      url("../../assets/fonts/#{$filename}.woff") format("woff");
-    font-weight: $weight;
-    font-style: $style;
-    font-display: swap;
-  }
-}
-
-// Алиасы семейств шрифтов (применяют font-family + fallback-цепочку).
-// Использование: @include jb; или @include jb(300);
-
-// JetBrains Mono — моноширинный шрифт для body и кода
-@mixin jb($weight: 400) {
-  font-family: "JetBrains Mono", monospace;
-  font-weight: $weight;
-}
-
-// Oswald — шрифт для заголовков
-@mixin os($weight: 700) {
-  font-family: "Oswald", sans-serif;
-  font-weight: $weight;
-}
-
-// Spectral SC — шрифт с засечками для акцентов
-@mixin sc($weight: 700) {
-  font-family: "Spectral SC", serif;
-  font-weight: $weight;
-}
-
-// --------------------------------------------------------------------------
-// Background Images (WebP / AVIF)
-// --------------------------------------------------------------------------
-
-// Responsive background image mixin — generates fallback + .webp + .avif
-// variants for CSS background-image properties.
-//
-// Usage:
-//   .hero {
-//     @include bg-responsive('../../assets/images/bg-all', 'svg');
-//   }
-//
-// Generates:
-//   .hero { background-image: url('../../assets/images/bg-all.svg'); }
-//   .webp .hero { background-image: url('../../assets/images/bg-all.webp'); }
-//   .avif .hero { background-image: url('../../assets/images/bg-all.avif'); }
-//
-@mixin bg-responsive($path-without-ext, $ext: 'jpg') {
-  background-image: url('#{$path-without-ext}.#{$ext}');
-  .webp & {
-    background-image: url('#{$path-without-ext}.webp');
-  }
-  .avif & {
-    background-image: url('#{$path-without-ext}.avif');
   }
 }

@@ -1,0 +1,47 @@
+{
+  "plugin": "vite-plugin-smart-assets",
+  "version": "0.0.0-fixture",
+  "rawDir": "frontend/raw",
+  "entries": [
+    {
+      "source": "frontend/raw/phone.svg",
+      "file": "ui/phone.svg",
+      "kind": "icon",
+      "mode": "inline",
+      "hash": "797138f4"
+    },
+    {
+      "source": "frontend/raw/demo-sprite.svg",
+      "file": "icons/sprite.289c7160.svg",
+      "kind": "sprite",
+      "mode": "sprite",
+      "symbol": "demo-sprite",
+      "hash": "289c7160"
+    },
+    {
+      "source": "frontend/raw/banner.svg",
+      "file": "img/banner.abc12345.svg",
+      "kind": "illustration",
+      "mode": "img",
+      "hash": "abc12345"
+    },
+    {
+      "source": "frontend/raw/hero.jpg",
+      "type": "img",
+      "hash": "fbf7356d",
+      "size": 28381,
+      "retina": true,
+      "width": 592,
+      "height": 402,
+      "output": "img/hero.fbf7356d.jpg",
+      "variants": [
+        { "path": "img/hero.fbf7356d@2x.jpg", "format": "jpg", "descriptor": "2x", "width": 1184, "height": 804 },
+        { "path": "img/hero.fbf7356d.jpg", "format": "jpg", "descriptor": "1x", "width": 592, "height": 402 },
+        { "path": "img/hero.fbf7356d@2x.webp", "format": "webp", "descriptor": "2x", "width": 1184, "height": 804 },
+        { "path": "img/hero.fbf7356d.webp", "format": "webp", "descriptor": "1x", "width": 592, "height": 402 },
+        { "path": "img/hero.fbf7356d@2x.avif", "format": "avif", "descriptor": "2x", "width": 1184, "height": 804 },
+        { "path": "img/hero.fbf7356d.avif", "format": "avif", "descriptor": "1x", "width": 592, "height": 402 }
+      ]
+    }
+  ]
+}

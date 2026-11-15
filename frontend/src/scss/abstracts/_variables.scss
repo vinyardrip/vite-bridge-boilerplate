@@ -47,20 +47,33 @@ $z-indices: (
   // Цвета
   // --------------------------------------------------------------------------
   --color-primary: #3b4b66;
+  --color-primary-hover: #2c3a52;
   --color-accent: #0091ea;
+  --color-accent-hover: #0077c2;
   --color-text-base: #333;
+  --color-text-muted: #6b7280;
   --color-link: var(--color-accent);
   --color-link-hover: var(--color-primary);
   --color-white: #fff;
   --color-black: #000;
   --color-background: var(--color-white);
 
+  // Оттенки поверхностей: границы и «тихие» фоны
+  --color-border: #e2e6ee;
+  --color-surface-muted: #f5f7fa;
+
+  // Состояния (формы, уведомления)
+  --color-success: #2e9e5b;
+  --color-danger: #d9433f;
+
+  // Фокус-кольцо для доступности (кнопки, поля, ссылки)
+  --focus-ring: 0 0 0 3px rgba(0, 145, 234, 0.25);
+
   // --------------------------------------------------------------------------
   // Типографика
   // --------------------------------------------------------------------------
-  // Семейства шрифтов реального сайта (@font-face — в base/_typography.scss).
-  --font-family-base: "JetBrains Mono", monospace;
-  --font-family-headings: "Oswald", sans-serif;
+  --font-family-base: "Helvetica", "Arial", sans-serif; // Placeholder
+  --font-family-headings: "Georgia", serif; // Placeholder
   --font-size-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
   --font-size-h1: clamp(2rem, 1.5rem + 2.5vw, 3.5rem);
   --font-size-h2: clamp(1.75rem, 1.4rem + 1.75vw, 2.75rem);

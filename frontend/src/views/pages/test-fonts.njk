@@ -1,55 +1,48 @@
 ---
-title: "Web Font Diagnostics"
-layout: "layouts/_default.njk"
+title: "Диагностика веб-шрифтов"
+description: "Инструмент проверки корректной загрузки веб-шрифтов в проекте."
 body_class: "page-font-test"
 ---
 {% extends "layouts/_default.njk" %}
 
 {% block content %}
+
+{#
+  Этот контейнер является точкой входа для нашего JS-модуля.
+  Скрипт найдет его по ID и запустит тесты.
+#}
 <div class="font-tester" id="font-tester">
   <div class="font-tester__header">
-    <h1>Web Font Diagnostics</h1>
+    <h1>Диагностика веб-шрифтов</h1>
     <p class="font-tester__intro">
-      This page is your tool for verifying that all web fonts configured in
-      <code>vite.config.js</code> are loading correctly. Each card shows a
-      side-by-side comparison: the <strong>target font</strong> on top and a
-      <strong>system fallback</strong> on the bottom at the same weight and
-      style, so you can instantly spot whether the browser is using the real
-      font or a generic substitute.
+      Эта страница — ваш инструмент для проверки корректности загрузки веб-шрифтов в проекте. Она помогает убедиться, что все начертания, настроенные в <code>vite.config.ts</code>, действительно загружаются и применяются браузером.
     </p>
   </div>
 
   <div class="font-tester__guide">
-    <h2>How it works</h2>
+    <h2>Как это работает?</h2>
     <ol>
-      <li>
-        <strong>Target line:</strong> Rendered with
-        <code>font-family: '&lt;name&gt;', fallback</code> at the configured
-        weight and style — this is what the font <em>should</em> look like.
-      </li>
-      <li>
-        <strong>Fallback line:</strong> Rendered with a standard system
-        <code>sans-serif</code> (or <code>monospace</code> for monospaced
-        fonts) at the same weight and style, so you can compare against the
-        browser default.
-      </li>
-      <li>
-        <strong>Status badge:</strong> JavaScript checks
-        <code>document.fonts.check()</code> after all CSS fonts finish
-        loading. A green "Loaded" badge means the font is available; a red
-        "Failed" badge means the browser fell back to a system font.
-      </li>
+      <li><strong>Сверху ("Ожидание"):</strong> Текст отображается с применением нужных CSS-свойств <code>font-family</code> и <code>font-weight</code>. Так он <strong>должен</strong> выглядеть.</li>
+      <li><strong>Снизу ("Результат"):</strong> Тот же текст принудительно системным шрифтом (<code>monospace</code> для Mono-семейств, иначе <code>sans-serif</code>) — эталон для визуального сравнения. JavaScript через <code>document.fonts</code> API дополнительно проверяет, загружена ли грань, и ставит статус-бейдж.</li>
+      <li><strong>Статус:</strong> Если шрифт успешно загружен, вы увидите зеленую плашку "Успешно". Если браузер использует системный fallback-шрифт (например, Times New Roman или Arial), вы увидите красную плашку "Ошибка".</li>
     </ol>
   </div>
 
   <div class="font-tester__grid">
+    {#
+      !Главная магия здесь.
+      Мы запускаем цикл по массиву `site.fonts`, который мы определили в `site.json`.
+      Для каждого шрифта в этом массиве Nunjucks автоматически создаст тестовый блок.
+    #}
     {% for font in site.fonts %}
-      {# Determine a sensible fallback family for comparison #}
+      {# Фолбэк для сравнения: monospace для Mono-семейств, иначе sans-serif
+         (тот же принцип, что у Dev Dashboard). Строки сравнения рендерит
+         ШАБЛОН — они видны и без JS, в т.ч. в собранной test-fonts.html
+         (статусы «Успешно/Ошибка» добавляет JS-модуль modules/dev/test-fonts.ts). #}
       {% set fallbackFamily = "sans-serif" %}
       {% if "Mono" in font.name or "mono" in font.name %}
         {% set fallbackFamily = "monospace" %}
       {% endif %}
-
       <div
         class="font-test-card"
         data-family="{{ font.name }}"
@@ -59,15 +52,15 @@ body_class: "page-font-test"
         <div class="font-test-card__header">
           <h3 class="font-test-card__title">{{ font.name }}</h3>
           <div class="font-test-card__meta">
-            <span>Weight: {{ font.weight }} &middot; Style: {{ font.style }}</span>
-            <span class="font-test-card__status" data-status="pending">Checking&hellip;</span>
+            <span>Weight: {{ font.weight }} · Style: {{ font.style }}</span>
+            {# Бейдж результата, который JS-модуль заполнит после document.fonts.ready #}
+            <span class="font-test-card__status" data-status="pending">Проверка...</span>
           </div>
         </div>
-
         <div class="font-test-card__body">
-          {# Line 1 — Target font #}
+          {# Строка 1 — «Ожидание» (Target): целевой шрифт с нужным весом/стилем. #}
           <div class="font-test-card__row">
-            <span class="font-test-card__label">Target:</span>
+            <span class="font-test-card__label">Ожидание:</span>
             <p
               class="font-test-card__preview font-test-card__preview--target"
               style="font-family: '{{ font.name }}', {{ fallbackFamily }}; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
@@ -75,10 +68,10 @@ body_class: "page-font-test"
               {{ font.text }}
             </p>
           </div>
-
-          {# Line 2 — System fallback for comparison #}
+          {# Строка 2 — «Результат» (Fallback): системный фолбэк тем же весом/стилем,
+             чтобы разница была видна только в начертании, а не в размере. #}
           <div class="font-test-card__row">
-            <span class="font-test-card__label">Fallback:</span>
+            <span class="font-test-card__label">Результат:</span>
             <p
               class="font-test-card__preview font-test-card__preview--fallback"
               style="font-family: {{ fallbackFamily }}; font-weight: {{ font.weight }}; font-style: {{ font.style }};"
@@ -91,4 +84,5 @@ body_class: "page-font-test"
     {% endfor %}
   </div>
 </div>
+
 {% endblock %}
