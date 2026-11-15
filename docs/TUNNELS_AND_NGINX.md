@@ -24,13 +24,16 @@ redirect** на URI со слешем. По умолчанию (`absolute_redire
 ```nginx
 location / {
     absolute_redirect off;   # Location: относительный URI ("/catalog/page-2/"), без host:port
+    port_in_redirect off;    # не подставлять внутренний порт контейнера в Location
     try_files $uri $uri/ /index.php?$args;
 }
 ```
 
-С `absolute_redirect off` редирект относительный — работает за любым прокси и
-туннелем. **На проде** убедись, что та же строка есть в server-блоке Nginx
-(частая причина «на локалке работает, на проде сломалось»).
+С `absolute_redirect off` + `port_in_redirect off` редирект относительный и без
+внутреннего порта — работает за любым прокси и туннелем. Обе строки **уже в
+шаблоне**: `.ddev/nginx_full/nginx-site.conf` (location /). **На проде** убедись,
+что они же есть в server-блоке Nginx (частая причина «на локалке работает, на
+проде сломалось»).
 
 ## 2. VPN и туннели (Cloudflare/ngrok)
 

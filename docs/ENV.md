@@ -32,14 +32,18 @@ dpx ddev wp redis enable --here         # создаст wp-content/object-cache
 dpx ddev wp redis status --here         # ожидаемо: "Status: Connected"
 ```
 
-Что делает хук: `ddev start` перегенерирует `backend/wp-config.php`
-(файл с маркером `#ddev-generated` ведётся ddev) и вытирает ручные константы.
-Post-start-хук возвращает их, если нет:
+Константы живут в **версионируемом** файле `backend/wp-redis-config.php`
+(боевой блок: phpredis, `WP_REDIS_GRACEFUL` — деградация на MySQL при сбое,
+таймауты 1с, хост `redis` в ddev / `127.0.0.1` на проде). `ddev start`
+перегенерирует `backend/wp-config.php` (маркер `#ddev-generated`) и вытирает
+include-строку — post-start-хук возвращает её, если нет:
 
 ```php
-define( 'WP_REDIS_HOST', 'redis' );  // сервис доступен ПО ИМЕНИ, не 127.0.0.1
-define( 'WP_REDIS_PORT', 6379 );
+require_once __DIR__ . '/wp-redis-config.php';
 ```
+
+На проде (без ddev) добавь ту же строку в wp-config.php руками — блок сам
+определит хост по `IS_DDEV_PROJECT`.
 
 Нюансы:
 

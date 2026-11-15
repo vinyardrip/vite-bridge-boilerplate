@@ -306,12 +306,12 @@ corepack_enable: false
 #  post-start:
 #    - exec: wp cli version
 
-# Redis object cache (docs/ENV.md, раздел Redis): ddev start перегенерирует
-# backend/wp-config.php (маркер #ddev-generated) и вытирает константы
-# WP_REDIS_HOST/WP_REDIS_PORT — после каждого старта возвращаем их, если их
-# нет. Без этого redis-cache drop-in стучится в 127.0.0.1 и падает с
-# "Connection refused" в wp-cli.
+# Redis object cache (backend/wp-redis-config.php + docs/ENV.md): ddev start
+# перегенерирует backend/wp-config.php (маркер #ddev-generated) и вытирает
+# include-строку универсального блока Redis — после каждого старта возвращаем
+# её, если нет. Сам блок констант живёт в версионированном wp-redis-config.php
+# (DDEV: сервис redis; прод: 127.0.0.1, WP_REDIS_GRACEFUL).
 hooks:
   post-start:
     - exec: |
-        php -r '$f="/var/www/html/backend/wp-config.php"; $c=(string)file_get_contents($f); if (!str_contains($c, "WP_REDIS_HOST")) { $anchor="/* Add any custom values"; $ins="define( \x27WP_REDIS_HOST\x27, \x27redis\x27 );\ndefine( \x27WP_REDIS_PORT\x27, 6379 );\n\n"; file_put_contents($f, str_replace($anchor, $ins.$anchor, $c)); echo "WP_REDIS restored\n"; }'
+        php -r '$f="/var/www/html/backend/wp-config.php"; $c=(string)file_get_contents($f); if (!str_contains($c, "wp-redis-config.php")) { $anchor="/* Add any custom values"; $ins="require_once __DIR__ . \x27/wp-redis-config.php\x27;\n\n"; file_put_contents($f, str_replace($anchor, $ins.$anchor, $c)); echo "wp-redis-config include restored\n"; }'
