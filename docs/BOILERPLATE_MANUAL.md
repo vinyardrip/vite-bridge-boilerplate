@@ -848,3 +848,36 @@ BEM-классы пунктов навешиваются фильтрами `nav
 и убедитесь, что в шапке есть
 `<nav class="header__nav"><ul class="header__menu"><li class="header__menu-item …">`
 — иначе `display: flex` из стилей хедера не сработает.
+
+## 6. Блоки главной в реестре (mu-plugin block-composer)
+
+Архитектура Block Composer перенесена из боевого проекта (grand-mebel,
+см. его docs/MOCKUP_NOTES.md) в шаблон как mu-plugin
+`backend/wp-content/mu-plugins/block-composer/` (лоадер
+`block-composer-loader.php`): CPT `block` + таксономия `block_type` +
+PHP-реестр + метабоксы `_page_blocks`/полей + рендер `bc_render_page_blocks()`.
+
+**Реестр** (`block-registry.php`, фильтр `bc_registry`) — 5 блоков:
+`hero`, `advantages`, `how-we-work`, `categories`, `products-grid`.
+Поля: `title`, `subtitle`, `image`/`images` (relationship на вложения,
+`post_status: inherit`), у products-grid — commerce-поля (`source`,
+`limit`, `manual_products`).
+
+**Партиалы** `template-parts/blocks/*.php` — graceful fallback на статику
+макета: пустое поле → текст из макета; картинка: relationship →
+`bc_attachment_image()` (uploads), пусто → `theme_picture()` из `raw/`.
+front-page.php рендерит главную из `_page_blocks` (page_on_front).
+
+**Тесты** `tests/block-composer-eval.php` (запуск: `pnpm test:php` →
+`dpx ddev wp eval-file` — требует провижиненного WP в окружении:
+`wp core download` и сид из docs/ENV.md). Покрывают: реестр, санитизацию
+`_page_blocks`, рендер 4 секций главной, fallback-статику, пропуски
+незарегистрированных типов.
+
+**Сидирование демо-главной** (после провижининга):
+```bash
+dpx ddev wp eval-file scripts/seed-home-blocks.php --here
+```
+
+**Грабль WP_Query**: слаг ищется параметром `name` — `post_name` и
+`post_title` молча игнорируются и запрос возвращает все блоки.

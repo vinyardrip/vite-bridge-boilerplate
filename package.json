@@ -20,7 +20,7 @@
     "format": "pnpm format:code && pnpm format:templates",
     "lint:code": "biome lint --write ./frontend/src",
     "check": "pnpm lint:code && pnpm format",
-    "verify": "pnpm build && pnpm test:build && pnpm playwright test",
+    "verify": "pnpm test:php && pnpm build:wp",
     "test:ui": "pnpm playwright test --ui",
     "test:build": "tsx scripts/check-build.ts",
     "test:wp": "tsx scripts/test-wp-helpers.ts",
@@ -32,7 +32,8 @@
     "images:convert": "tsx scripts/convert-images.ts",
     "images:compress": "tsx scripts/compress-images.ts",
     "test": "pnpm --filter vite-plugin-smart-assets test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:php": "tsx scripts/test-block-composer.ts"
   },
   "type": "module",
   "keywords": [],
