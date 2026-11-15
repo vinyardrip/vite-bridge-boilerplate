@@ -16,6 +16,10 @@
  *   inc/redis-config.php        — Redis: fallback-дефолты WP_REDIS_* + admin-notice диагностика
  *                                 (сами константы для object-cache инъектирует в wp-config.php
  *                                 post-start хук .ddev/config.yaml — см. docs/ENV.md)
+ *   inc/utils.php               — утилиты «золотой библиотеки»: trim_spaces_phone, is_mobile
+ *   inc/dates.php               — динамические даты (%date%) и умный сброс кэша (WP-Cron)
+ *   inc/translit.php            — транслитерация слагов и имён файлов (Яндекс-таблица)
+ *   inc/global-settings.php     — глобальные настройки CFS + плейсхолдеры %phone%/%address%/… (см. мануал р.4)
  *
  * Новую логику добавлять новым модулем в /inc и подключать его здесь.
  *
@@ -32,3 +36,7 @@ require_once get_template_directory() . '/inc/custom-post-types.php';
 require_once get_template_directory() . '/inc/helpers.php';
 require_once get_template_directory() . '/inc/assets-helpers.php';
 require_once get_template_directory() . '/inc/redis-config.php';
+require_once get_template_directory() . '/inc/utils.php';
+require_once get_template_directory() . '/inc/dates.php';
+require_once get_template_directory() . '/inc/translit.php';
+require_once get_template_directory() . '/inc/global-settings.php';
