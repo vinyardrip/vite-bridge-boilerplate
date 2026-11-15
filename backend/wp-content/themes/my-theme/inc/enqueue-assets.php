@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Production: путь из manifest.json на домене темы.
  * Development: адрес того же файла на dev-сервере Vite.
  *
- * @param string $entry Ключ точки входа, например 'frontend/src/js/app.js'.
+ * @param string $entry Ключ точки входа, например 'frontend/src/js/app.ts'.
  *
  * @return string URL ассета или '' (с записью в error_log), если ассет не найден.
  */
@@ -38,7 +38,7 @@ function get_asset( $entry ) {
 	if ( $manifest === null ) {
 		if ( ! file_exists( $manifest_path ) ) {
 			// $entry уже содержит полный путь от корня проекта
-			// ('frontend/src/js/app.js'), поэтому дописываем только домен.
+			// ('frontend/src/js/app.ts'), поэтому дописываем только домен.
 			$dev_server_url = 'http://localhost:5173';
 			return $dev_server_url . '/' . $entry;
 		}
@@ -62,7 +62,7 @@ function get_asset( $entry ) {
  * через JS-модуль Vite (HMR), отдельный <link> не нужен.
  */
 function my_theme_enqueue_assets() {
-	$js_entry = 'frontend/src/js/app.js';
+	$js_entry = 'frontend/src/js/app.ts';
 	$js_url   = get_asset( $js_entry );
 
 	if ( $js_url ) {
