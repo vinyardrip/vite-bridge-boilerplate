@@ -13,6 +13,9 @@
  *   inc/helpers.php             — динамические картинки: <img> → <picture> (AVIF/WebP из uploads)
  *   inc/assets-helpers.php      — вывод ассетов smart-assets: theme_icon()/theme_picture()
  *                                 (PHP-зеркала Nunjucks-макросов ui.icon()/ui.picture())
+ *   inc/redis-config.php        — Redis: fallback-дефолты WP_REDIS_* + admin-notice диагностика
+ *                                 (сами константы для object-cache инъектирует в wp-config.php
+ *                                 post-start хук .ddev/config.yaml — см. docs/ENV.md)
  *
  * Новую логику добавлять новым модулем в /inc и подключать его здесь.
  *
@@ -28,3 +31,4 @@ require_once get_template_directory() . '/inc/enqueue-assets.php';
 require_once get_template_directory() . '/inc/custom-post-types.php';
 require_once get_template_directory() . '/inc/helpers.php';
 require_once get_template_directory() . '/inc/assets-helpers.php';
+require_once get_template_directory() . '/inc/redis-config.php';

@@ -305,3 +305,13 @@ corepack_enable: false
 # Un-comment to emit the WP CLI version after ddev start.
 #  post-start:
 #    - exec: wp cli version
+
+# Redis object cache (docs/ENV.md, раздел Redis): ddev start перегенерирует
+# backend/wp-config.php (маркер #ddev-generated) и вытирает константы
+# WP_REDIS_HOST/WP_REDIS_PORT — после каждого старта возвращаем их, если их
+# нет. Без этого redis-cache drop-in стучится в 127.0.0.1 и падает с
+# "Connection refused" в wp-cli.
+hooks:
+  post-start:
+    - exec: |
+        php -r '$f="/var/www/html/backend/wp-config.php"; $c=(string)file_get_contents($f); if (!str_contains($c, "WP_REDIS_HOST")) { $anchor="/* Add any custom values"; $ins="define( \x27WP_REDIS_HOST\x27, \x27redis\x27 );\ndefine( \x27WP_REDIS_PORT\x27, 6379 );\n\n"; file_put_contents($f, str_replace($anchor, $ins.$anchor, $c)); echo "WP_REDIS restored\n"; }'
