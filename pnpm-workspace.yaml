@@ -6,13 +6,22 @@ packages:
 # Сборочные скрипты зависимостей, которым pnpm разрешает выполняться
 # (pnpm 10 по умолчанию блокирует все build-скрипты).
 #
+# @parcel/watcher (транзитивная зависимость sass): install-скрипт — no-op,
+# когда есть пребилд платформенного пакета (@parcel/watcher-linux-x64-glibc).
+onlyBuiltDependencies:
+  - esbuild
+  - puppeteer
+  - "@parcel/watcher"
+
 # sharp ЗДЕСЬ НЕТ И ЭТО НАМЕРЕННО: его install-скрипт при наличии
 # глобального системного libvips (например, пакет из репозитория Arch)
 # принудительно уходит в сборку из исходников через node-gyp и валит
 # `pnpm install`. Пребилды @img/sharp-<платформа> работают и без этого
-# скрипта — runtime грузит платформенный биндинг напрямую.
-# Если когда-нибудь понадобится сборка из исходников — вернуть sharp
-# в список и выполнить `pnpm approve-builds`.
-onlyBuiltDependencies:
-  - esbuild
-  - puppeteer
+# скрипта — runtime грузит платформенный биндинг напрямую, поэтому
+# нативные бинарники ставятся «из коробки» как обычные зависимости.
+# sharp объявлен в ignoredBuiltDependencies: игнорирование намеренное,
+# и pnpm не показывает предупреждение «Ignored build scripts».
+# Если когда-нибудь понадобится сборка из исходников — убрать sharp
+# отсюда, вернуть в onlyBuiltDependencies и выполнить `pnpm approve-builds`.
+ignoredBuiltDependencies:
+  - sharp

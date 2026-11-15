@@ -33,11 +33,18 @@ mise use node@22   # переключить проект на LTS и пропи�
 pnpm install       # повторить установку
 ```
 
+**Нативные модули (`sharp` для конвертации картинок) работают «из коробки»:**
+пребилды `@img/sharp-<платформа>` ставятся как обычные зависимости без
+дополнительных подтверждений, а `pnpm install` не показывает предупреждение
+«Ignored build scripts» — sharp намеренно объявлен в
+`ignoredBuiltDependencies`, а `@parcel/watcher` — в `onlyBuiltDependencies`
+в `pnpm-workspace.yaml` (подробности — комментарий там же).
+
 Если на машине есть **системный libvips** (пакет `libvips` в репозитории
-дистрибутива): не возвращайте sharp в `onlyBuiltDependencies` — его
-install-скрипт увидит системный libvips и уйдет в сборку из исходников,
-похоронив `pnpm install`. Пребилды sharp работают без этого скрипта
-(подробности — комментарий в `pnpm-workspace.yaml`).
+дистрибутива): не переносите sharp из `ignoredBuiltDependencies` в
+`onlyBuiltDependencies` — его install-скрипт увидит системный libvips и
+уйдет в сборку из исходников, похоронив `pnpm install`. Пребилды sharp
+работают и без этого скрипта.
 
 - [Docker](https://docs.docker.com/get-docker/) — среда контейнеров для локального WordPress-окружения.
 - [DDEV](https://ddev.readthedocs.io/en/stable/) — управление бэкенд-окружением в `backend/` (`ddev start`, `ddev wp ...`).
