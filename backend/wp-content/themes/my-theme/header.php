@@ -69,22 +69,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<button class="menu__btn" type="button" aria-label="Открыть меню" aria-expanded="false">
 							<span aria-hidden="true"></span>
 						</button>
-						<nav class="nav">
-							<?php
-							wp_nav_menu(
-								array(
-									'theme_location' => 'primary',
-									'container'      => false,
-									'menu_class'     => '',
-									'items_wrap'     => '%3$s',
-									'fallback_cb'    => 'my_theme_menu_fallback',
-									'walker'         => new My_Theme_Anchor_Walker(),
-									'depth'          => 1,
-									'link_class'     => 'nav__link',
-								)
-							);
-							?>
-						</nav>
+						<?php
+						// Структура строго nav > ul.header__menu > li (см.
+						// docs/BOILERPLATE_MANUAL.md, раздел «WordPress Nav Menu»):
+						// BEM-классы пунктов — через фильтры nav_menu_css_class /
+						// nav_menu_link_attributes (inc/theme-support.php).
+						wp_nav_menu(
+							array(
+								'theme_location'  => 'header',
+								'container'       => 'nav',
+								'container_class' => 'header__nav',
+								'menu_class'      => 'header__menu',
+								'items_wrap'      => '<ul id="%1$s" class="%2$s">%3$s</ul>',
+								'fallback_cb'     => 'my_theme_header_menu_fallback',
+								'depth'           => 1,
+							)
+						);
+						?>
 					</div>
 				</div>
 			</div>

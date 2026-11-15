@@ -57,8 +57,8 @@ add_theme_support( 'align-wide' );
 function my_theme_register_menus() {
 	register_nav_menus(
 		array(
-			'primary' => __( 'Основное меню', 'my-theme' ),
-			'footer'  => __( 'Меню в футере', 'my-theme' ),
+			'header' => __( 'Меню шапки', 'my-theme' ),
+			'footer' => __( 'Меню в футере', 'my-theme' ),
 		)
 	);
 }
@@ -148,4 +148,83 @@ function my_theme_menu_fallback( $args ) {
 			esc_html( $label )
 		);
 	}
+}
+
+
+/**
+ * =================================================================================================
+ * Меню шапки: BEM-структура nav > ul.header__menu > li.
+ * =================================================================================================
+ *
+ * WordPress по умолчанию ломает БЭМ-структуру nav > ul > li (см.
+ * docs/BOILERPLATE_MANUAL.md, раздел «WordPress Nav Menu»): items_wrap
+ * применяется только при существующем меню, а при fallback выводится
+ * голый список. Фильтры ниже добавляют к стандартным классам WP
+ * header__menu-item / header__menu-item--active / header__menu-link.
+ */
+
+/**
+ * Классы пунктов меню шапки: к стандартным классам WP (current-menu-item,
+ * current-menu-ancestor и т.п.) добавляются header__menu-item и
+ * header__menu-item--active (активный пункт с подчеркиванием).
+ */
+function my_theme_header_menu_item_classes( array $classes, WP_Post $menu_item, stdClass $args ): array {
+	if ( ! isset( $args->theme_location ) || 'header' !== $args->theme_location ) {
+		return $classes;
+	}
+
+	$classes[] = 'header__menu-item';
+
+	if (
+		in_array( 'current-menu-item', $classes, true )
+		|| in_array( 'current-menu-parent', $classes, true )
+		|| in_array( 'current-menu-ancestor', $classes, true )
+		|| in_array( 'current_page_item', $classes, true )
+	) {
+		$classes[] = 'header__menu-item--active';
+	}
+
+	return $classes;
+}
+add_filter( 'nav_menu_css_class', 'my_theme_header_menu_item_classes', 10, 3 );
+
+/**
+ * Класс ссылок меню шапки.
+ */
+function my_theme_header_menu_link_atts( array $atts, WP_Post $menu_item, stdClass $args ): array {
+	if ( ! isset( $args->theme_location ) || 'header' !== $args->theme_location ) {
+		return $atts;
+	}
+
+	$atts['class'] = trim( ( $atts['class'] ?? '' ) . ' header__menu-link' );
+	return $atts;
+}
+add_filter( 'nav_menu_link_attributes', 'my_theme_header_menu_link_atts', 10, 3 );
+
+/**
+ * Fallback меню шапки: вызывается ВМЕСТО items_wrap, когда меню не создано,
+ * поэтому обязан выводить полную структуру nav > ul.header__menu > li —
+ * иначе display: flex на .header__menu не применяется и хедер разваливается.
+ * Первый пункт помечен активным — как на макете.
+ */
+function my_theme_header_menu_fallback( $args ): void {
+	$items = array(
+		'#features' => array( 'Возможности', true ),
+		'#video'    => array( 'Видео', false ),
+		'#faq'      => array( 'Вопросы', false ),
+		'#contacts' => array( 'Контакты', false ),
+	);
+
+	echo '<nav class="header__nav" aria-label="' . esc_attr__( 'Основное меню', 'my-theme' ) . '">';
+	echo '<ul class="header__menu">';
+	foreach ( $items as $href => $data ) {
+		$active_class = $data[1] ? ' header__menu-item--active' : '';
+		printf(
+			'<li class="header__menu-item%1$s"><a class="header__menu-link" href="%2$s">%3$s</a></li>',
+			esc_attr( $active_class ),
+			esc_attr( $href ),
+			esc_html( $data[0] )
+		);
+	}
+	echo '</ul></nav>';
 }

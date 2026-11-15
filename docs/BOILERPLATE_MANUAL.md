@@ -802,3 +802,49 @@ echo my_theme_get_global_text_setting('global_address');  // экраниров�
 `my_theme_trim_spaces_phone($raw)` — номер для `href="tel:…"` (только цифры,
 `+`, префикс tel:); `my_theme_is_mobile()` — серверный детект мобильных по
 User-Agent (боевой regex; дополнение к CSS-breakpoints).
+
+## 5. ⚠️ WordPress Nav Menu
+
+**WordPress по умолчанию ломает БЭМ-структуру nav > ul > li.** В шаблоне это
+исправлено через `items_wrap`, регистрацию локации и правильный `fallback_cb`.
+При переносе хедера в новый проект всегда проверяйте наличие
+`<ul class="header__menu">` в DevTools, иначе `display: flex` не сработает.
+
+Три места, которые должны быть согласованы (см. `inc/theme-support.php` +
+`header.php`):
+
+1. **Локация**: `register_nav_menus()` регистрирует `'header' => 'Меню шапки'`
+   — вызов `wp_nav_menu( array( 'theme_location' => 'header', ... ) )` без
+   зарегистрированной локации молча уходит в fallback.
+2. **Аргументы вызова**: контейнер генерирует `<nav>` сам, `items_wrap`
+   возвращает `<ul>` (он применяется ТОЛЬКО когда меню назначено):
+
+```php
+wp_nav_menu(
+    array(
+        'theme_location'  => 'header',
+        'container'       => 'nav',
+        'container_class' => 'header__nav',
+        'menu_class'      => 'header__menu',
+        'items_wrap'      => '<ul id="%1$s" class="%2$s">%3$s</ul>',
+        'fallback_cb'     => 'my_theme_header_menu_fallback',
+        'depth'           => 1,
+    )
+);
+```
+
+3. **Fallback**: `my_theme_header_menu_fallback()` вызывается ВМЕСТО
+   `items_wrap` и потому обязан выводить полную структуру
+   `<nav class="header__nav"><ul class="header__menu">…</ul></nav>` —
+   голые `<li>` внутри `<nav>` ломают хедер (display: flex на ul не
+   применяется).
+
+BEM-классы пунктов навешиваются фильтрами `nav_menu_css_class`
+(`header__menu-item`, `header__menu-item--active` по стандартным
+`current-menu-item`/`current-menu-ancestor`) и `nav_menu_link_attributes`
+(`header__menu-link`).
+
+**Проверка после переноса хедера в новый проект**: выгрузите HTML страницы
+и убедитесь, что в шапке есть
+`<nav class="header__nav"><ul class="header__menu"><li class="header__menu-item …">`
+— иначе `display: flex` из стилей хедера не сработает.
