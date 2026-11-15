@@ -43,7 +43,7 @@ packages/*/node_modules
 /backend/wp-content/themes/*
 !/backend/wp-content/themes/my-theme
 # Конфигурационный файл WP с секретными ключами (покрывается маской wp-*.php).
-# Собранные фронтенд-ассеты темы (копия dist/, создается pnpm sync:theme).
+# Собранные фронтенд-ассеты темы (создается pnpm build:wp — плоская структура).
 /backend/wp-content/themes/my-theme/assets/
 # Загруженные пользователем медиафайлы.
 /backend/wp-content/uploads
@@ -61,8 +61,11 @@ packages/*/node_modules
 # (vite-plugin-image-optimize пишет их рядом с исходниками).
 /frontend/public/img/*.webp
 /frontend/public/img/*.avif
-# Сжатые TinyPNG-копии (scripts/compress-images.js) — артефакт, не исходник.
+# Сжатые TinyPNG-копии (scripts/compress-images.ts) — артефакт, не исходник.
 /frontend/src/assets/images-tiny/
+# Sass-карта путей smart-assets — генерируется плагином на buildStart
+# (frontend/src/scss/generated/_smart-assets-map.scss), артефакт, не исходник.
+/frontend/src/scss/generated/
 # Отчеты и артефакты прогонов Playwright.
 /test-results
 /playwright-report

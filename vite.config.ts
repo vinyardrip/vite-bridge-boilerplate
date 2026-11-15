@@ -277,7 +277,7 @@ export default defineConfig(({ command, mode }) => {
 
   !SCOPE: статика — "assets" (dist/assets/img, dist/assets/icons);
   WP-сборка — "" (файлы прямо в <тема>/assets/img — плоская структура,
-  требование совместимости с WP-плагинами и strip-avif.js). Один экземпляр
+  требование совместимости с WP-плагинами и strip-avif.ts). Один экземпляр
   на конфиг: фильтры Nunjucks и hooks делят одно состояние. */
   const smartAssetsPlugin = smartAssets({ scope: isWpBuild ? "" : "assets" });
 
@@ -528,7 +528,7 @@ export default defineConfig(({ command, mode }) => {
       emptyOutDir: true,
       // manifest.json кладем в корень выходной папки, чтобы PHP-хелпер
       // get_asset() находил его по пути <theme>/assets/manifest.json
-      // (и после build:wp, и после sync:theme из dist).
+      // (после build:wp; в статической сборке он лежит в корне dist/).
       manifest: "manifest.json",
       sourcemap: true,
       rollupOptions: {
@@ -556,7 +556,7 @@ export default defineConfig(({ command, mode }) => {
             // !ВСЕ картинки (jpg/png/svg/webp/avif/...) — в ПЛОСКУЮ img/:
             // никаких img/avif/, img/webp/ (совместимость с WP-плагинами).
             // get_asset() клеит путь из manifest.json к URL как есть,
-            // strip-avif.js удаляет *.avif по маске **/*.avif — оба ожидают
+            // strip-avif.ts удаляет *.avif по маске **/*.avif — оба ожидают
             // одноуровневую структуру. imgToPicture и image-optimize тоже
             // пишут варианты рядом (outputDir + имя файла, без подпапок).
             if (/png|jpe?g|svg|gif|tiff|bmp|ico|webp|avif/i.test(extType))

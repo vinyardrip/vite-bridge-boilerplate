@@ -153,16 +153,13 @@ JSON
   }
 }
 8. Рабочий процесс тестирования: "Проверяй то, что отдаешь"
-(Настройки Playwright актуальны и находятся в playwright.config.js)
+(Настройки Playwright актуальны и находятся в playwright.config.ts)
 9. Безопасный рабочий процесс и интеграция с бэкендом
-Скрипт sync:theme в package.json:
-code
-JSON
-{
-  "scripts": {
-    "sync:theme": "if [ -n \"$(git status --porcelain)\" ]; then echo '❌ Ошибка: Обнаружены незакоммиченные изменения!'; exit 1; fi && echo '✅ Рабочая директория чиста, начинаю синхронизацию...' && rsync -av --delete dist/ backend/wp-content/themes/my-theme/assets/"
-  }
-}
+Сборка в тему — `pnpm build:wp`: ассеты собираются напрямую в
+backend/wp-content/themes/my-theme/assets/ (плоская структура, manifest.json
+в корне). Скрипт sync:theme (rsync dist/ → тема) удален как конфликтующий
+с прямым build:wp; каноничный способ доставки ассетов в WordPress —
+только build:wp.
 PHP-функция get_asset в functions.php (WordPress):
 code
 PHP

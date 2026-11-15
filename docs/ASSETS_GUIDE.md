@@ -364,8 +364,8 @@ Critical CSS нет намеренно — WP-сборка не строит HTM
 деплоить нельзя.
 
 Для **WordPress-темы** (PHP-деплой) есть свой вариант: цепочка
-`pnpm build && pnpm sync:theme && pnpm build:wp-strip-avif` (режет тему
-in place) — подробности в корневом `README.md`, раздел
+`pnpm build:wp && pnpm build:wp-strip-avif` (сборка сразу в тему, затем
+режет тему in place) — подробности в корневом `README.md`, раздел
 «Деплой на шаред-хостинг».
 
 ---
@@ -392,9 +392,9 @@ in place) — подробности в корневом `README.md`, разде
    | `apple-touch-icon-180x180.png` | иконка для iOS/закладок Safari |
 
 3. `public/` копируется в сборку как есть → файлы оказываются в
-   `dist/assets/favicons/`, а после `pnpm sync:theme` — в
-   `assets/assets/favicons/` темы WordPress (двойной `assets/` — след
-   структуры `dist/`, не опечатка).
+   `dist/assets/favicons/` (статическая сборка), а при `pnpm build:wp` —
+   в `assets/favicons/` темы WordPress (плагин wp-flatten-favicons
+   расплющивает путь, без вложенного `assets/assets`).
 
 Теги `<link>` уже вписаны в шаблоны — руками их добавлять не нужно:
 

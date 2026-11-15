@@ -49,7 +49,6 @@ pnpm install       # повторить установку
 - [Docker](https://docs.docker.com/get-docker/) — среда контейнеров для локального WordPress-окружения.
 - [DDEV](https://ddev.readthedocs.io/en/stable/) — управление бэкенд-окружением в `backend/` (`ddev start`, `ddev wp ...`).
 - [mise](https://mise.jdx.dev/) (версии node/pnpm берутся из `.tool-versions`; проект — Node 22 LTS)
-- rsync (для `sync:theme`)
 - DPX (опционально) — надстройка над DDEV (`~/.local/bin/dpx`): создание проектов (`dpx new-wp`), публичные туннели, `db pull` с продакшена.
 - CK — Context Keeper (опционально, `~/.local/bin/ck`) — «внешняя память» разработчика: задачи и контекст сессий (папка `.ck/` в корне репозитория).
 
@@ -65,18 +64,17 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | Команда | Описание |
 | --- | --- |
 | `pnpm dev` | Dev-сервер Vite с горячей перезагрузкой. |
-| `pnpm build` | Production-сборка: генерация фавиконок → оптимизация изображений → `vite build` → `dist/` (с AVIF и фавиконками; Critical CSS сюда не входит — он замедляет сборку, см. `build:prod`). |
-| `pnpm build:wp` | То же в режиме WordPress: ассеты собираются сразу в `backend/wp-content/themes/my-theme/assets/` (HTML не собирается, разметку рендерит PHP). |
-| `pnpm build:prod` | Финальная сборка для статического деплоя: `pnpm build` + инлайн **Critical CSS** в HTML (`scripts/make-critical.ts`). |
+| `pnpm build` | Production-сборка для **статических сайтов**: генерация фавиконок → оптимизация изображений → `vite build` → `dist/` (с AVIF и фавиконками; Critical CSS сюда не входит — он замедляет сборку, см. `build:prod`). |
+| `pnpm build:wp` | Сборка для **WordPress** — каноничный способ доставки ассетов в тему: собираются напрямую в `backend/wp-content/themes/my-theme/assets/` (плоская структура; HTML не собирается, разметку рендерит PHP). |
+| `pnpm build:prod` | Продакшен для **статического деплоя**: `pnpm build` + инлайн **Critical CSS** в HTML (`scripts/make-critical.ts`). |
+| `pnpm strip-avif:dist` | Копия `dist/` → `dist-wp/` без AVIF — для заливки на **слабые хостинги** (оригинал `dist/` не трогается). |
 | `pnpm preview` | Локальный сервер для проверки собранной версии (`dist/`). |
 | `pnpm verify` | `pnpm build` + прогон Playwright-тестов. |
 | `pnpm test:ui` | Playwright-тесты в UI-режиме. |
 | `pnpm test:update` | Пересборка + обновление снапшотов Playwright. |
 | `pnpm check` | Линт (Biome) + форматирование (Biome + Prettier). |
 | `pnpm test:build` | Build-smoke: проверка артефактов сборки в `dist/` (см. `scripts/check-build.ts`). |
-| `pnpm sync:theme` | Синхронизация `dist/` в тему WordPress (блокируется при грязном `git status`). |
 | `pnpm build:wp-strip-avif` | Вырезает AVIF-фрагменты из PHP/HTML/CSS темы (перед деплоем на шаред-хостинг, см. «Деплой»). |
-| `pnpm strip-avif:dist` | Копия `dist/` → `dist-wp/` без AVIF (статический деплой, оригинал не трогается). |
 
 ### Вспомогательные (utility) скрипты
 
@@ -343,7 +341,7 @@ backend/wp-content/themes/my-theme/
 
 Как работает подключение ассетов (`inc/enqueue-assets.php`):
 
-- **Production:** после `pnpm build && pnpm sync:theme` в теме лежит
+- **Production:** после `pnpm build:wp` в теме лежит
   `assets/manifest.json` + собранные файлы. `get_asset('frontend/src/js/app.ts')`
   возвращает версионированный URL с хешем; CSS берётся из поля `css` entry.
 - **Development:** если `manifest.json` отсутствует, `get_asset()` возвращает адрес
@@ -354,16 +352,16 @@ backend/wp-content/themes/my-theme/
 `script_loader_tag` (`my_theme_script_loader_tag()`). ES-модуль deferred по
 умолчанию — отрисовку не блокирует. Скрипты плагинов и ядра фильтр не трогает.
 
-### Сборка → синхронизация с темой
+### Сборка в тему WordPress
 
 ```bash
-pnpm build        # соберет dist/ (manifest.json в корне)
-pnpm sync:theme   # rsync dist/ → backend/wp-content/themes/my-theme/assets/
+pnpm build:wp     # соберет ассеты напрямую в backend/wp-content/themes/my-theme/assets/
 ```
 
-- `sync:theme` **блокируется**, если рабочее дерево грязное (`git status --porcelain`)
-  — ассеты всегда соответствуют закоммиченному исходнику.
-- `assets/` в теме — артефакт сборки (копия `dist/`), добавлен в `.gitignore`;
+- `build:wp` — **единственный каноничный способ** доставки ассетов в тему:
+  сборка идет сразу в `assets/` темы с плоской структурой (`css/`, `js/`,
+  `img/`, `favicons/`, `manifest.json` в корне) — без промежуточного `dist/`.
+- `assets/` в теме — артефакт сборки, добавлен в `.gitignore`;
   в git попадает только исходный код.
 
 ### Относительные пути и открытие dist через file://
@@ -427,12 +425,11 @@ wp-content/uploads/2026/11/photo.jpg.webp   ← сиблинг WebP
 | Шаг | Команда | Что делает |
 | --- | --- | --- |
 | 1. Конвертация изображений | `pnpm images:convert` | Исходники из `frontend/src/assets/images-convert/source/` → WebP+AVIF в `.../result/`. Один раз перед сборкой: результат — исходники для Vite. |
-| 2. Сборка | `pnpm build` | `dist/` с хешами и `manifest.json` (с AVIF). |
-| 3. Синхронизация | `pnpm sync:theme` | `rsync dist/ → backend/wp-content/themes/my-theme/assets/` (требует чистый git status). |
-| 4. Стрип AVIF | `pnpm build:wp-strip-avif` | Вырезает AVIF-фрагменты из PHP/HTML/CSS темы **in place**. |
-| 5. Заливка | rsync/FTP/панель хостинга | Загружаете папку `backend/wp-content/themes/my-theme/` на хостинг. |
+| 2. Сборка в тему | `pnpm build:wp` | Ассеты напрямую в `backend/wp-content/themes/my-theme/assets/`, плоско, с AVIF. |
+| 3. Стрип AVIF | `pnpm build:wp-strip-avif` | Вырезает AVIF-фрагменты из PHP/HTML/CSS темы **in place**. |
+| 4. Заливка | rsync/FTP/панель хостинга | Загружаете папку `backend/wp-content/themes/my-theme/` на хостинг. |
 
-Про шаг 4 (`scripts/strip-avif.js`):
+Про шаг 3 (`scripts/strip-avif.ts`):
 
 - вырезает `<source srcset="… .avif …">` и `background-image: image-set(…avif…)`
   (включая многострочные значения и вложенный `url()`), чистит лишние запятые;
@@ -447,8 +444,8 @@ wp-content/uploads/2026/11/photo.jpg.webp   ← сиблинг WebP
   не ссылки) — перечисляет их с файлами и строками и завершается с ошибкой:
   деплоить нельзя. `tests/` из сканирования исключены (dev-артефакты);
 - идемпотентен: повторный запуск ничего не меняет;
-- повторный `pnpm build && pnpm sync:theme` возвращает AVIF — когда хостинг
-  «подрастёт», просто перестаньте запускать шаг 4.
+- повторный `pnpm build:wp` возвращает AVIF — когда хостинг
+  «подрастёт», просто перестаньте запускать шаг 3.
 
 ### Статический деплой `dist/` без AVIF (`dist-wp/`)
 
