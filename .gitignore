@@ -32,6 +32,7 @@ packages/*/node_modules
 /backend/license.txt
 /backend/readme.html
 /backend/wp-*.php
+!backend/wp-redis-config.php
 /backend/xmlrpc.php
 /backend/wp-admin/
 /backend/wp-includes/
