@@ -7,8 +7,8 @@
     "preinstall": "node scripts/check-node.js",
     "dev": "vite",
     "full": "concurrently -n \"VITE,DDEV\" -c \"blue,green\" \"pnpm dev\" \"echo 'Start DDEV manually'\"",
-    "build": "pnpm favicons:generate && tsx scripts/compress-images.ts && tsx scripts/optimize-svg.ts && vite build",
-    "build:wp": "pnpm favicons:generate && tsx scripts/compress-images.ts && tsx scripts/optimize-svg.ts && vite build --mode wordpress",
+    "build": "pnpm favicons:generate && tsx scripts/compress-images.ts && vite build",
+    "build:wp": "pnpm favicons:generate && tsx scripts/compress-images.ts && vite build --mode wordpress",
     "build:prod": "pnpm build && tsx scripts/make-critical.ts",
     "build:stats": "ANALYZE=true pnpm build",
     "build:wp-strip-avif": "tsx scripts/strip-avif.ts",
@@ -31,7 +31,6 @@
     "favicons:generate": "tsx scripts/make-favicons.ts",
     "images:convert": "tsx scripts/convert-images.ts",
     "images:compress": "tsx scripts/compress-images.ts",
-    "svg:optimize": "tsx scripts/optimize-svg.ts",
     "test": "pnpm --filter vite-plugin-smart-assets test",
     "typecheck": "tsc --noEmit"
   },

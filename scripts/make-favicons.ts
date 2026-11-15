@@ -13,8 +13,10 @@
  *   вывод     — frontend/public/assets/favicons/ (все сгенерированные иконки,
  *               чтобы не засорять корень public/ и корень dist/).
  *
- * public/ копируется в dist как есть → иконки попадают в dist/assets/favicons/,
- * а после `pnpm sync:theme` — в assets/assets/favicons/ темы WordPress.
+ * public/ копируется в dist как есть → иконки попадают в dist/assets/favicons/.
+ * В WP-сборке (`pnpm build:wp`, outDir — сразу <тема>/assets/) плагин
+ * wp-flatten-favicons (vite.config.ts) перекладывает их плоско в
+ * <тема>/assets/favicons/ — без вложенного assets/assets.
  *
  * Сгенерированные файлы — АРТЕФАКТЫ (в .gitignore): пересоздаются командой
  * `pnpm favicons:generate`, которая автоматически выполняется перед каждой
@@ -44,7 +46,7 @@ const rootPath = path.resolve(__dirname, "..");
 const SOURCE = path.resolve(rootPath, "frontend/public/favicon.svg");
 const OUTPUT_DIR = path.resolve(rootPath, "frontend/public/assets/favicons");
 // Префикс путей в печатаемых <link> — от корня dist/ (совпадает с публичным
-// URL иконок и с путем внутри assets/ темы WP).
+// URL иконок в dist-сборке).
 const BASE_PATH = "assets/favicons/";
 // Имя SVG-фавиконки в OUTPUT_DIR: генератор не пишет SVG-исходник в вывод
 // (его CLI рассчитывает, что исходник уже лежит в целевой папке), поэтому

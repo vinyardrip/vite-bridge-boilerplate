@@ -65,7 +65,7 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | Команда | Описание |
 | --- | --- |
 | `pnpm dev` | Dev-сервер Vite с горячей перезагрузкой. |
-| `pnpm build` | Production-сборка: генерация фавиконок → оптимизация изображений/SVG → `vite build` → `dist/` (с AVIF и фавиконками; Critical CSS сюда не входит — он замедляет сборку, см. `build:prod`). |
+| `pnpm build` | Production-сборка: генерация фавиконок → оптимизация изображений → `vite build` → `dist/` (с AVIF и фавиконками; Critical CSS сюда не входит — он замедляет сборку, см. `build:prod`). |
 | `pnpm build:wp` | То же в режиме WordPress: ассеты собираются сразу в `backend/wp-content/themes/my-theme/assets/` (HTML не собирается, разметку рендерит PHP). |
 | `pnpm build:prod` | Финальная сборка для статического деплоя: `pnpm build` + инлайн **Critical CSS** в HTML (`scripts/make-critical.ts`). |
 | `pnpm preview` | Локальный сервер для проверки собранной версии (`dist/`). |
@@ -86,7 +86,6 @@ pnpm dev       # запустить dev-сервер (http://localhost:5173)
 | `pnpm favicons:generate` | Генерация favicon/PWA-ассетов из `frontend/public/favicon.svg` → `frontend/public/assets/favicons/` (автоматически выполняется перед каждой сборкой; подробнее — [Cookbook](./docs/ASSETS_GUIDE.md)). |
 | `pnpm images:convert` | Конвертация изображений в WebP/AVIF (sharp). |
 | `pnpm images:compress` | Сжатие изображений (входит в `pnpm build`). |
-| `pnpm svg:optimize` | Оптимизация SVG (svgo, входит в `pnpm build`). |
 
 ## Структура проекта
 

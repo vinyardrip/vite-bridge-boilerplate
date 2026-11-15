@@ -219,6 +219,38 @@ const removeOrphanSourcemaps = (): Plugin => ({
   },
 });
 
+/*!
+ * Локальный плагин (только WP-сборка): расплющивание фавиконок из public.
+ *
+ * publicDir копируется в outDir «как есть»: frontend/public/assets/favicons/
+ * → <тема>/assets/assets/favicons/ — вложенный assets внутри assets (outDir
+ * WP-сборки уже заканчивается на assets/). closeBundle срабатывает ПОСЛЕ
+ * копирования public, поэтому здесь папка просто переезжает на уровень
+ * выше: <тема>/assets/favicons/ — плоская раскладка, как у img/, fonts/
+ * и manifest.json в WP-режиме (ср. scope: "" у smart-assets и шрифты
+ * в assetFileNames).
+ */
+const flattenWpFavicons = (outDir: string): Plugin => ({
+  name: "wp-flatten-favicons",
+  apply: "build",
+  closeBundle() {
+    const outDirAbs = path.resolve(__dirname, outDir);
+    const nested = path.join(outDirAbs, "assets", "favicons");
+    // favicons:generate не запускался / папки нет — расплющивать нечего.
+    if (!fs.existsSync(nested)) return;
+    fs.rmSync(path.join(outDirAbs, "favicons"), { recursive: true, force: true });
+    fs.renameSync(nested, path.join(outDirAbs, "favicons"));
+    // <тема>/assets/assets/ после переезда пуста — убрать остатки.
+    const nestedRoot = path.join(outDirAbs, "assets");
+    if (fs.existsSync(nestedRoot) && fs.readdirSync(nestedRoot).length === 0) {
+      fs.rmdirSync(nestedRoot);
+    }
+    console.log(
+      "[wp-flatten-favicons] assets/favicons → favicons (плоская раскладка темы)",
+    );
+  },
+});
+
 
 export default defineConfig(({ command, mode }) => {
   /*! --- РЕЖИМ WORDPRESS (pnpm build:wp, `vite build --mode wordpress`) ---
@@ -439,6 +471,11 @@ export default defineConfig(({ command, mode }) => {
     /*! --- ЧИСТКА ОСИРОТЕВШИХ SOURCEMAP'ОВ --- */
     removeOrphanSourcemaps(),
   ];
+
+  /*! --- WP-РЕЖИМ: РАСПЛЮЩИВАНИЕ ФАВИКОНОК ИЗ PUBLIC (см. flattenWpFavicons) --- */
+  if (isWpBuild) {
+    plugins.push(flattenWpFavicons(wpAssetsDir));
+  }
 
   /*! --- УСЛОВНОЕ ПОДКЛЮЧЕНИЕ АНАЛИЗАТОРА СБОРКИ ---
   Только при ANALYZE=true (pnpm build:stats). Строгое сравнение со строкой:
