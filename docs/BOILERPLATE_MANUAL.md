@@ -440,15 +440,17 @@ Nunjucks-макросов `ui.icon()` / `ui.picture()`. Источник дан�
 
 ## 3. Концепция Генератора: scripts/init-project.ts
 
-> Скрипта **в репозитории еще нет** — проверено: `scripts/` содержит только
-> `check-build.ts`, `check-node.js`, `compress-images.ts`, `convert-images.ts`,
-> `make-critical.ts`, `make-favicons.ts`, `strip-avif-dist.ts`,
-> `strip-avif-rules.ts`, `strip-avif.ts`, `test-wp-helpers.ts` (+ `.gitkeep`).
-> Это концепт под реальную структуру; согласованная с ним задача уже есть в
-> PLAN.md («Бэклог → 3. Автоматическое переименование темы при генерации
-> проекта»; «Фаза 5: Упаковка в Yeoman-генератор» — более дальняя цель).
-> Конвенции проекта: скрипты на TypeScript под `tsx`, запуск через
-> `"init-project": "tsx scripts/init-project.ts"` в package.json, zsh.
+> **Статус: РЕАЛИЗОВАНО** — скрипт лежит в `scripts/init-project.ts` (2026-11-15),
+> запуск: `pnpm init-project`. Флаги: `--name=<slug>`, `--title=<Название>`,
+> `--dry-run`, `--yes`. Только `node:*` — работает на свежем клоне до `pnpm install`.
+> Этапы: validate → rename → replace → configs → cleanup → verify → report.
+> Отличия от концепта ниже: фикстуры живут ВНУТРИ темы
+> (`themes/<slug>/tests/fixtures/`), поэтому папки переименовываются по одной
+> с пересканированием после каждого rename; старые токены сверяются тремя
+> формами (`my_theme`, `my-theme`, `My Theme`); `docs/BOILERPLATE_MANUAL.md`
+> исключён из замен (документация бойлерплейта).
+> Исходная задача в PLAN.md («Бэклог → 3. Автоматическое переименование темы»)
+> закрыта; «Фаза 5: Упаковка в Yeoman-генератор» — более дальняя цель.
 
 ### 3.1 Назначение и входные данные
 

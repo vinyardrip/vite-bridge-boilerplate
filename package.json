@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "init-project": "tsx scripts/init-project.ts",
     "preinstall": "node scripts/check-node.js",
     "dev": "vite",
     "full": "concurrently -n \"VITE,DDEV\" -c \"blue,green\" \"pnpm dev\" \"echo 'Start DDEV manually'\"",
