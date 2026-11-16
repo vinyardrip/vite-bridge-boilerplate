@@ -21,6 +21,13 @@
 
 ## Требования
 
+**⚠️ Менеджер пакетов — только pnpm (10.x).** Проект — pnpm-монорепо
+(`pnpm-workspace.yaml` + зависимости `workspace:*`): `npm install` / yarn / bun
+падают с `EUNSUPPORTEDPROTOCOL: Unsupported URL Type "workspace:"` — это
+ожидаемо и безопасно (до скачивания пакетов ничего не трогается).
+Быстрый способ включить pnpm: `corepack enable && pnpm install`
+(версия возьмётся из `packageManager` в `package.json`).
+
 **⚠️ Node.js LTS (v20 или v22) — строго обязательно.** На «свежих» не-LTS
 версиях (например, v24) нет пребилдов нативных модулей (sharp и др.) —
 `pnpm install` падает в компиляцию через node-gyp и обрывается с ошибкой
