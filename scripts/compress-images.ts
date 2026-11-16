@@ -61,14 +61,25 @@ async function saveCache(cache: Record<string, number>): Promise<void> {
  */
 async function validateAndSetApiKey() {
   const spinner = ora("Проверяю API ключи...").start();
+  let keyIndex = 0;
   for (const key of API_KEYS) {
+    keyIndex++;
     try {
       tinify.key = key.trim();
-      await promisify(tinify.validate)();
+      // tinify >= 1.9: validate() — метод класса, зовётся С this (promisify
+      // отрывает this → TypeError внутри пакета, который раньше молча
+      // превращался в «ключ невалиден»). Без callback validate() возвращает Promise.
+      await tinify.validate();
       spinner.succeed(chalk.green("Рабочий API ключ найден и установлен."));
       return true;
     } catch (err) {
-      // Игнорируем ошибку и пробуем следующий ключ
+      // Ошибка не обязательно «ключ невалиден»: сломанный API пакета (TypeError)
+      // или сеть выглядят так же. Не молчим — показываем и пробуем следующий ключ.
+      spinner.warn(
+        chalk.yellow(
+          `Ключ #${keyIndex} не прошёл валидацию: ${err?.message ?? err}`,
+        ),
+      );
     }
   }
   spinner.fail(
