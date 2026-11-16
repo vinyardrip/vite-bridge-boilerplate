@@ -68,9 +68,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="modal" role="dialog" aria-modal="true">
 
 			<button class="modal__close" data-modal-close="data-modal-close" aria-label="Закрыть окно">
-				<svg class="icon icon-cross" aria-hidden="true" focusable="false">
-					<use xlink:href="./img/sprite.svg#icon-cross"></use>
-				</svg>
+				<?php echo theme_icon( 'cross', 'icon-cross' ); // phpcs:ignore WordPress.Security.EscapeOutput -- theme_icon экранирует разметку внутри. ?>
 			</button>
 
 			<?php // ОКНО «СПАСИБО». ?>
