@@ -84,3 +84,13 @@ STATUS.md
 .ck/state.json
 # DPX: журналы сессий (создаются в каталоге запуска команд).
 .dpx/
+
+# ck 0.14 per-project runtime (генерируется ck, у каждого проекта своё)
+.ck/PLAN.md
+.ck/AGENTS.md
+.ck/HISTORY.md
+.ck/JOURNAL.md
+.ck/links.json
+.ck/meta.json
+.ck/version
+.ck_backup_*/
